@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:8000';
+const API_BASE = 'https://optiflow-backend-977593391877.us-central1.run.app';
 
 export async function uploadFile(endpoint, file) {
   const formData = new FormData();

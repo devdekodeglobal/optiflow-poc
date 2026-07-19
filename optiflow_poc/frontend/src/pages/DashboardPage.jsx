@@ -140,7 +140,7 @@ export default function DashboardPage() {
     setLoading(true);
     try {
       const q = new URLSearchParams({ ...filters, page_size: 50000 });
-      const res = await fetch(`http://localhost:8000/api/allocation/results?${q}`);
+      const res = await fetch(`https://optiflow-backend-977593391877.us-central1.run.app/api/allocation/results?${q}`);
       const json = await res.json();
       
       if (!res.ok) {
@@ -204,9 +204,9 @@ export default function DashboardPage() {
   const handleDownloadCsv = (full) => {
     setExportMenuOpen(false);
     if (full) {
-      window.open(`http://localhost:8000/api/allocation/results/export?group_by=zone`, '_blank');
+      window.open(`https://optiflow-backend-977593391877.us-central1.run.app/api/allocation/results/export?group_by=zone`, '_blank');
     } else {
-      window.open(`http://localhost:8000/api/allocation/results/export?group_by=zone&${new URLSearchParams(filters)}`, '_blank');
+      window.open(`https://optiflow-backend-977593391877.us-central1.run.app/api/allocation/results/export?group_by=zone&${new URLSearchParams(filters)}`, '_blank');
     }
   };
 

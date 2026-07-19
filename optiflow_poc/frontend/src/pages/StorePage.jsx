@@ -89,7 +89,7 @@ export default function StorePage() {
           <p className="subtitle">{detail.store_type}</p>
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
-          <button className="btn btn-secondary" onClick={() => window.open(`http://localhost:8000/api/allocation/download/by-store`, '_blank')}>
+          <button className="btn btn-secondary" onClick={() => window.open(`https://optiflow-backend-977593391877.us-central1.run.app/api/allocation/download/by-store`, '_blank')}>
             ⬇ Download Master CSV
           </button>
           <button className="btn btn-primary" onClick={() => navigate(`/dispatch/${encodeURIComponent(detail.store_name)}`)}>
