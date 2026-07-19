@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OptiFlow System Blueprint - Centre For Sight</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    /* Merged ProposalCFS CSS with original layout */
+    :root {
+      --bg-color: #f8fafc;
+      --surface-color: #ffffff;
+      --text-primary: #1e293b;
+      --text-secondary: #475569;
+      --accent-primary: #2563eb;
+      --accent-secondary: #7c3aed;
+      --danger: #ef4444;
+      --success: #10b981;
+      --border-color: rgba(0, 0, 0, 0.08);
+      --dekode-blue: #053364;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: #0f172a;
+      line-height: 1.6;
+      background-image: 
+        radial-gradient(circle at 15% 50%, rgba(37, 99, 235, 0.04), transparent 25%),
+        radial-gradient(circle at 85% 30%, rgba(124, 58, 237, 0.04), transparent 25%);
+      background-attachment: fixed;
+    }
+
+    .dekode-nav {
+      background-color: var(--dekode-blue);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 16px 32px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .dekode-logo { color: white; font-size: 24px; font-weight: 800; letter-spacing: 2px; margin: 0; }
+
+    .workflow-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 60px 24px;
+    }
+
+    .header-section { text-align: center; margin-bottom: 60px; }
+    .header-section h1 { font-size: 48px; font-weight: 900; margin-bottom: 16px; color: #0b1d3a; line-height: 1.1; letter-spacing: -1px; }
+    .header-section p { font-size: 18px; color: #475569; max-width: 700px; margin: 0 auto; }
+
+    .segmented-control {
+      display: flex; justify-content: center; background: rgba(15, 37, 64, 0.08);
+      padding: 4px; border-radius: 30px; max-width: 500px; margin: 0 auto 40px auto; border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    .segmented-btn {
+      flex: 1; border: none; background: transparent; padding: 12px 24px;
+      border-radius: 26px; font-size: 14px; font-weight: 700; color: #475569; cursor: pointer; transition: all 0.3s ease;
+    }
+    .segmented-btn.active { background-color: #003b7a; color: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+
+    .section-card {
+      background: var(--surface-color); border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 12px; padding: 32px; margin-bottom: 60px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .section-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); border-color: rgba(0, 0, 0, 0.12); }
+    .section-card h2 { margin-top: 0; font-size: 24px; display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .section-card h2::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--accent-primary); }
+
+    h3 { font-size: 20px; font-weight: 700; color: #003b7a; margin: 2rem 0 1rem; border-bottom: 2px solid rgba(0, 59, 122, 0.1); padding-bottom: 12px; }
+    ul { list-style: none; }
+    ul li { position: relative; padding-left: 1.75rem; margin-bottom: 1rem; color: var(--text-secondary); }
+    ul li::before { content: '→'; position: absolute; left: 0; color: var(--accent-secondary); font-weight: bold; }
+
+    .role-badge { display: inline-block; padding: 0.35rem 1rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; margin-right: 0.75rem; margin-bottom: 0.5rem; }
+    .role-basic { background: rgba(16, 185, 129, 0.1); color: #059669; border: 1px solid rgba(16, 185, 129, 0.2); }
+    .role-admin { background: rgba(239, 68, 68, 0.1); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.2); }
+    .equation-box { background: #f1f5f9; border-left: 4px solid var(--accent-primary); padding: 1.5rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; font-family: monospace; font-size: 1.1rem; color: #334155; overflow-x: auto; }
+    .flowchart { background: #f8fafc; padding: 2rem; border-radius: 12px; font-family: monospace; white-space: pre; overflow-x: auto; color: #0f172a; border: 1px solid #e2e8f0; line-height: 1.4; }
+
+    .info-box { background: #fff8f1; border-left: 4px solid #f97316; padding: 24px; border-radius: 8px; margin-bottom: 1.5rem; }
+    .info-box.danger { background: #fef2f2; border-left-color: #ef4444; }
+    .info-box.success { background: #ecfdf5; border-left-color: #10b981; }
+
+    .svg-container { background-color: #ffffff; border: 1px solid rgba(0, 0, 0, 0.1); border-radius: 12px; padding: 40px; text-align: center; margin-bottom: 2rem; overflow-x: auto; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+    .svg-node-text { fill: #0f172a; font-weight: 600; font-size: 16px; }
+    .svg-sub-text { fill: #94a3b8; font-size: 14px; }
+    .svg-white-text { fill: #ffffff; font-weight: 600; font-size: 16px; }
+
+    .filter-btn-group { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin: 0 auto 32px auto; max-width: fit-content; padding: 8px; background: rgba(15, 23, 42, 0.04); border-radius: 16px; border: 1px solid rgba(0,0,0,0.05); }
+    .filter-btn { display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 12px; border: 1px solid transparent; background-color: transparent; color: #475569; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s ease-in-out; }
+    .filter-btn:hover { background-color: rgba(255, 255, 255, 0.8); border-color: rgba(0, 0, 0, 0.1); color: #0f172a; transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+    .filter-btn.active { background-color: #053364 !important; border-color: #053364 !important; color: white !important; box-shadow: 0 4px 12px rgba(5, 51, 100, 0.25); }
+
+    .flow-element { transition: opacity 0.3s ease; }
+    .dimmed { opacity: 0.15 !important; }
+
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-color); }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body>
+
+  <nav class="dekode-nav">
+    <div class="dekode-logo">DEKODE</div>
+  </nav>
+
+  <div class="workflow-container">
+    
+    <div class="header-section">
+      <h1>Centre For Sight: OptiFlow</h1>
+      <p>Complete technical overview and transition guide for automated inventory allocation from the Dwarka warehouse to PAN India stores.</p>
+    </div>
+
+    <!-- CLIENT CONTEXT -->
+    <section class="section-card" style="margin-bottom: 3rem;">
+      <h2 style="color: #0b1d3a; margin-bottom: 1rem;">Client Context: Centre For Sight</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+        <strong>Centre For Sight</strong> operates a geographically distributed network of optical stores across India. Their entire supply chain is anchored by a single, central warehouse located in <strong>Dwarka, New Delhi</strong>. 
+      </p>
+      <p style="color: var(--text-secondary); margin-bottom: 0;">
+        The Dwarka warehouse acts as a continuous supplier (it does not flag stockouts in this allocation model). The core logistical challenge is accurately calculating the specific Planogram deficits at each PAN India store and determining exactly which frames / sunglasses (or substitutes) need to be dispatched from Dwarka to fulfill those gaps.
+      </p>
+    </section>
+
+    <!-- THE PRESSING ISSUE -->
+    <section class="section-card" style="border: 2px solid #ef4444; position: relative; overflow: hidden;">
+      <div style="position: absolute; top: 0; left: 0; width: 100%; height: 6px; background: #ef4444;"></div>
+      <h2 style="color: #ef4444; border-bottom-color: rgba(239, 68, 68, 0.2);"><span style="color: #ef4444; display: inline; border: none; padding: 0; font-size: inherit;">The Pressing Issue</span></h2>
+      
+      <div class="info-box danger">
+        <h3 style="color: #b91c1c; margin-top: 0; font-size: 1.2rem; border-bottom: none; padding-bottom: 0;">Manual Bottlenecks & Wasted Time</h3>
+        <p style="color: #450a0a; margin-bottom: 1rem;">
+          Currently at Centre For Sight, inventory replenishment is driven entirely by manual Excel spreadsheets. The central warehouse in <strong>Dwarka, New Delhi</strong> receives inventory (acting as a continuous supplier without stockouts), and merchandisers must export raw data, run complex VLOOKUPs to compare <strong>PAN India store stock</strong> against Planograms.
+        </p>
+        <p style="color: #450a0a; margin-bottom: 1rem;">
+          It takes a massive amount of time for the team to manually figure out <em>which substitute frame / sunglass goes to which PAN India store</em> when an exact SKU isn't available.
+        </p>
+        <p style="color: #450a0a; margin-bottom: 0; font-weight: 500;">
+          This manual process introduces significant operational bottlenecks. Across the network, this process requires over <strong>191 manual events per month</strong>, wasting an estimated <strong>12,600+ hours annually</strong>. Our immediate focus is to address this first.
+        </p>
+      </div>
+
+      <div style="margin-top: 2.5rem; padding-top: 2rem; border-top: 1px solid var(--border-color);">
+        <h3 style="margin-top: 0; font-size: 1.2rem; text-align: center; color: var(--text-primary); border: none; padding: 0;">High-Level System Flow</h3>
+        <div style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; font-weight: 600; flex-wrap: wrap;">
+          <div style="background: var(--bg-color); padding: 1rem 2rem; border-radius: 8px; border: 1px solid var(--border-color); color: var(--text-primary); box-shadow: 0 2px 4px rgba(0,0,0,0.02);">Data Inputs (Dwarka + Stores)</div>
+          <div style="color: var(--text-secondary); font-size: 1.5rem;">→</div>
+          <div style="background: #eff6ff; color: #1d4ed8; padding: 1rem 2rem; border-radius: 8px; border: 2px solid #93c5fd; box-shadow: 0 4px 6px rgba(29, 78, 216, 0.1);">OptiFlow Engine</div>
+          <div style="color: var(--text-secondary); font-size: 1.5rem;">→</div>
+          <div style="background: #f0fdf4; color: #15803d; padding: 1rem 2rem; border-radius: 8px; border: 2px solid #86efac; box-shadow: 0 4px 6px rgba(21, 128, 61, 0.1);">Outputs (PAN India Dispatch)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- OPTIFLOW COMPONENTS -->
+    <section class="section-card">
+      <h2>OptiFlow System Components</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 2rem;">To achieve this high-level flow, the architecture is broken down into four core technical pillars:</p>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+        <div style="background: var(--bg-color); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-color);">
+          <h3 style="margin-top: 0; color: #003b7a; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; border: none; padding: 0;">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+            Front End
+          </h3>
+          <p style="font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 0;">Web-based dashboards for Admins to upload data and for Store Managers to view outputs and generate physical dispatch orders.</p>
+        </div>
+        
+        <div style="background: var(--bg-color); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-color);">
+          <h3 style="margin-top: 0; color: #003b7a; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; border: none; padding: 0;">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            Middleware (Core Engine)
+          </h3>
+          <p style="font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 0;">The heavy-lifting calculation layer hosting the deterministic heuristic logic, processing the matrix of planograms against current inventory.</p>
+        </div>
+        
+        <div style="background: var(--bg-color); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-color);">
+          <h3 style="margin-top: 0; color: #003b7a; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; border: none; padding: 0;">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+            Backend
+          </h3>
+          <p style="font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 0;">Scalable database architecture tracking sales history, unifying PAN India store and Dwarka warehouse feeds, and managing analytics logs.</p>
+        </div>
+        
+        <div style="background: var(--bg-color); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border-color);">
+          <h3 style="margin-top: 0; color: #003b7a; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; border: none; padding: 0;">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            API Layer
+          </h3>
+          <p style="font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 0;">RESTful endpoints connecting the core calculation engine to the front end and facilitating dynamic UI filtering and report generation.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROPOSED METHOD -->
+    <section class="section-card">
+      <h2>Proposed Method</h2>
+      <div class="info-box success">
+        <h3 style="color: #047857; margin-top: 0; font-size: 1.2rem; border: none; padding: 0;">The Automated Solution</h3>
+        <p style="color: #334155; margin-bottom: 1rem;">
+          We are deploying a deterministic <strong>Logic Engine</strong>. The user simply uploads the raw PAN India store and Dwarka warehouse CSV data. The system automatically calculates Planogram deficits for each store and executes allocations.
+        </p>
+        <p style="color: #334155; font-weight: 600; margin-bottom: 0;">
+          Fully Automated 3-Step Substitutions: <span style="font-weight: 400;">If an exact frame / sunglass is out of stock in the warehouse, the system automatically runs a heuristic search to find a similar item. If a similar item is not found, it picks a NEW item from the SAME BRAND. The engine allocates it immediately. No manager approval or manual click is required.</span>
+        </p>
+      </div>
+    </section>
+
+    <div class="segmented-control">
+      <button id="btn-manual" class="segmented-btn active" onclick="toggleView('manual')">Legacy Manual Process</button>
+      <button id="btn-automated" class="segmented-btn" onclick="toggleView('automated')">OptiFlow Automated</button>
+    </div>
+
+    <!-- AUTOMATED VIEW -->
+    <div id="automated-view" style="display: none;">
+      <div style="text-align: center; margin-bottom: 1.5rem;">
+        <h3 style="margin-top: 0; border: none; padding: 0;">Automated Decision Workflow</h3>
+        <p style="color: var(--text-secondary);">End-to-end logic showing how the system calculates store deficits and routes substitutions via the 3-step cascade.</p>
+      </div>
+      
+      <div class="filter-btn-group">
+        <button class="filter-btn active" onclick="highlightPath('all')">Show Full Workflow</button>
+        <button class="filter-btn" onclick="highlightPath('path-skip')">Path 1: Stock Adequate</button>
+        <button class="filter-btn" onclick="highlightPath('path-match')">Path 2: Exact Auto-Allocate</button>
+        <button class="filter-btn" onclick="highlightPath('path-exception')">Path 3: Substitution Cascade</button>
+      </div>
+
+      <div class="svg-container">
+        <svg width="100%" height="1300" viewBox="0 0 1000 1300" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="primaryGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#053364"/>
+              <stop offset="100%" stop-color="#053364"/>
+            </linearGradient>
+            <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#64748b" />
+            </marker>
+          </defs>
+
+          <!-- COMMON PATH -->
+          <g class="flow-element path-skip path-match path-exception">
+            <rect x="350" y="30" width="200" height="55" rx="27.5" fill="#053364" />
+            <text x="450" y="55" class="svg-white-text" text-anchor="middle">Start</text>
+            <text x="450" y="72" fill="#94a3b8" font-size="11" text-anchor="middle">(Allocation Day)</text>
+
+            <path d="M450 85 V120" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <rect x="300" y="120" width="300" height="45" rx="8" fill="var(--surface-color)" stroke="#cbd5e1" stroke-width="2"/>
+            <text x="450" y="146" class="svg-node-text" text-anchor="middle">Upload/Retrieve Planogram(s)</text>
+
+            <path d="M450 165 V200" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <rect x="300" y="200" width="300" height="45" rx="8" fill="var(--surface-color)" stroke="#cbd5e1" stroke-width="2"/>
+            <text x="450" y="226" class="svg-node-text" text-anchor="middle">Upload/Retrieve Last 7 Day Sales</text>
+
+            <path d="M450 245 V280" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <rect x="300" y="280" width="300" height="45" rx="8" fill="var(--surface-color)" stroke="#cbd5e1" stroke-width="2"/>
+            <text x="450" y="306" class="svg-node-text" text-anchor="middle">Upload/Retrieve Store Stock</text>
+
+            <path d="M450 325 V360" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <rect x="300" y="360" width="300" height="45" rx="8" fill="var(--surface-color)" stroke="#cbd5e1" stroke-width="2"/>
+            <text x="450" y="386" class="svg-node-text" text-anchor="middle">Upload/Retrieve Dwarka WH Stock</text>
+
+            <path d="M450 405 V440" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <rect x="300" y="440" width="300" height="50" rx="8" fill="#FEB611" stroke="#FEB611" stroke-width="2"/>
+            <text x="450" y="470" class="svg-node-text" text-anchor="middle" fill="#ffffff">OptiFlow Engine Processing</text>
+            
+            <path d="M450 490 V520" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <rect x="250" y="520" width="400" height="50" rx="8" fill="url(#primaryGrad)"/>
+            <text x="450" y="550" class="svg-white-text" text-anchor="middle">Generate Allocation/Replenishment Report</text>
+
+            <path d="M450 570 V610" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <polygon points="450,610 560,650 450,690 340,650" fill="var(--surface-color)" stroke="#FEB611" stroke-width="2"/>
+            <text x="450" y="654" class="svg-node-text" text-anchor="middle">Store Deficit Exists?</text>
+          </g>
+
+          <!-- PATH 1 (NO Deficit) -->
+          <g class="flow-element path-skip">
+            <path d="M340 650 H180 V1210 H350" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+            <rect x="240" y="639" width="40" height="22" rx="11" fill="#ef4444" />
+            <text x="260" y="654" fill="white" font-size="11" font-weight="600" text-anchor="middle">NO</text>
+          </g>
+
+          <g class="flow-element path-match path-exception">
+            <path d="M450 690 V750" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+            <rect x="430" y="709" width="40" height="22" rx="11" fill="#10b981" />
+            <text x="450" y="724" fill="white" font-size="11" font-weight="600" text-anchor="middle">YES</text>
+
+            <!-- 1. EXACT MATCH DIAMOND -->
+            <polygon points="450,750 560,790 450,830 340,790" fill="var(--surface-color)" stroke="#FEB611" stroke-width="2"/>
+            <text x="450" y="794" class="svg-node-text" text-anchor="middle">Exact SKU Found?</text>
+          </g>
+
+          <!-- PATH 2 (EXACT YES) -->
+          <g class="flow-element path-match">
+            <path d="M560 790 H760 V1050" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+            <rect x="620" y="779" width="40" height="22" rx="11" fill="#10b981" />
+            <text x="640" y="794" fill="white" font-size="11" font-weight="600" text-anchor="middle">YES</text>
+          </g>
+
+          <!-- PATH 3a (EXACT NO -> SIMILAR DIAMOND) -->
+          <g class="flow-element path-exception">
+            <path d="M450 830 V870" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+            <rect x="430" y="839" width="40" height="22" rx="11" fill="#ef4444" />
+            <text x="450" y="854" fill="white" font-size="11" font-weight="600" text-anchor="middle">NO</text>
+
+            <polygon points="450,870 560,910 450,950 340,910" fill="var(--surface-color)" stroke="#FEB611" stroke-width="2"/>
+            <text x="450" y="914" class="svg-node-text" text-anchor="middle">Similar Item Found?</text>
+          </g>
+
+          <!-- PATH 3a (SIMILAR YES) -->
+          <g class="flow-element path-exception">
+             <path d="M560 910 H760 V1050" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+             <rect x="620" y="899" width="40" height="22" rx="11" fill="#10b981" />
+             <text x="640" y="914" fill="white" font-size="11" font-weight="600" text-anchor="middle">YES</text>
+          </g>
+
+          <!-- PATH 3b (SIMILAR NO -> NEW FROM SAME BRAND) -->
+          <g class="flow-element path-exception">
+            <path d="M450 950 V990" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+            <rect x="430" y="959" width="40" height="22" rx="11" fill="#ef4444" />
+            <text x="450" y="974" fill="white" font-size="11" font-weight="600" text-anchor="middle">NO</text>
+
+            <rect x="300" y="990" width="300" height="50" rx="8" fill="var(--surface-color)" stroke="#cbd5e1" stroke-width="2"/>
+            <text x="450" y="1013" class="svg-node-text" text-anchor="middle">Find NEW Item (Same Brand)</text>
+            <text x="450" y="1030" fill="#64748b" font-size="10" text-anchor="middle">Rule: Max 2 colors (3rd marked RED)</text>
+
+            <!-- Route down and into Auto-Allocate -->
+            <path d="M450 1040 V1045 H760 V1050" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+          </g>
+
+          <g class="flow-element path-match path-exception">
+            <rect x="660" y="1050" width="200" height="50" rx="8" fill="url(#primaryGrad)"/>
+            <text x="760" y="1080" class="svg-white-text" text-anchor="middle">Auto-Allocate Item</text>
+
+            <path d="M760 1100 V1130" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+
+            <rect x="640" y="1130" width="240" height="50" rx="8" fill="var(--surface-color)" stroke="#10b981" stroke-width="2"/>
+            <text x="760" y="1160" class="svg-node-text" text-anchor="middle">Dispatch Order Generated</text>
+
+            <path d="M760 1180 V1210 H550" stroke="#64748b" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+          </g>
+
+          <g class="flow-element path-skip path-match path-exception">
+            <rect x="350" y="1185" width="200" height="50" rx="25" fill="#053364" />
+            <text x="450" y="1215" class="svg-white-text" text-anchor="middle">END</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <!-- MANUAL VIEW (Legacy) -->
+    <div id="manual-view">
+      <div style="text-align: center; margin-bottom: 1.5rem;">
+        <h3 style="margin-top: 0; border: none; padding: 0;">Legacy Manual Workflow</h3>
+        <p style="color: var(--text-secondary);">The convoluted manual process involving subjective decisions and wasted time.</p>
+      </div>
+      <div class="svg-container">
+        <svg width="100%" height="1100" viewBox="0 0 1100 1100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arrow-manual" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#94a3b8" />
+            </marker>
+          </defs>
+
+          <rect x="300" y="30" width="300" height="60" rx="30" fill="#053364" />
+          <text x="450" y="55" class="svg-white-text" text-anchor="middle">Start</text>
+          <text x="450" y="75" fill="#94a3b8" font-size="11" text-anchor="middle">(Distribution Day) Allocation</text>
+
+          <path d="M450 90 V140" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow-manual)"/>
+
+          <rect x="300" y="140" width="300" height="50" rx="8" fill="var(--surface-color)" stroke="#cbd5e1" stroke-width="2"/>
+          <text x="450" y="170" class="svg-node-text" text-anchor="middle">Get Planned Stock for Store</text>
+
+          <path d="M450 190 V240" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow-manual)"/>
+
+          <rect x="300" y="240" width="300" height="50" rx="8" fill="var(--surface-color)" stroke="#cbd5e1" stroke-width="2"/>
+          <text x="450" y="270" class="svg-node-text" text-anchor="middle">Get Last 7 Day Sales</text>
+
+          <path d="M450 290 V340" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow-manual)"/>
+
+          <rect x="300" y="340" width="300" height="50" rx="8" fill="var(--surface-color)" stroke="#cbd5e1" stroke-width="2"/>
+          <text x="450" y="370" class="svg-node-text" text-anchor="middle">Get Current Stock for Store</text>
+
+          <path d="M450 390 V440" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow-manual)"/>
+
+          <rect x="300" y="440" width="300" height="50" rx="8" fill="var(--surface-color)" stroke="#cbd5e1" stroke-width="2"/>
+          <text x="450" y="470" class="svg-node-text" text-anchor="middle">Get Warehouse Stock</text>
+
+          <path d="M450 490 V540" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow-manual)"/>
+
+          <rect x="280" y="540" width="340" height="60" rx="8" fill="#f59e0b" stroke="#f59e0b" stroke-width="2"/>
+          <text x="450" y="565" fill="#053364" font-weight="700" font-size="14" text-anchor="middle">Logistics Manager / Analyst</text>
+          <text x="450" y="582" fill="#053364" font-weight="500" font-size="12" text-anchor="middle">Manually cross-references all inputs</text>
+
+          <path d="M450 600 V650" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow-manual)"/>
+
+          <rect x="320" y="650" width="260" height="50" rx="8" fill="#053364" stroke="#053364" stroke-width="2"/>
+          <text x="450" y="680" class="svg-white-text" text-anchor="middle">Dispatch to Store</text>
+
+          <path d="M450 700 V750" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow-manual)"/>
+
+          <rect x="300" y="750" width="300" height="60" rx="8" fill="var(--surface-color)" stroke="#cbd5e1" stroke-width="2"/>
+          <text x="450" y="775" class="svg-node-text" text-anchor="middle">Stock Reconciled</text>
+          <text x="450" y="792" class="svg-sub-text" text-anchor="middle">(Store + Warehouse)</text>
+
+          <path d="M450 810 V860" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow-manual)"/>
+
+          <polygon points="450,860 560,900 450,940 340,900" fill="var(--surface-color)" stroke="#f59e0b" stroke-width="2"/>
+          <text x="450" y="904" class="svg-node-text" text-anchor="middle">More Stores?</text>
+
+          <path d="M560 900 H980 V60 H600" stroke="#f59e0b" stroke-width="2" stroke-dasharray="8 8" fill="none" marker-end="url(#arrow-manual)"/>
+          <rect x="580" y="889" width="40" height="22" rx="11" fill="#10b981" />
+          <text x="600" y="904" fill="white" font-size="11" font-weight="600" text-anchor="middle">YES</text>
+          <text x="970" y="480" fill="#f59e0b" font-size="12" font-weight="700" text-anchor="middle" transform="rotate(-90 970 480)">NEXT STORE</text>
+
+          <path d="M450 940 V990" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow-manual)"/>
+          <rect x="430" y="949" width="40" height="22" rx="11" fill="#ef4444" />
+          <text x="450" y="964" fill="white" font-size="11" font-weight="600" text-anchor="middle">NO</text>
+
+          <rect x="350" y="990" width="200" height="50" rx="25" fill="#053364" />
+          <text x="450" y="1020" class="svg-white-text" text-anchor="middle">END</text>
+        </svg>
+      </div>
+    </div>
+
+    <!-- SYSTEM BLUEPRINT DETAILS -->
+    
+    <section class="section-card">
+      <h2>1. System Roles & Access Control (RBAC)</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">The platform restricts actions based on two distinct user tiers:</p>
+      
+      <div style="margin-bottom: 2.5rem;">
+        <span class="role-badge role-basic">Basic User</span>
+        <span style="color: var(--text-primary); font-weight: 500;">(Store Managers / Warehouse Staff)</span>
+        <ul style="margin-top: 1.25rem;">
+          <li><strong>Permissions:</strong> View-only access to dashboards, stock levels, and calculated metrics.</li>
+          <li><strong>Outputs:</strong> Can filter and print physical <strong>Dispatch Orders</strong> and packing slips. Cannot modify data or upload files.</li>
+        </ul>
+      </div>
+
+      <div>
+        <span class="role-badge role-admin">Admin</span>
+        <span style="color: var(--text-primary); font-weight: 500;">(Corporate Merchandising / Corporate Team)</span>
+        <ul style="margin-top: 1.25rem;">
+          <li><strong>Permissions:</strong> Full read/write/execute control over the platform.</li>
+          <li><strong>Actions:</strong> Uploads all CSV feeds, modifies data rows inline, adjusts heuristic search weights, and receives system health alerts.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section-card">
+      <h2>2. Data Ingestion Architecture (The Inputs)</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">The system ingests data through three standardized CSV structures. The columns are fixed per file type, and only the row data changes dynamically.</p>
+      
+      <ul>
+        <li><strong>Planogram Master Data:</strong> Serves as the stable source of truth. Admins have full control to add or delete rows (e.g., introducing a new brand like "Brand P" or removing a discontinued one).</li>
+        <li><strong>Sales Data:</strong> Accepts historical data (the initial 6-month block). Every 7 days, Admins upload an incremental 7-day CSV. The system performs an <strong>Upsert</strong> based on the transaction log to append new sales tracking data without overwriting history.</li>
+        <li><strong>Stock Data (Unified PAN India Store & Dwarka Warehouse Feed):</strong> A single, consolidated CSV that captures current stock levels across the entire network. The system differentiates locations based on the identifier in the store name column. Ingesting this file overwrites the previous snapshot to provide real-time visibility.</li>
+      </ul>
+
+      <div style="background: rgba(37, 99, 235, 0.05); border-left: 4px solid var(--accent-primary); padding: 1rem; border-radius: 4px; margin-top: 1.5rem;">
+        <h3 style="margin-top: 0; color: #003b7a; font-size: 1.1rem; border-bottom: none; padding-bottom: 0.5rem;">Inventory Tracking Mechanisms</h3>
+        <p style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.95rem;">
+          <strong>1. Barcode:</strong> Used to track the physical order lifecycle. It is highly dynamic, often associated with order dates, and changes based on each specific order.
+        </p>
+        <p style="color: var(--text-secondary); margin-bottom: 0; font-size: 0.95rem;">
+          <strong>2. Item Code:</strong> A static, permanent identifier assigned to each SKU. This never changes and serves as the primary key for the heuristics engine to track and evaluate frames / sunglasses across the network.
+        </p>
+      </div>
+    </section>
+
+    <section class="section-card">
+      <h2>3. Core Calculation & Heuristic Engine</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 1rem;">When an Admin runs a cycle, the system executes three sequential algorithmic layers:</p>
+
+      <h3>Layer A: The Deficit & Uniqueness Evaluator</h3>
+      <p style="color: var(--text-secondary); margin-bottom: 0.5rem;"><strong>1. Store Deficit Calculation:</strong> For every PAN India store, brand, and SKU, the engine calculates the fulfillment target:</p>
+      <div class="equation-box">
+        Deficit = (Facing + Back stock) - Current Store SOH
+      </div>
+
+      <p style="color: var(--text-secondary); margin-bottom: 0.5rem; margin-top: 1rem;"><strong>2. The 85% Uniqueness Filter (Soft Warning):</strong> During validation, the system aggregates the metrics per brand per store:</p>
+      <div class="equation-box">
+        Uniqueness Ratio = (Unique SKU Count for Brand) / (Total SOH Inventory for Brand)
+      </div>
+
+      <h3>Layer B: Waterfall Prioritization Logic</h3>
+      <p style="color: var(--text-secondary); margin-bottom: 1rem;">If total network demand outpaces the Dwarka warehouse supply batch, stock allocation drops down a strict multi-tier priority cascade:</p>
+      <ul style="margin-bottom: 2rem;">
+        <li><strong>Store Grade Tiering:</strong> Allocate completely to <strong>Grade A</strong> stores first → then <strong>Grade B</strong> → then <strong>Grade C</strong>.</li>
+        <li><strong>Internal Grade List:</strong> Within Grade A (or B/C), the engine allocates inventory based on a secondary, client-provided internal ranking array.</li>
+      </ul>
+
+      <h3>Layer C: Auto-Substitution Match Cascade</h3>
+      <p style="color: var(--text-secondary); margin-bottom: 1rem;">When a specific SKU deficit is identified for a store, the engine executes a strict 3-tier substitution hierarchy from the Dwarka warehouse supply:</p>
+      
+      <div class="flowchart">
+[SKU Deficit Identified for Store]
+ │
+ ├──► 1. Exact Match in WH? ──► YES ──► Auto-Allocate SKU
+ │
+ └──► NO ──► 2. Similar Item Heuristic
+      │      (Brand ──► Frame vs Sunglass ──► Price ──► Attributes)
+      │      ├──► Match Found? ──► YES ──► Auto-Allocate Substitute
+      │
+      └──► NO ──► 3. New Item Assignment
+             └──► Must be SAME BRAND ──► Auto-Allocate New Item
+      </div>
+
+      <p style="color: var(--text-secondary); margin-top: 1.5rem;"><strong>Store Display Constraint Rule:</strong> During allocations, the engine enforces a strict constraint: <strong>Maximum of 2 colors of the same type of frame / sunglass</strong> per store. If a 3rd color is allocated, the system allows it but it is <strong>marked in RED</strong> on the output reports to warn the user.</p>
+    </section>
+
+    <section class="section-card">
+      <h2>4. Reporting & Output Generation</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Once the engine finishes calculations, it outputs clean, isolated datasets ready for physical action:</p>
+      <ul>
+        <li><strong>Recommended Distribution Report:</strong> A clean master grid showing what SKU (or chosen heuristic match) is assigned to go where.</li>
+        <li><strong>Dynamic UI Filters & Printing:</strong> Users can filter and print out <strong>Dispatch Orders</strong> dynamically based on <strong>Brand</strong>, <strong>Store</strong>, or a combined <strong>All</strong> view.</li>
+        <li><strong>Print-Optimized Dispatch Orders:</strong> Single-click formatting for warehouse staff to print physical picking lists.</li>
+      </ul>
+    </section>
+
+    <section class="section-card">
+      <h2>5. Intelligent Analytics Layer (Future Capability)</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">The underlying database architecture will handle data collection to support these automated features:</p>
+      <ul>
+        <li><strong>Cold-Start Engine (New Brands):</strong> When a brand-new brand is added to a store layout, the engine bypasses the 6-month baseline and calculates its performance velocity <strong>solely on its past 7 days of incremental sales</strong>.</li>
+        <li><strong>Dynamic Demand Adjustments:</strong> A script that monitors rolling 30-day barcode velocity. If a brand's sales slide consistently, the engine recommends lowering that store's target allocation by <strong>10% to 20%</strong>.</li>
+        <li><strong>Cross-Pollination Recommendation:</strong> If a certain price point for frames / sunglasses is booming in a store, the system scans the warehouse stock for idle inventory from <em>other</em> brands matching that exact price bracket.</li>
+      </ul>
+    </section>
+
+  </div>
+
+  <script>
+    function toggleView(view) {
+      if (view === 'manual') {
+        document.getElementById('automated-view').style.display = 'none';
+        document.getElementById('manual-view').style.display = 'block';
+        document.getElementById('btn-manual').classList.add('active');
+        document.getElementById('btn-automated').classList.remove('active');
+      } else {
+        document.getElementById('manual-view').style.display = 'none';
+        document.getElementById('automated-view').style.display = 'block';
+        document.getElementById('btn-automated').classList.add('active');
+        document.getElementById('btn-manual').classList.remove('active');
+      }
+    }
+
+    function highlightPath(pathClass) {
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+
+      const elements = document.querySelectorAll('.flow-element');
+      elements.forEach(el => {
+        if (pathClass === 'all') {
+          el.classList.remove('dimmed');
+        } else {
+          if (el.classList.contains(pathClass)) {
+            el.classList.remove('dimmed');
+          } else {
+            el.classList.add('dimmed');
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dekode: Intelligent Data Dashboard</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- PapaParse for CSV parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  
+  <!-- Grid.js for beautiful tables -->
+  <link href="https://cdn.jsdelivr.net/npm/gridjs/dist/theme/mermaid.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/gridjs/dist/gridjs.umd.js"></script>
+
+  <style>
+    :root {
+      --dekode-blue: #053364;
+      --bg-color: #f1f5f9;
+      --surface-color: #ffffff;
+      --text-primary: #1e293b;
+      --text-secondary: #475569;
+      --accent: #2563eb;
+      --accent-light: #eff6ff;
+      --border-color: #e2e8f0;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-primary);
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      background: var(--dekode-blue);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 4px 0 15px rgba(0,0,0,0.1);
+      z-index: 10;
+    }
+    .sidebar-header {
+      padding: 2rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .sidebar-header h1 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+    .nav-links {
+      flex: 1;
+      padding: 1.5rem 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .nav-link {
+      padding: 1rem 2rem;
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-left: 4px solid transparent;
+      pointer-events: none; /* Disabled until files uploaded */
+      opacity: 0.5;
+    }
+    .nav-link.enabled {
+      pointer-events: auto;
+      opacity: 1;
+    }
+    .nav-link.enabled:hover {
+      background: rgba(255,255,255,0.05);
+      color: white;
+    }
+    .nav-link.active {
+      background: rgba(255,255,255,0.1);
+      color: white;
+      border-left-color: #3b82f6;
+    }
+
+    /* Main Content */
+    .main-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    .topbar {
+      height: 70px;
+      background: var(--surface-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      z-index: 5;
+    }
+
+    /* Upload Section */
+    .upload-btn-wrapper {
+      position: relative;
+      overflow: hidden;
+      display: inline-block;
+    }
+    .upload-btn-wrapper input[type=file] {
+      font-size: 100px;
+      position: absolute;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .btn {
+      background: var(--accent);
+      color: white;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      border: none;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .btn:hover { background: #1d4ed8; }
+
+    /* Content Area */
+    .content-area {
+      flex: 1;
+      padding: 2rem;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    /* Views */
+    .view-container {
+      display: none;
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+    .view-container.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .view-header {
+      margin-bottom: 1.5rem;
+    }
+    .view-header h2 {
+      font-size: 1.8rem;
+      color: var(--dekode-blue);
+      margin-bottom: 0.5rem;
+    }
+    .view-header p {
+      color: var(--text-secondary);
+    }
+
+    /* KPI Cards */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .kpi-card {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.03);
+      border-bottom: 4px solid var(--accent);
+    }
+    .kpi-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    .kpi-value {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+
+    /* Grid Container */
+    .grid-wrapper {
+      background: var(--surface-color);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Grid.js Customizations for Full Column Names */
+    .gridjs-container { font-family: 'Inter', sans-serif !important; }
+    .gridjs-th {
+      background-color: #f8fafc !important;
+      color: var(--dekode-blue) !important;
+      font-weight: 600 !important;
+      white-space: nowrap !important; /* Force full column names */
+      padding: 12px 24px !important;
+    }
+    .gridjs-td {
+      color: var(--text-secondary) !important;
+      white-space: nowrap !important;
+    }
+    .gridjs-table {
+      width: 100% !important;
+    }
+
+    .initial-state {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: var(--text-secondary);
+    }
+    .initial-state svg {
+      width: 80px;
+      height: 80px;
+      color: #cbd5e1;
+      margin-bottom: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h1>DEKODE<br><span style="font-size:0.9rem; font-weight:400; color:rgba(255,255,255,0.7)">OptiFlow Dashboards</span></h1>
+    </div>
+    <div class="nav-links">
+      <div class="nav-link" id="nav-sales" onclick="switchView('view-sales')">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        Sales Data
+      </div>
+      <div class="nav-link" id="nav-stock" onclick="switchView('view-stock')">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+        Stock Data
+      </div>
+      <div class="nav-link" id="nav-planogram" onclick="switchView('view-planogram')">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+        Planogram
+      </div>
+      <div class="nav-link" id="nav-distribution" onclick="switchView('view-distribution')">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17l6-6-6-6"></path></svg>
+        Distribution Report
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Area -->
+  <main class="main-wrapper">
+    <header class="topbar">
+      <div style="font-weight: 500; color: var(--text-secondary);" id="status-text">
+        Ready to process data.
+      </div>
+      <div class="upload-btn-wrapper">
+        <button class="btn">Upload CSV Datasets</button>
+        <input type="file" id="csv-input" multiple accept=".csv" />
+      </div>
+    </header>
+
+    <div class="content-area">
+      <!-- Initial State -->
+      <div class="initial-state" id="initial-state">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+        <h2>No Data Loaded</h2>
+        <p style="margin-top: 0.5rem; max-width: 400px;">Upload all 4 CSV files (Sales Data, Stock data, Planogram, Increff Distribution) to instantly activate the intelligent dashboards.</p>
+      </div>
+
+      <!-- Sales View -->
+      <div class="view-container" id="view-sales">
+        <div class="view-header">
+          <h2>Sales Data Intelligence</h2>
+          <p>Real-time aggregates of historical and recent POS transactions.</p>
+        </div>
+        <div class="kpi-grid" id="sales-kpis"></div>
+        <div class="grid-wrapper" id="grid-sales"></div>
+      </div>
+
+      <!-- Stock View -->
+      <div class="view-container" id="view-stock">
+        <div class="view-header">
+          <h2>Network Stock Intelligence</h2>
+          <p>Unified live snapshot of PAN India and Dwarka warehouse inventory.</p>
+        </div>
+        <div class="kpi-grid" id="stock-kpis"></div>
+        <div class="grid-wrapper" id="grid-stock"></div>
+      </div>
+
+      <!-- Planogram View -->
+      <div class="view-container" id="view-planogram">
+        <div class="view-header">
+          <h2>Planogram Intelligence</h2>
+          <p>Matrix analyzing display targets vs actual store physical capacities.</p>
+        </div>
+        <div class="kpi-grid" id="planogram-kpis"></div>
+        <div class="grid-wrapper" id="grid-planogram"></div>
+      </div>
+
+      <!-- Distribution View -->
+      <div class="view-container" id="view-distribution">
+        <div class="view-header">
+          <h2>Distribution Intelligence</h2>
+          <p>Execution tracking of allocated inventory vs store fulfillment gaps.</p>
+        </div>
+        <div class="kpi-grid" id="distribution-kpis"></div>
+        <div class="grid-wrapper" id="grid-distribution"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const fileInput = document.getElementById('csv-input');
+    const statusText = document.getElementById('status-text');
+    let parsedData = {}; 
+    let gridInstances = {};
+
+    fileInput.addEventListener('change', handleFiles);
+
+    function formatCurrency(val) {
+      return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
+    }
+    function formatNumber(val) {
+      return new Intl.NumberFormat('en-IN').format(val);
+    }
+
+    function handleFiles(e) {
+      const files = Array.from(e.target.files);
+      if (files.length === 0) return;
+
+      statusText.textContent = "Parsing data locally...";
+      parsedData = {};
+      
+      // Destroy old grids
+      Object.values(gridInstances).forEach(g => g.destroy());
+      gridInstances = {};
+
+      let filesProcessed = 0;
+
+      files.forEach(file => {
+        Papa.parse(file, {
+          header: true,
+          skipEmptyLines: true,
+          complete: function(results) {
+            let dataRows = results.data;
+            let headers = results.meta.fields;
+            let fileKey = file.name.toLowerCase();
+
+            // Special Fix for Planogram
+            if (fileKey.includes('planogram')) {
+              if (dataRows.length > 0) {
+                const realHeaders = Object.values(dataRows[0]);
+                headers = realHeaders.map((h, i) => h ? String(h).trim() : `Column_${i}`);
+                dataRows.shift();
+                dataRows = dataRows.map(row => {
+                  const values = Object.values(row);
+                  let newRow = {};
+                  headers.forEach((h, i) => newRow[h] = values[i] || '');
+                  return newRow;
+                });
+              }
+            }
+
+            parsedData[fileKey] = {
+              name: file.name,
+              headers: headers,
+              rawRows: dataRows, // Array of objects
+              gridRows: dataRows.map(row => headers.map(h => row[h])) // Array of arrays for Grid.js
+            };
+
+            filesProcessed++;
+            if (filesProcessed === files.length) {
+              activateDashboards();
+            }
+          }
+        });
+      });
+    }
+
+    function activateDashboards() {
+      statusText.textContent = "Data successfully loaded.";
+      document.getElementById('initial-state').style.display = 'none';
+      
+      // Enable sidebar links
+      document.querySelectorAll('.nav-link').forEach(el => el.classList.add('enabled'));
+
+      // Process KPIs
+      processSalesKPIs();
+      processStockKPIs();
+      processPlanogramKPIs();
+      processDistributionKPIs();
+
+      // Switch to first view available (Sales Data)
+      switchView('view-sales');
+    }
+
+    // --- KPI INTELLIGENCE PROCESSING ---
+
+    function createKPICard(title, value, colorVar) {
+      return `
+        <div class="kpi-card" style="border-bottom-color: var(${colorVar})">
+          <div class="kpi-title">${title}</div>
+          <div class="kpi-value">${value}</div>
+        </div>
+      `;
+    }
+
+    function getDataset(keyword) {
+      return Object.values(parsedData).find(d => d.name.toLowerCase().includes(keyword));
+    }
+
+    function processSalesKPIs() {
+      const ds = getDataset('sales');
+      if (!ds) return;
+      
+      let totalRevenue = 0;
+      let totalQty = 0;
+      let facilityCounts = {};
+
+      ds.rawRows.forEach(row => {
+        totalRevenue += parseFloat(row['Net Amount'] || 0);
+        totalQty += parseInt(row['Quantity'] || 0);
+        
+        let facility = row['Facility Name'] || 'Unknown';
+        facilityCounts[facility] = (facilityCounts[facility] || 0) + 1;
+      });
+
+      let topFacility = Object.keys(facilityCounts).reduce((a, b) => facilityCounts[a] > facilityCounts[b] ? a : b, '-');
+
+      const kpiContainer = document.getElementById('sales-kpis');
+      kpiContainer.innerHTML = 
+        createKPICard('Total Net Revenue', formatCurrency(totalRevenue), '--success') +
+        createKPICard('Total Units Sold', formatNumber(totalQty), '--accent') +
+        createKPICard('Top Performing Facility', topFacility, '--dekode-blue');
+    }
+
+    function processStockKPIs() {
+      const ds = getDataset('stock');
+      if (!ds) return;
+      
+      let totalValue = 0;
+      let categoryCounts = {};
+
+      ds.rawRows.forEach(row => {
+        totalValue += parseFloat(row['MRP'] || 0);
+        let cat = row['Item Category'] || 'Unknown';
+        categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+      });
+
+      let topCat = Object.keys(categoryCounts).reduce((a, b) => categoryCounts[a] > categoryCounts[b] ? a : b, '-');
+
+      const kpiContainer = document.getElementById('stock-kpis');
+      kpiContainer.innerHTML = 
+        createKPICard('Total Network Inventory Value', formatCurrency(totalValue), '--warning') +
+        createKPICard('Total Items Listed', formatNumber(ds.rawRows.length), '--accent') +
+        createKPICard('Primary Category', topCat, '--dekode-blue');
+    }
+
+    function processPlanogramKPIs() {
+      const ds = getDataset('planogram');
+      if (!ds) return;
+      
+      let totalSOH = 0;
+      let totalFacingDelta = 0;
+
+      ds.rawRows.forEach(row => {
+        totalSOH += parseInt(row['SOH Total'] || 0);
+        totalFacingDelta += parseInt(row['Facing Delta'] || 0);
+      });
+
+      const kpiContainer = document.getElementById('planogram-kpis');
+      kpiContainer.innerHTML = 
+        createKPICard('Total SOH', formatNumber(totalSOH), '--accent') +
+        createKPICard('Overall Facing Delta', formatNumber(totalFacingDelta), '--danger') +
+        createKPICard('Network Store & Code Variations', formatNumber(ds.rawRows.length), '--dekode-blue');
+    }
+
+    function processDistributionKPIs() {
+      const ds = getDataset('increff');
+      if (!ds) return;
+      
+      let storeStock = 0;
+      let distStock = 0;
+      let planogramGap = 0;
+
+      ds.rawRows.forEach(row => {
+        storeStock += parseInt(row['Store Stock'] || 0);
+        distStock += parseInt(row['Distributed Stock'] || 0);
+        planogramGap += parseInt(row['Remaining Planogram Gap'] || 0);
+      });
+
+      const kpiContainer = document.getElementById('distribution-kpis');
+      kpiContainer.innerHTML = 
+        createKPICard('Total Store Stock', formatNumber(storeStock), '--success') +
+        createKPICard('Distributed Stock', formatNumber(distStock), '--accent') +
+        createKPICard('Remaining Planogram Gap', formatNumber(planogramGap), '--danger');
+    }
+
+    // --- VIEW NAVIGATION & RENDERING ---
+
+    function switchView(viewId) {
+      // Update UI Tabs
+      document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+      const activeLink = document.querySelector(`[onclick="switchView('${viewId}')"]`);
+      if(activeLink) activeLink.classList.add('active');
+
+      // Hide all views
+      document.querySelectorAll('.view-container').forEach(el => el.classList.remove('active'));
+      document.getElementById(viewId).classList.add('active');
+
+      // Render grid if not done yet
+      let datasetKeyword = '';
+      let gridDivId = '';
+      if(viewId === 'view-sales') { datasetKeyword = 'sales'; gridDivId = 'grid-sales'; }
+      if(viewId === 'view-stock') { datasetKeyword = 'stock'; gridDivId = 'grid-stock'; }
+      if(viewId === 'view-planogram') { datasetKeyword = 'planogram'; gridDivId = 'grid-planogram'; }
+      if(viewId === 'view-distribution') { datasetKeyword = 'increff'; gridDivId = 'grid-distribution'; }
+
+      const ds = getDataset(datasetKeyword);
+      if (ds && !gridInstances[gridDivId]) {
+        gridInstances[gridDivId] = new gridjs.Grid({
+          columns: ds.headers,
+          data: ds.gridRows,
+          pagination: { limit: 100 },
+          search: true,
+          sort: true,
+          resizable: true,
+          className: { table: 'gridjs-table' }
+        }).render(document.getElementById(gridDivId));
+      }
+    }
+  </script>
+</body>
+</html>
