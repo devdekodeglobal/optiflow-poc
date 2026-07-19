@@ -283,17 +283,17 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      <div className="page-header animate-in print-hide" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="page-header animate-in print-hide" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 9999 }}>
         <h2>Allocation Report</h2>
         <div style={{ display: 'flex', gap: 12 }}>
           
           {/* PRINT DROPDOWN */}
-          <div style={{ position: 'relative', zIndex: 100 }} onClick={e => e.stopPropagation()}>
+          <div style={{ position: 'relative', zIndex: 9999 }} onClick={e => e.stopPropagation()}>
             <button className="btn btn-ghost" onClick={() => { setPrintMenuOpen(!printMenuOpen); setExportMenuOpen(false); }}>
               Print Report ▼
             </button>
             {printMenuOpen && (
-              <div style={{ position: 'absolute', top: '100%', right: 0, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 100, minWidth: 180, marginTop: 4, overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: '100%', right: 0, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 9999, minWidth: 180, marginTop: 4, overflow: 'hidden' }}>
                 <div 
                   onClick={() => handlePrint(false)} 
                   style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', fontSize: 14, fontWeight: 500 }}
@@ -313,12 +313,12 @@ export default function DashboardPage() {
           </div>
 
           {/* EXPORT DROPDOWN */}
-          <div style={{ position: 'relative', zIndex: 100 }} onClick={e => e.stopPropagation()}>
+          <div style={{ position: 'relative', zIndex: 9999 }} onClick={e => e.stopPropagation()}>
             <button className="btn btn-primary" onClick={() => { setExportMenuOpen(!exportMenuOpen); setPrintMenuOpen(false); }}>
               Download Excel ▼
             </button>
             {exportMenuOpen && (
-              <div style={{ position: 'absolute', top: '100%', right: 0, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 100, minWidth: 180, marginTop: 4, overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: '100%', right: 0, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 9999, minWidth: 180, marginTop: 4, overflow: 'hidden' }}>
                 <div 
                   onClick={() => handleDownloadCsv(false)} 
                   style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}
