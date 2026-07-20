@@ -232,9 +232,9 @@ export default function OverallDashboard() {
       <div className="card animate-in" style={{ padding: 24, textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div style={{ textAlign: 'left' }}>
-            <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Stock Ratio by {entityLabel}</h4>
+            <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Stock Level by {entityLabel}</h4>
           </div>
-          <div style={{ display: 'flex', gap: 12, fontSize: 12, fontWeight: 600 }}>
+          <div style={{ display: 'flex', gap: 16, fontSize: 14, fontWeight: 700 }}>
             <span style={{ color: '#adb5bd' }}>No Stock: 0%</span>
             <span style={{ color: '#ff6b6b' }}>Critical: 1-30%</span>
             <span style={{ color: '#fcc419' }}>Warning: 31-59%</span>
