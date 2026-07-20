@@ -47,8 +47,8 @@ export default function LoginPage({ onLogin }) {
             <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
           </div>
           <h2 style={{ fontSize: 16, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: 2, margin: '0 0 8px', fontWeight: 600 }}>Login</h2>
-          <h1 style={{ fontSize: 28, margin: '0 0 8px', color: 'var(--primary)', fontWeight: 800 }}>Centre For Sight</h1>
-          <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: 14 }}>OptiFlow Proof of Concept</p>
+          <h1 style={{ fontSize: 28, margin: '0 0 4px', color: 'var(--primary)', fontWeight: 900, fontFamily: '"Montserrat", sans-serif', textTransform: 'uppercase', letterSpacing: '1px' }}>CENTRE FOR SIGHT</h1>
+          <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: 13, fontWeight: 600, letterSpacing: '0.5px' }}>OptiFlow v0.1</p>
         </div>
 
         {adminMode ? (
