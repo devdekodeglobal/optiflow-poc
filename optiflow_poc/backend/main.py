@@ -65,6 +65,7 @@ class DataStore:
         self.strategy_store_lists: Dict[str, List[str]] = {}
         self.allocations: List[AllocationItem] = []
         self.summary: Optional[AllocationSummary] = None
+        self.dashboard_all_stores_cache: Optional[Dict] = None
         self.last_run_time: Optional[float] = None
         self.last_run_at: Optional[str] = None
 
@@ -202,6 +203,11 @@ async def upload_planogram(file: UploadFile = File(...)):
             df = pd.read_csv(io.BytesIO(contents), encoding="utf-8", header=1, on_bad_lines="skip")
             
         store.planogram = parse_planogram(df.copy())
+        store.allocations = []
+        store.summary = None
+        store.dashboard_all_stores_cache = None
+        
+        upload_to_gcs("Planogram.csv", contents)
         
         return {
             "status": "success",
@@ -218,13 +224,17 @@ async def upload_planogram(file: UploadFile = File(...)):
 async def upload_stock(file: UploadFile = File(...)):
     try:
         contents = await file.read()
-        upload_to_gcs("Stock data.csv", contents)
         df = pd.read_csv(io.BytesIO(contents), encoding="utf-8", on_bad_lines="skip")
         store.stock_raw = df
         
         wh_stock, st_stock = parse_stock(df.copy())
         store.warehouse_stock = wh_stock
         store.store_stock = st_stock
+        store.allocations = []
+        store.summary = None
+        store.dashboard_all_stores_cache = None
+        
+        upload_to_gcs("Stock data.csv", contents)
         
         return {
             "status": "success",
@@ -243,9 +253,14 @@ async def upload_stock(file: UploadFile = File(...)):
 async def upload_sales(file: UploadFile = File(...)):
     try:
         contents = await file.read()
-        upload_to_gcs("Sales Data.csv", contents)
         df = pd.read_csv(io.BytesIO(contents), encoding="utf-8", on_bad_lines="skip")
         store.sales_raw = df
+        store.allocations = []
+        store.summary = None
+        store.dashboard_all_stores_cache = None
+        
+        upload_to_gcs("Sales Data.csv", contents)
+        
         return {
             "status": "success",
             "filename": file.filename,
@@ -866,6 +881,7 @@ async def get_strategy():
 async def update_strategy(req: StrategyUpdate):
     store.strategy_active_categories = req.active_categories
     store.strategy_store_lists = req.category_stores
+    store.dashboard_all_stores_cache = None
     
     strategy_data = {
         "active_categories": store.strategy_active_categories,
@@ -1224,12 +1240,18 @@ async def allocation_status():
         "last_run_at": store.last_run_at
     }
 
-@app.post("/api/allocation/reset")
-async def allocation_reset():
+@app.post("/api/upload/reset")
+async def reset_data():
+    store.planogram = None
+    store.sales_raw = None
+    store.stock_raw = None
+    store.warehouse_stock = None
+    store.store_stock = None
     store.allocations = []
     store.summary = None
     store.last_run_time = None
     store.last_run_at = None
+    store.dashboard_all_stores_cache = None
     store.strategy_store_lists = {}
     store.strategy_active_categories = ["A++", "A+", "A", "B+", "B", "C"]
     
@@ -1256,6 +1278,9 @@ async def dashboard_all_stores():
     if store.warehouse_stock is None:
         return {"allocations": [], "warehouse_stock_total": 0}
 
+    if store.dashboard_all_stores_cache is not None:
+        return store.dashboard_all_stores_cache
+
     # Build all-stores strategy: every store in every tier, all tiers active
     all_cats = ["A++", "A+", "A", "B+", "B", "C"]
     stores_df = store.planogram[["store_name", "store_category"]].drop_duplicates()
@@ -1278,10 +1303,13 @@ async def dashboard_all_stores():
     # Constant: total Corporate Office warehouse stock (not filtered by allocation)
     wh_stock_total = float(store.warehouse_stock["batch_stock"].sum())
 
-    return {
+    result = {
         "allocations": [a.model_dump() for a in allocations],
         "warehouse_stock_total": wh_stock_total
     }
+    
+    store.dashboard_all_stores_cache = result
+    return result
 
 
 @app.get("/api/stores")
