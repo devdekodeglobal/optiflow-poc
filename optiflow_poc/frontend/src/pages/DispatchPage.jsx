@@ -181,7 +181,7 @@ export default function DispatchPage() {
       categories: getOptions('store_category'),
       stores: getOptions('store_name'),
       brands: getOptions('brand_name'),
-      commodities: ['Frame', 'Lens', 'Contact Lens', 'Sunglasses']
+      commodities: getOptions('commodity')
     };
   }, [masterData, filters]);
 
@@ -348,7 +348,7 @@ export default function DispatchPage() {
         <div style={{ padding: 40, textAlign: 'center' }}>
           <div className="spinner" style={{ width: 32, height: 32, borderWidth: 3 }}></div>
         </div>
-      ) : data.length === 0 && metadata.zones.length === 0 ? (
+      ) : data.length === 0 && dynamicMetadata.zones.length === 0 ? (
         <div className="empty-state card print-hide">
           <h3>No Dispatch Data</h3>
           <p>Run the allocation engine from the Upload page first to generate picking lists.</p>

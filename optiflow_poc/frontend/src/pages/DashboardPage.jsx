@@ -191,7 +191,7 @@ export default function DashboardPage() {
       categories: getOptions('store_category'),
       stores: getOptions('store_name'),
       brands: getOptions('brand_name'),
-      commodities: ['Frame', 'Lens', 'Contact Lens', 'Sunglasses']
+      commodities: getOptions('commodity')
     };
   }, [masterData, filters]);
 
