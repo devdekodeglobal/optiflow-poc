@@ -128,7 +128,7 @@ export default function StrategyPage() {
   return (
     <div>
       <div className="page-header animate-in">
-        <h2 style={{ fontSize: 32, marginBottom: 8 }}>Allocation Strategy</h2>
+        <h2 style={{ fontSize: 32, marginBottom: 8 }}>Allocation Settings</h2>
         <p style={{ fontSize: 16, color: 'var(--text-secondary)' }}>Use the arrows to rank stores. The system allocates inventory to the checked columns first, from top to bottom.</p>
         <div style={{ background: 'var(--bg-surface)', padding: '12px 16px', borderRadius: 8, border: '1px solid var(--border)', marginTop: 16, display: 'inline-flex', alignItems: 'center', gap: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

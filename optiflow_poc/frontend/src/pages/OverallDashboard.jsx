@@ -27,7 +27,7 @@ export default function OverallDashboard() {
   const [metricFilter, setMetricFilter] = useState(null); // 'Fulfilled', 'Out of Stock', 'Stock in Hand', 'Planogram Deficit'
 
   useEffect(() => {
-    fetch('https://optiflow-backend-977593391877.us-central1.run.app/api/allocation/results?page_size=50000')
+    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/allocation/results?page_size=50000`)
       .then(res => res.json())
       .then(json => {
         setData(json.allocations || []);
@@ -273,7 +273,7 @@ export default function OverallDashboard() {
     return (
       <div className="card animate-in" style={{ padding: 20, marginTop: 24 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h4 style={{ margin: 0, fontSize: 14 }}>🚨 Top {entityLabel}s by OOS Severity</h4>
+          <h4 style={{ margin: 0, fontSize: 14 }}>🚨 Top {entityLabel}s by Critical Shortage</h4>
           <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>% deficit unfulfilled · click row to drill down</span>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -369,7 +369,7 @@ export default function OverallDashboard() {
       </div>
 
       {isDanger && (
-        <div className="animate-in" style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9999, background: '#fff', borderLeft: '4px solid var(--danger)', boxShadow: '0 10px 25px rgba(0,0,0,0.15)', borderRadius: 8, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 16, maxWidth: 350 }}>
+        <div className="animate-in" style={{ position: 'fixed', top: 24, right: 24, zIndex: 9999, background: '#fff', borderLeft: '4px solid var(--danger)', boxShadow: '0 10px 25px rgba(0,0,0,0.15)', borderRadius: 8, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 16, maxWidth: 350 }}>
           <div style={{ color: 'var(--danger)' }}>
             <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />

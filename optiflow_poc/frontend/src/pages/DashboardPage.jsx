@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import MultiSelect from '../components/MultiSelect';
 
 function CollapsibleRow({ node, depth = 0, forceExpandAll }) {
   const [expanded, setExpanded] = useState(false); // All zones collapsed by default
@@ -53,6 +54,7 @@ function CollapsibleRow({ node, depth = 0, forceExpandAll }) {
             </span>
           </div>
         </td>
+        <td style={{ textAlign: 'right' }}>{node.summary.expected.toLocaleString()}</td>
         <td style={{ textAlign: 'right' }}>{node.summary.soh.toLocaleString()}</td>
         <td style={{ textAlign: 'right', fontWeight: 600 }}>{node.summary.deficit.toLocaleString()}</td>
         <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--primary)' }}>{node.summary.allocated.toLocaleString()}</td>
@@ -70,7 +72,7 @@ function CollapsibleRow({ node, depth = 0, forceExpandAll }) {
 
       {isExpanded && isLeaf && (
         <tr>
-          <td colSpan={6} style={{ padding: 0 }}>
+          <td colSpan={7} style={{ padding: 0 }}>
             <div style={{ padding: '0px 16px 16px ' + (16 + (depth + 1) * 24) + 'px', background: 'var(--bg-app)', borderBottom: '2px solid var(--border)' }} className="print-no-padding">
               <div style={{ maxHeight: '400px', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: '0 0 8px 8px', borderTop: 'none' }} className="table-container">
                 <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
@@ -115,52 +117,36 @@ function CollapsibleRow({ node, depth = 0, forceExpandAll }) {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState([]);
-  const [total, setTotal] = useState(0);
-  
+  const [masterData, setMasterData] = useState([]);
+
   const [printMenuOpen, setPrintMenuOpen] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [forceExpandAll, setForceExpandAll] = useState(false);
 
   const [filters, setFilters] = useState({
-    zone: '',
-    region: '',
-    store_category: '',
-    store_name: '',
-    brand_name: '',
-    commodity: ''
+    zone: [],
+    region: [],
+    store_category: [],
+    store_name: [],
+    brand_name: [],
+    commodity: []
   });
 
-  const [metadata, setMetadata] = useState({
-    zones: [], regions: [], categories: [], stores: [], brands: []
-  });
-
+  const [loading, setLoading] = useState(true);
+  
   const fetchData = async () => {
     setLoading(true);
     try {
-      const q = new URLSearchParams({ ...filters, page_size: 50000 });
-      const res = await fetch(`https://optiflow-backend-977593391877.us-central1.run.app/api/allocation/results?${q}`);
+      const q = new URLSearchParams({ page_size: 50000 }).toString();
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/allocation/results?${q}`);
       const json = await res.json();
       
       if (!res.ok) {
-        if (res.status === 404) setData([]);
+        if (res.status === 404) setMasterData([]);
         return;
       }
       
-      setData(json.allocations || []);
-      setTotal(json.total || 0);
-
-      if (metadata.zones.length === 0 && json.allocations.length > 0) {
-        const unique = (key) => [...new Set(json.allocations.map(a => a[key]).filter(Boolean))].sort();
-        setMetadata({
-          zones: unique('zone'),
-          regions: unique('region'),
-          categories: ['A++', 'A+', 'A', 'B+', 'B', 'C'],
-          stores: unique('store_name'),
-          brands: unique('brand_name')
-        });
-      }
+      setMasterData(json.allocations || []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -170,7 +156,45 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchData();
-  }, [filters]);
+  }, []); // Run ONCE on mount
+
+  const filteredData = useMemo(() => {
+    return masterData.filter(item => {
+      if (filters.zone.length > 0 && !filters.zone.includes(item.zone)) return false;
+      if (filters.region.length > 0 && !filters.region.includes(item.region)) return false;
+      if (filters.store_category.length > 0 && !filters.store_category.includes(item.store_category)) return false;
+      if (filters.store_name.length > 0 && !filters.store_name.includes(item.store_name)) return false;
+      if (filters.brand_name.length > 0 && !filters.brand_name.includes(item.brand_name)) return false;
+      if (filters.commodity.length > 0 && !filters.commodity.includes(item.commodity)) return false;
+      return true;
+    });
+  }, [masterData, filters]);
+
+  const dynamicMetadata = useMemo(() => {
+    const getOptions = (field) => {
+      const subset = masterData.filter(item => {
+        if (field !== 'zone' && filters.zone.length > 0 && !filters.zone.includes(item.zone)) return false;
+        if (field !== 'region' && filters.region.length > 0 && !filters.region.includes(item.region)) return false;
+        if (field !== 'store_category' && filters.store_category.length > 0 && !filters.store_category.includes(item.store_category)) return false;
+        if (field !== 'store_name' && filters.store_name.length > 0 && !filters.store_name.includes(item.store_name)) return false;
+        if (field !== 'brand_name' && filters.brand_name.length > 0 && !filters.brand_name.includes(item.brand_name)) return false;
+        if (field !== 'commodity' && filters.commodity.length > 0 && !filters.commodity.includes(item.commodity)) return false;
+        return true;
+      });
+      return [...new Set(subset.map(a => a[field]).filter(Boolean))].sort();
+    };
+
+    return {
+      zones: getOptions('zone'),
+      regions: getOptions('region'),
+      categories: getOptions('store_category'),
+      stores: getOptions('store_name'),
+      brands: getOptions('brand_name'),
+      commodities: ['Frame', 'Lens', 'Contact Lens', 'Sunglasses']
+    };
+  }, [masterData, filters]);
+
+
 
   useEffect(() => {
     if (!loading && sessionStorage.getItem('pending_print_full') === 'true') {
@@ -190,7 +214,7 @@ export default function DashboardPage() {
   const handlePrint = (full) => {
     setPrintMenuOpen(false);
     if (full) {
-      setFilters({ zone: '', region: '', store_category: '', store_name: '', brand_name: '', commodity: '' });
+      setFilters({ zone: [], region: [], store_category: [], store_name: [], brand_name: [], commodity: [] });
       sessionStorage.setItem('pending_print_full', 'true');
     } else {
       setForceExpandAll(true);
@@ -204,27 +228,39 @@ export default function DashboardPage() {
   const handleDownloadCsv = (full) => {
     setExportMenuOpen(false);
     if (full) {
-      window.open(`https://optiflow-backend-977593391877.us-central1.run.app/api/allocation/results/export?group_by=zone`, '_blank');
+      window.open(`${import.meta.env.VITE_API_BASE_URL}/api/allocation/results/export?group_by=zone`, '_blank');
     } else {
-      window.open(`https://optiflow-backend-977593391877.us-central1.run.app/api/allocation/results/export?group_by=zone&${new URLSearchParams(filters)}`, '_blank');
+      const q = new URLSearchParams({ 
+        zone: filters.zone.join(','),
+        region: filters.region.join(','),
+        store_category: filters.store_category.join(','),
+        store_name: filters.store_name.join(','),
+        brand_name: filters.brand_name.join(','),
+        commodity: filters.commodity.join(','),
+        group_by: 'zone'
+      }).toString();
+      window.open(`${import.meta.env.VITE_API_BASE_URL}/api/allocation/results/export?${q}`, '_blank');
     }
   };
 
   const treeData = useMemo(() => {
-    if (!data.length) return [];
+    if (!filteredData.length) return [];
 
     const summarize = (items) => {
       const uniqueGapsMap = {};
       const uniqueSohMap = {};
+      const uniqueExpectedMap = {};
       items.forEach(i => { 
         uniqueGapsMap[i.gap_id] = i.deficit; 
         uniqueSohMap[i.gap_id] = i.current_soh;
+        uniqueExpectedMap[i.gap_id] = (i.facing || 0) + (i.back_stock || 0);
       });
       const deficit = Object.values(uniqueGapsMap).reduce((a, b) => a + b, 0);
       const soh = Object.values(uniqueSohMap).reduce((a, b) => a + b, 0);
+      const expected = Object.values(uniqueExpectedMap).reduce((a, b) => a + b, 0);
       const allocated = items.reduce((a, b) => a + b.allocated_qty, 0);
       const outOfStock = Math.max(0, deficit - allocated);
-      return { soh, deficit, allocated, outOfStock };
+      return { expected, soh, deficit, allocated, outOfStock };
     };
 
     const buildTree = (items, keys) => {
@@ -246,14 +282,14 @@ export default function DashboardPage() {
       }));
     };
 
-    return buildTree(data, ['zone', 'region', 'store_category', 'store_name', 'brand_name']);
-  }, [data]);
+    return buildTree(filteredData, ['zone', 'region', 'store_category', 'store_name', 'brand_name']);
+  }, [filteredData]);
 
-  if (loading && data.length === 0) {
+  if (loading && masterData.length === 0) {
     return <div style={{ padding: 40, textAlign: 'center' }}>Loading Report...</div>;
   }
 
-  if (data.length === 0 && !Object.values(filters).some(v => v !== '')) {
+  if (masterData.length === 0 && !Object.values(filters).some(v => v.length > 0)) {
     return (
       <div style={{ padding: 40, textAlign: 'center', marginTop: 100 }}>
         <div className="card animate-in" style={{ display: 'inline-block', padding: 40 }}>
@@ -299,14 +335,14 @@ export default function DashboardPage() {
                   style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', fontSize: 14, fontWeight: 500 }}
                   className="hover-row"
                 >
-                  Print Filtered Report
+                  Filtered
                 </div>
                 <div 
                   onClick={() => handlePrint(true)} 
                   style={{ padding: '12px 16px', cursor: 'pointer', fontSize: 14, fontWeight: 500 }}
                   className="hover-row"
                 >
-                  Print Full Master
+                  Full
                 </div>
               </div>
             )}
@@ -314,8 +350,8 @@ export default function DashboardPage() {
 
           {/* EXPORT DROPDOWN */}
           <div style={{ position: 'relative', zIndex: 9999 }} onClick={e => e.stopPropagation()}>
-            <button className="btn btn-primary" onClick={() => { setExportMenuOpen(!exportMenuOpen); setPrintMenuOpen(false); }}>
-              Download Excel ▼
+            <button className="btn btn-ghost" onClick={() => { setExportMenuOpen(!exportMenuOpen); setPrintMenuOpen(false); }}>
+              Download Report ▼
             </button>
             {exportMenuOpen && (
               <div style={{ position: 'absolute', top: '100%', right: 0, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 9999, minWidth: 180, marginTop: 4, overflow: 'hidden' }}>
@@ -324,14 +360,14 @@ export default function DashboardPage() {
                   style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}
                   className="hover-row"
                 >
-                  Download Filtered Excel
+                  Filtered
                 </div>
                 <div 
                   onClick={() => handleDownloadCsv(true)} 
                   style={{ padding: '12px 16px', cursor: 'pointer', fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}
                   className="hover-row"
                 >
-                  Download Full Master Excel
+                  Full
                 </div>
               </div>
             )}
@@ -349,9 +385,9 @@ export default function DashboardPage() {
               <h3 style={{ margin: 0, fontSize: 18 }}>Filters</h3>
               <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 16 }}>
                 <span style={{ fontSize: 15, color: 'var(--text-secondary)', fontWeight: 600 }}>
-                  {total.toLocaleString()} rows found
+                  {filteredData.length.toLocaleString()} allocations created
                 </span>
-                <button className="btn btn-ghost btn-sm" onClick={() => setFilters({ zone: '', store_category: '', region: '', store_name: '', brand_name: '', commodity: '' })} style={{ fontSize: 14, color: 'var(--danger)' }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => setFilters({ zone: [], store_category: [], region: [], store_name: [], brand_name: [], commodity: [] })} style={{ fontSize: 14, color: 'var(--primary)' }}>
                   Reset Filters
                 </button>
               </div>
@@ -360,46 +396,27 @@ export default function DashboardPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 20 }}>
               <div>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Zone</label>
-                <select className="filter-select" style={{ width: '100%', padding: '10px', borderRadius: 6, fontSize: 14 }} value={filters.zone} onChange={(e) => handleFilterChange('zone', e.target.value)}>
-                  <option value="">All Zones</option>
-                  {metadata.zones.map((z, i) => <option key={i} value={z}>{z}</option>)}
-                </select>
+                <MultiSelect placeholder="All Zones" options={dynamicMetadata.zones} value={filters.zone} onChange={(val) => handleFilterChange('zone', val)} />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Region</label>
-                <select className="filter-select" style={{ width: '100%', padding: '10px', borderRadius: 6, fontSize: 14 }} value={filters.region} onChange={(e) => handleFilterChange('region', e.target.value)}>
-                  <option value="">All Regions</option>
-                  {metadata.regions.map((r, i) => <option key={i} value={r}>{r}</option>)}
-                </select>
+                <MultiSelect placeholder="All Regions" options={dynamicMetadata.regions} value={filters.region} onChange={(val) => handleFilterChange('region', val)} />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Store Grade</label>
-                <select className="filter-select" style={{ width: '100%', padding: '10px', borderRadius: 6, fontSize: 14 }} value={filters.store_category} onChange={(e) => handleFilterChange('store_category', e.target.value)}>
-                  <option value="">All Grades</option>
-                  {metadata.categories.map((c, i) => <option key={i} value={c}>{c}</option>)}
-                </select>
+                <MultiSelect placeholder="All Grades" options={dynamicMetadata.categories} value={filters.store_category} onChange={(val) => handleFilterChange('store_category', val)} />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Store Name</label>
-                <select className="filter-select" style={{ width: '100%', padding: '10px', borderRadius: 6, fontSize: 14 }} value={filters.store_name} onChange={(e) => handleFilterChange('store_name', e.target.value)}>
-                  <option value="">All Stores</option>
-                  {metadata.stores.map((s, i) => <option key={i} value={s}>{s}</option>)}
-                </select>
+                <MultiSelect placeholder="All Stores" options={dynamicMetadata.stores} value={filters.store_name} onChange={(val) => handleFilterChange('store_name', val)} />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Brand</label>
-                <select className="filter-select" style={{ width: '100%', padding: '10px', borderRadius: 6, fontSize: 14 }} value={filters.brand_name} onChange={(e) => handleFilterChange('brand_name', e.target.value)}>
-                  <option value="">All Brands</option>
-                  {metadata.brands.map((b, i) => <option key={i} value={b}>{b}</option>)}
-                </select>
+                <MultiSelect placeholder="All Brands" options={dynamicMetadata.brands} value={filters.brand_name} onChange={(val) => handleFilterChange('brand_name', val)} />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Category</label>
-                <select className="filter-select" style={{ width: '100%', padding: '10px', borderRadius: 6, fontSize: 14 }} value={filters.commodity} onChange={(e) => handleFilterChange('commodity', e.target.value)}>
-                  <option value="">All Categories</option>
-                  <option value="Frame">Frames</option>
-                  <option value="Sunglass">Sunglasses</option>
-                </select>
+                <MultiSelect placeholder="All Categories" options={dynamicMetadata.commodities} value={filters.commodity} onChange={(val) => handleFilterChange('commodity', val)} />
               </div>
             </div>
           </div>
@@ -410,11 +427,12 @@ export default function DashboardPage() {
               <thead style={{ position: 'sticky', top: 0, zIndex: 10, background: 'var(--bg-surface)', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
                 <tr>
                   <th style={{ paddingLeft: 24, fontSize: 11, letterSpacing: 0.5 }}></th>
-                  <th style={{ textAlign: 'right', fontSize: 11, letterSpacing: 0.5 }}>STOCK IN HAND</th>
-                  <th style={{ textAlign: 'right', fontSize: 11, letterSpacing: 0.5 }}>PLANOGRAM DEFICIT</th>
-                  <th style={{ textAlign: 'right', fontSize: 11, letterSpacing: 0.5 }}>FULFILLED STOCK</th>
+                  <th style={{ textAlign: 'right', fontSize: 11, letterSpacing: 0.5 }}>EXPECTED</th>
+                  <th style={{ textAlign: 'right', fontSize: 11, letterSpacing: 0.5 }}>IN HAND</th>
+                  <th style={{ textAlign: 'right', fontSize: 11, letterSpacing: 0.5 }}>DEFICIT</th>
+                  <th style={{ textAlign: 'right', fontSize: 11, letterSpacing: 0.5 }}>FULLFILLED</th>
                   <th style={{ textAlign: 'right', fontSize: 11, letterSpacing: 0.5 }}>OUT OF STOCK</th>
-                  <th style={{ textAlign: 'right', width: 100, fontSize: 11, letterSpacing: 0.5 }}>FULFILLMENT %</th>
+                  <th style={{ textAlign: 'right', width: 100, fontSize: 11, letterSpacing: 0.5 }}>FULLFILLMENT %</th>
                 </tr>
               </thead>
               <tbody>
@@ -423,7 +441,7 @@ export default function DashboardPage() {
                 ))}
                 {treeData.length === 0 && !loading && (
                   <tr>
-                    <td colSpan="6" style={{ textAlign: 'center', padding: 40, color: 'var(--text-secondary)' }}>
+                    <td colSpan="7" style={{ textAlign: 'center', padding: 40, color: 'var(--text-secondary)' }}>
                       No results found for these filters.
                     </td>
                   </tr>

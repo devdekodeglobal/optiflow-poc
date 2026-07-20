@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import MultiSelect from '../components/MultiSelect';
 
 function CollapsibleRow({ node, depth = 0, forceExpandAll }) {
   const [expanded, setExpanded] = useState(false);
@@ -110,38 +111,32 @@ export default function DispatchPage() {
   const searchParams = new URLSearchParams(window.location.search);
   
   const [filters, setFilters] = useState({
-    zone: searchParams.get('zone') || '',
-    region: searchParams.get('region') || '',
-    store_category: searchParams.get('store_category') || '',
-    store_name: searchParams.get('store_name') || '',
-    brand_name: searchParams.get('brand_name') || '',
-    commodity: searchParams.get('commodity') || ''
+    zone: searchParams.get('zone') ? searchParams.get('zone').split(',') : [],
+    region: searchParams.get('region') ? searchParams.get('region').split(',') : [],
+    store_category: searchParams.get('store_category') ? searchParams.get('store_category').split(',') : [],
+    store_name: searchParams.get('store_name') ? searchParams.get('store_name').split(',') : [],
+    brand_name: searchParams.get('brand_name') ? searchParams.get('brand_name').split(',') : [],
+    commodity: searchParams.get('commodity') ? searchParams.get('commodity').split(',') : []
   });
 
-  const [metadata, setMetadata] = useState({
-    zones: [], regions: [], categories: [], stores: [], brands: []
-  });
+  const [masterData, setMasterData] = useState([]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const q = new URLSearchParams({ ...filters, page_size: 50000, dispatch_only: true }).toString();
-      const res = await fetch(`https://optiflow-backend-977593391877.us-central1.run.app/api/allocation/results?${q}`);
+      const q = new URLSearchParams({ 
+        page_size: 50000, 
+        dispatch_only: true 
+      }).toString();
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/allocation/results?${q}`);
       const json = await res.json();
       
-      setData(json.allocations || []);
-      setTotal(json.total || 0);
-
-      if (metadata.zones.length === 0 && json.allocations.length > 0) {
-        const unique = (key) => [...new Set(json.allocations.map(a => a[key]).filter(Boolean))].sort();
-        setMetadata({
-          zones: unique('zone'),
-          regions: unique('region'),
-          categories: ['A++', 'A+', 'A', 'B+', 'B', 'C'],
-          stores: unique('store_name'),
-          brands: unique('brand_name')
-        });
+      if (!res.ok) {
+        if (res.status === 404) setMasterData([]);
+        return;
       }
+      
+      setMasterData(json.allocations || []);
     } catch (e) {
       console.error(e);
     } finally {
@@ -151,7 +146,43 @@ export default function DispatchPage() {
 
   useEffect(() => {
     fetchData();
-  }, [filters]);
+  }, []);
+
+  const filteredData = useMemo(() => {
+    return masterData.filter(item => {
+      if (filters.zone.length > 0 && !filters.zone.includes(item.zone)) return false;
+      if (filters.region.length > 0 && !filters.region.includes(item.region)) return false;
+      if (filters.store_category.length > 0 && !filters.store_category.includes(item.store_category)) return false;
+      if (filters.store_name.length > 0 && !filters.store_name.includes(item.store_name)) return false;
+      if (filters.brand_name.length > 0 && !filters.brand_name.includes(item.brand_name)) return false;
+      if (filters.commodity.length > 0 && !filters.commodity.includes(item.commodity)) return false;
+      return true;
+    });
+  }, [masterData, filters]);
+
+  const dynamicMetadata = useMemo(() => {
+    const getOptions = (field) => {
+      const subset = masterData.filter(item => {
+        if (field !== 'zone' && filters.zone.length > 0 && !filters.zone.includes(item.zone)) return false;
+        if (field !== 'region' && filters.region.length > 0 && !filters.region.includes(item.region)) return false;
+        if (field !== 'store_category' && filters.store_category.length > 0 && !filters.store_category.includes(item.store_category)) return false;
+        if (field !== 'store_name' && filters.store_name.length > 0 && !filters.store_name.includes(item.store_name)) return false;
+        if (field !== 'brand_name' && filters.brand_name.length > 0 && !filters.brand_name.includes(item.brand_name)) return false;
+        if (field !== 'commodity' && filters.commodity.length > 0 && !filters.commodity.includes(item.commodity)) return false;
+        return true;
+      });
+      return [...new Set(subset.map(a => a[field]).filter(Boolean))].sort();
+    };
+
+    return {
+      zones: getOptions('zone'),
+      regions: getOptions('region'),
+      categories: getOptions('store_category'),
+      stores: getOptions('store_name'),
+      brands: getOptions('brand_name'),
+      commodities: ['Frame', 'Lens', 'Contact Lens', 'Sunglasses']
+    };
+  }, [masterData, filters]);
 
   useEffect(() => {
     if (!loading && sessionStorage.getItem('pending_print_dispatch_full') === 'true') {
@@ -171,7 +202,7 @@ export default function DispatchPage() {
   const handlePrint = (full) => {
     setPrintMenuOpen(false);
     if (full) {
-      setFilters({ zone: '', region: '', store_category: '', store_name: '', brand_name: '', commodity: '' });
+      setFilters({ zone: [], region: [], store_category: [], store_name: [], brand_name: [], commodity: [] });
       sessionStorage.setItem('pending_print_dispatch_full', 'true');
     } else {
       setForceExpandAll(true);
@@ -185,14 +216,24 @@ export default function DispatchPage() {
   const handleDownloadExcel = (full) => {
     setExportMenuOpen(false);
     if (full) {
-      window.open(`https://optiflow-backend-977593391877.us-central1.run.app/api/allocation/results/export?group_by=zone&dispatch_only=true`, '_blank');
+      window.open(`${import.meta.env.VITE_API_BASE_URL}/api/allocation/results/export?group_by=zone&dispatch_only=true`, '_blank');
     } else {
-      window.open(`https://optiflow-backend-977593391877.us-central1.run.app/api/allocation/results/export?group_by=zone&dispatch_only=true&${new URLSearchParams(filters)}`, '_blank');
+      const q = new URLSearchParams({ 
+        zone: filters.zone.join(','),
+        region: filters.region.join(','),
+        store_category: filters.store_category.join(','),
+        store_name: filters.store_name.join(','),
+        brand_name: filters.brand_name.join(','),
+        commodity: filters.commodity.join(','),
+        group_by: 'zone',
+        dispatch_only: true 
+      }).toString();
+      window.open(`${import.meta.env.VITE_API_BASE_URL}/api/allocation/results/export?${q}`, '_blank');
     }
   };
 
   const treeData = useMemo(() => {
-    if (!data.length) return [];
+    if (!filteredData.length) return [];
 
     const summarize = (items) => {
       const allocated = items.reduce((a, b) => a + b.allocated_qty, 0);
@@ -218,8 +259,23 @@ export default function DispatchPage() {
       }));
     };
 
-    return buildTree(data, ['zone', 'region', 'store_category', 'store_name', 'brand_name']);
-  }, [data]);
+    return buildTree(filteredData, ['zone', 'region', 'store_category', 'store_name', 'brand_name']);
+  }, [filteredData]);
+
+  if (loading && masterData.length === 0) {
+    return <div style={{ padding: 40, textAlign: 'center' }}>Loading Dispatch Orders...</div>;
+  }
+
+  if (masterData.length === 0 && !Object.values(filters).some(v => v.length > 0)) {
+    return (
+      <div style={{ padding: 40, textAlign: 'center', marginTop: 100 }}>
+        <div className="card animate-in" style={{ display: 'inline-block', padding: 40 }}>
+          <h3 style={{ marginBottom: 10 }}>No Dispatch Orders</h3>
+          <p style={{ color: 'var(--text-secondary)' }}>Run an allocation to generate dispatch orders.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div onClick={() => { setPrintMenuOpen(false); setExportMenuOpen(false); }}>
@@ -228,51 +284,50 @@ export default function DispatchPage() {
         <div style={{ display: 'flex', gap: 12 }}>
           
           {/* PRINT DROPDOWN */}
-          <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
-            <button className="btn btn-secondary" onClick={() => { setPrintMenuOpen(!printMenuOpen); setExportMenuOpen(false); }}>
-              <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ marginRight: 6 }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-              Print List ▼
+          <div style={{ position: 'relative', zIndex: 9999 }} onClick={e => e.stopPropagation()}>
+            <button className="btn btn-ghost" onClick={() => { setPrintMenuOpen(!printMenuOpen); setExportMenuOpen(false); }}>
+              Print Report ▼
             </button>
             {printMenuOpen && (
-              <div style={{ position: 'absolute', top: '100%', right: 0, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 100, minWidth: 180, marginTop: 4, overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: '100%', right: 0, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 9999, minWidth: 180, marginTop: 4, overflow: 'hidden' }}>
                 <div 
                   onClick={() => handlePrint(false)} 
                   style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}
                   className="hover-row"
                 >
-                  Print Filtered List
+                  Filtered
                 </div>
                 <div 
                   onClick={() => handlePrint(true)} 
                   style={{ padding: '12px 16px', cursor: 'pointer', fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}
                   className="hover-row"
                 >
-                  Print Full Master List
+                  Full
                 </div>
               </div>
             )}
           </div>
 
           {/* EXPORT DROPDOWN */}
-          <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
-            <button className="btn btn-primary" onClick={() => { setExportMenuOpen(!exportMenuOpen); setPrintMenuOpen(false); }}>
-              Download Excel ▼
+          <div style={{ position: 'relative', zIndex: 9999 }} onClick={e => e.stopPropagation()}>
+            <button className="btn btn-ghost" onClick={() => { setExportMenuOpen(!exportMenuOpen); setPrintMenuOpen(false); }}>
+              Download Report ▼
             </button>
             {exportMenuOpen && (
-              <div style={{ position: 'absolute', top: '100%', right: 0, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 100, minWidth: 180, marginTop: 4, overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: '100%', right: 0, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 9999, minWidth: 180, marginTop: 4, overflow: 'hidden' }}>
                 <div 
                   onClick={() => handleDownloadExcel(false)} 
                   style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}
                   className="hover-row"
                 >
-                  Download Filtered Excel
+                  Filtered
                 </div>
                 <div 
                   onClick={() => handleDownloadExcel(true)} 
                   style={{ padding: '12px 16px', cursor: 'pointer', fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}
                   className="hover-row"
                 >
-                  Download Full Master Excel
+                  Full
                 </div>
               </div>
             )}
@@ -309,12 +364,12 @@ export default function DispatchPage() {
               <h3 style={{ margin: 0, fontSize: 18 }}>Filters</h3>
               <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 16 }}>
                 <span style={{ fontSize: 15, color: 'var(--text-secondary)', fontWeight: 600 }}>
-                  {total.toLocaleString()} rows found
+                  {filteredData.length.toLocaleString()} dispatch orders created
                 </span>
                 <button 
                   className="btn btn-ghost btn-sm" 
-                  onClick={() => setFilters({ zone: '', region: '', store_category: '', store_name: '', brand_name: '', commodity: '' })} 
-                  style={{ fontSize: 14, color: 'var(--danger)' }}
+                  onClick={() => setFilters({ zone: [], region: [], store_category: [], store_name: [], brand_name: [], commodity: [] })} 
+                  style={{ fontSize: 14, color: 'var(--primary)' }}
                 >
                   Reset Filters
                 </button>
@@ -323,39 +378,28 @@ export default function DispatchPage() {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase' }}>Zone</label>
-                <select className="filter-select" style={{ width: '100%', padding: '10px 12px', borderRadius: 8, fontSize: 14 }} value={filters.zone} onChange={(e) => handleFilterChange('zone', e.target.value)}>
-                  <option value="">All Zones</option>
-                  {metadata.zones.map((z, i) => <option key={i} value={z}>{z}</option>)}
-                </select>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Zone</label>
+                <MultiSelect placeholder="All Zones" options={dynamicMetadata.zones} value={filters.zone} onChange={(val) => handleFilterChange('zone', val)} />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase' }}>Region</label>
-                <select className="filter-select" style={{ width: '100%', padding: '10px 12px', borderRadius: 8, fontSize: 14 }} value={filters.region} onChange={(e) => handleFilterChange('region', e.target.value)}>
-                  <option value="">All Regions</option>
-                  {metadata.regions.map((r, i) => <option key={i} value={r}>{r}</option>)}
-                </select>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Region</label>
+                <MultiSelect placeholder="All Regions" options={dynamicMetadata.regions} value={filters.region} onChange={(val) => handleFilterChange('region', val)} />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase' }}>Store Grade</label>
-                <select className="filter-select" style={{ width: '100%', padding: '10px 12px', borderRadius: 8, fontSize: 14 }} value={filters.store_category} onChange={(e) => handleFilterChange('store_category', e.target.value)}>
-                  <option value="">All Grades</option>
-                  {metadata.categories.map((c, i) => <option key={i} value={c}>{c}</option>)}
-                </select>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Store Grade</label>
+                <MultiSelect placeholder="All Grades" options={dynamicMetadata.categories} value={filters.store_category} onChange={(val) => handleFilterChange('store_category', val)} />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase' }}>Store Name</label>
-                <select className="filter-select" style={{ width: '100%', padding: '10px 12px', borderRadius: 8, fontSize: 14 }} value={filters.store_name} onChange={(e) => handleFilterChange('store_name', e.target.value)}>
-                  <option value="">All Stores</option>
-                  {metadata.stores.map((s, i) => <option key={i} value={s}>{s}</option>)}
-                </select>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Store Name</label>
+                <MultiSelect placeholder="All Stores" options={dynamicMetadata.stores} value={filters.store_name} onChange={(val) => handleFilterChange('store_name', val)} />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase' }}>Brand</label>
-                <select className="filter-select" style={{ width: '100%', padding: '10px 12px', borderRadius: 8, fontSize: 14 }} value={filters.brand_name} onChange={(e) => handleFilterChange('brand_name', e.target.value)}>
-                  <option value="">All Brands</option>
-                  {metadata.brands.map((b, i) => <option key={i} value={b}>{b}</option>)}
-                </select>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Brand</label>
+                <MultiSelect placeholder="All Brands" options={dynamicMetadata.brands} value={filters.brand_name} onChange={(val) => handleFilterChange('brand_name', val)} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Category</label>
+                <MultiSelect placeholder="All Categories" options={dynamicMetadata.commodities} value={filters.commodity} onChange={(val) => handleFilterChange('commodity', val)} />
               </div>
             </div>
           </div>

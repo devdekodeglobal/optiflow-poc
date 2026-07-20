@@ -6,7 +6,11 @@ Web service layer exposing CSV uploads, similar-item heuristics, and dispatch or
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+import os
 from typing import Optional, List, Dict
+from pydantic import BaseModel
+from google.cloud import storage
+import logging
 import pandas as pd
 import io
 import time
@@ -63,11 +67,97 @@ class DataStore:
 
 store = DataStore()
 
+GCS_BUCKET_NAME = "optiflow-poc-data-kopal500607"
+
+def download_from_gcs(filename):
+    try:
+        client = storage.Client()
+        bucket = client.bucket(GCS_BUCKET_NAME)
+        blob = bucket.blob(filename)
+        if blob.exists():
+            return blob.download_as_bytes()
+    except Exception as e:
+        logging.error(f"Error downloading {filename} from GCS: {e}")
+    return None
+
+def upload_to_gcs(filename, contents):
+    try:
+        client = storage.Client()
+        bucket = client.bucket(GCS_BUCKET_NAME)
+        blob = bucket.blob(filename)
+        blob.upload_from_string(contents)
+    except Exception as e:
+        logging.error(f"Error uploading {filename} to GCS: {e}")
+
+@app.on_event("startup")
+async def startup_event():
+    print("Downloading data from GCS...")
+    planogram_bytes = download_from_gcs("Planogram.csv")
+    if planogram_bytes:
+        try:
+            df = pd.read_csv(io.BytesIO(planogram_bytes), encoding="utf-8", on_bad_lines="skip")
+            if "Unnamed: 0" in df.columns or "Unnamed: 1" in df.columns:
+                df = pd.read_csv(io.BytesIO(planogram_bytes), encoding="utf-8", header=1, on_bad_lines="skip")
+            store.planogram = parse_planogram(df.copy())
+            print("Loaded Planogram.csv from GCS")
+        except Exception as e:
+            print(f"Failed to load Planogram from GCS: {e}")
+            
+    stock_bytes = download_from_gcs("Stock data.csv")
+    if stock_bytes:
+        try:
+            df = pd.read_csv(io.BytesIO(stock_bytes), encoding="utf-8", on_bad_lines="skip")
+            store.stock_raw = df
+            wh_stock, st_stock = parse_stock(df.copy())
+            store.warehouse_stock = wh_stock
+            store.store_stock = st_stock
+            print("Loaded Stock data.csv from GCS")
+        except Exception as e:
+            print(f"Failed to load Stock from GCS: {e}")
+            
+    sales_bytes = download_from_gcs("Sales Data.csv")
+    if sales_bytes:
+        try:
+            df = pd.read_csv(io.BytesIO(sales_bytes), encoding="utf-8", on_bad_lines="skip")
+            store.sales_raw = df
+            print("Loaded Sales Data.csv from GCS")
+        except Exception as e:
+            print(f"Failed to load Sales from GCS: {e}")
+            
+    if store.planogram is not None and store.warehouse_stock is not None:
+        try:
+            print("Running initial allocation engine...")
+            if not store.strategy_store_lists:
+                stores_df = store.planogram[["store_name", "store_category"]].drop_duplicates()
+                all_cats = ["A++", "A+", "A", "B+", "B", "C"]
+                for cat in all_cats:
+                    store.strategy_store_lists[cat] = []
+                for _, row in stores_df.iterrows():
+                    cat = row["store_category"]
+                    if cat in store.strategy_store_lists:
+                        if row["store_name"] not in store.strategy_store_lists[cat]:
+                            store.strategy_store_lists[cat].append(row["store_name"])
+            start = time.time()
+            allocations, summary = run_allocation(
+                planogram_df=store.planogram,
+                wh_stock_df=store.warehouse_stock,
+                store_stock_df=store.store_stock,
+                sales_df=store.sales_raw,
+                strategy_store_lists=store.strategy_store_lists,
+                active_categories=store.strategy_active_categories
+            )
+            store.allocations = allocations
+            store.summary = summary
+            store.last_run_time = time.time() - start
+            print("Initial allocation complete.")
+        except Exception as e:
+            print(f"Failed initial allocation: {e}")
 
 @app.post("/api/upload/planogram")
 async def upload_planogram(file: UploadFile = File(...)):
     try:
         contents = await file.read()
+        upload_to_gcs("Planogram.csv", contents)
         df = pd.read_csv(io.BytesIO(contents), encoding="utf-8", on_bad_lines="skip")
         
         # Double header check
@@ -91,6 +181,7 @@ async def upload_planogram(file: UploadFile = File(...)):
 async def upload_stock(file: UploadFile = File(...)):
     try:
         contents = await file.read()
+        upload_to_gcs("Stock data.csv", contents)
         df = pd.read_csv(io.BytesIO(contents), encoding="utf-8", on_bad_lines="skip")
         store.stock_raw = df
         
@@ -115,6 +206,7 @@ async def upload_stock(file: UploadFile = File(...)):
 async def upload_sales(file: UploadFile = File(...)):
     try:
         contents = await file.read()
+        upload_to_gcs("Sales Data.csv", contents)
         df = pd.read_csv(io.BytesIO(contents), encoding="utf-8", on_bad_lines="skip")
         store.sales_raw = df
         return {
@@ -197,19 +289,26 @@ async def get_results(
 ):
     results = store.allocations
     if store_name:
-        results = [a for a in results if store_name.lower() in a.store_name.lower()]
+        store_list = [s.strip().lower() for s in store_name.split(',')]
+        results = [a for a in results if any(s in a.store_name.lower() for s in store_list)]
     if brand_name:
-        results = [a for a in results if brand_name.lower() in a.brand_name.lower()]
+        brand_list = [b.strip().lower() for b in brand_name.split(',')]
+        results = [a for a in results if any(b in a.brand_name.lower() for b in brand_list)]
     if match_type:
-        results = [a for a in results if a.match_type.value == match_type.lower()]
+        match_list = [m.strip().lower() for m in match_type.split(',')]
+        results = [a for a in results if a.match_type.value in match_list]
     if zone:
-        results = [a for a in results if a.zone and a.zone.lower() == zone.lower()]
+        zone_list = [z.strip().lower() for z in zone.split(',')]
+        results = [a for a in results if a.zone and a.zone.lower() in zone_list]
     if region:
-        results = [a for a in results if get_store_region(a.store_name).lower() == region.lower()]
+        region_list = [r.strip().lower() for r in region.split(',')]
+        results = [a for a in results if get_store_region(a.store_name).lower() in region_list]
     if store_category:
-        results = [a for a in results if a.store_category.lower() == store_category.lower()]
+        cat_list = [c.strip().lower() for c in store_category.split(',')]
+        results = [a for a in results if a.store_category.lower() in cat_list]
     if commodity:
-        results = [a for a in results if a.commodity.lower() == commodity.lower()]
+        comm_list = [c.strip().lower() for c in commodity.split(',')]
+        results = [a for a in results if a.commodity.lower() in comm_list]
     if dispatch_only:
         results = [a for a in results if a.allocated_qty > 0]
         
@@ -328,17 +427,23 @@ async def export_results(
 ):
     results = store.allocations
     if store_name:
-        results = [a for a in results if store_name.lower() in a.store_name.lower()]
+        store_list = [s.strip().lower() for s in store_name.split(',')]
+        results = [a for a in results if any(s in a.store_name.lower() for s in store_list)]
     if brand_name:
-        results = [a for a in results if brand_name.lower() in a.brand_name.lower()]
+        brand_list = [b.strip().lower() for b in brand_name.split(',')]
+        results = [a for a in results if any(b in a.brand_name.lower() for b in brand_list)]
     if match_type:
-        results = [a for a in results if a.match_type.value == match_type.lower()]
+        match_list = [m.strip().lower() for m in match_type.split(',')]
+        results = [a for a in results if a.match_type.value in match_list]
     if zone:
-        results = [a for a in results if a.zone and a.zone.lower() == zone.lower()]
+        zone_list = [z.strip().lower() for z in zone.split(',')]
+        results = [a for a in results if a.zone and a.zone.lower() in zone_list]
     if region:
-        results = [a for a in results if get_store_region(a.store_name).lower() == region.lower()]
+        region_list = [r.strip().lower() for r in region.split(',')]
+        results = [a for a in results if get_store_region(a.store_name).lower() in region_list]
     if store_category:
-        results = [a for a in results if a.store_category.lower() == store_category.lower()]
+        cat_list = [c.strip().lower() for c in store_category.split(',')]
+        results = [a for a in results if a.store_category.lower() in cat_list]
         
     output = io.BytesIO()
     wb = openpyxl.Workbook()
@@ -350,10 +455,10 @@ async def export_results(
     else:
         headers = [
             "Store Name", "Region", "Store Grade", "Target Brand", 
-            "Allocated Item Code", "Allocated Item Name", "Allocated Qty", "MRP", 
-            "Match Type", "OptiFlow Reasoning", "Initial Store Stock", 
-            "Post-Distributed Store Stock", "Initial Warehouse Stock", 
-            "Remaining Warehouse Stock", "Initial Planogram Deficit", "Remaining Planogram Deficit"
+            "Allocated Item Code", "Allocated Item Name", "Match Type", "OptiFlow Reasoning", 
+            "MRP", "Expected Stock", "Stock In Hand", "Post-Distributed Stock", 
+            "Deficit", "Fulfilled Qty", "Out Of Stock",
+            "Initial Warehouse Stock", "Remaining Warehouse Stock"
         ]
     
     hdr_fill = PatternFill(start_color="FFE2E8F0", end_color="FFE2E8F0", fill_type="solid")
@@ -376,16 +481,18 @@ async def export_results(
                 a.store_name, a.brand_name, a.allocated_qty
             ])
         else:
+            expected = int(a.facing + a.back_stock)
             ws.append([
                 a.store_name, a.region, a.store_category, a.brand_name,
                 a.allocated_item_code or "", a.allocated_item_name or "",
-                a.allocated_qty, a.mrp, a.match_type.value.upper(),
-                a.match_reason, int(a.current_soh), int(a.current_soh + a.allocated_qty),
-                a.initial_wh_stock, a.remaining_wh_stock, int(a.initial_gap), int(a.remaining_gap)
+                a.match_type.value.upper(), a.match_reason, a.mrp, 
+                expected, int(a.current_soh), int(a.current_soh + a.allocated_qty),
+                int(a.initial_gap), a.allocated_qty, int(a.remaining_gap),
+                a.initial_wh_stock, a.remaining_wh_stock
             ])
         
     def write_header(text, rows, fill):
-        row = [""] * (5 if dispatch_only else 16)
+        row = [""] * (5 if dispatch_only else 17)
         row[0] = text
         if rows:
             total_allocated = sum(r.allocated_qty for r in rows)
@@ -393,17 +500,21 @@ async def export_results(
                 row[1] = f"Total Items to Pick: {total_allocated}"
             else:
                 unique_gaps = {}
+                unique_expected = {}
                 total_value = 0
                 for r in rows:
                     unique_gaps[r.gap_id] = r.deficit
+                    unique_expected[r.gap_id] = r.facing + r.back_stock
                     total_value += r.allocated_qty * r.mrp
                 initial_deficit = sum(unique_gaps.values())
+                expected_total = sum(unique_expected.values())
                 remaining_deficit = max(0, initial_deficit - total_allocated)
                 row[1] = f"Lines: {len(unique_gaps)}"
-                row[2] = f"Initial Deficit: {int(initial_deficit)}"
-                row[3] = f"Allocated Qty: {total_allocated}"
-                row[4] = f"Remaining Deficit: {int(remaining_deficit)}"
-                row[5] = f"Total Value: ₹{int(total_value):,}"
+                row[2] = f"Expected: {int(expected_total)}"
+                row[3] = f"Deficit: {int(initial_deficit)}"
+                row[4] = f"Fulfilled: {total_allocated}"
+                row[5] = f"Out of Stock: {int(remaining_deficit)}"
+                row[6] = f"Total Value: ₹{int(total_value):,}"
         ws.append(row)
         apply_style(ws.max_row, fill, is_bold=True)
         
