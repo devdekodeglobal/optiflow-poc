@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, Label, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, Label, BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList } from 'recharts';
 
 const COLORS = {
-  fulfilled: 'rgba(46,204,113,0.85)',
-  outOfStock: 'rgba(231,76,60,0.85)',
-  soh: 'rgba(52,152,219,0.85)',
-  deficit: 'rgba(241,196,15,0.85)',
+  fulfilled: '#20c997', // Teal
+  outOfStock: '#ff6b6b', // Coral
+  soh: '#4c6ef5', // Indigo
+  deficit: '#fcc419', // Gold
 };
 
 const BREAKDOWN_COLORS = [
@@ -24,6 +24,7 @@ export default function OverallDashboard() {
   const [selectedZone, setSelectedZone] = useState(null);
   const [selectedRegion, setSelectedRegion] = useState(null);
   const [selectedStore, setSelectedStore] = useState(null);
+  const [selectedBrand, setSelectedBrand] = useState(null);
   const [metricFilter, setMetricFilter] = useState(null); // 'Fulfilled', 'Out of Stock', 'Stock in Hand', 'Planogram Deficit'
 
   useEffect(() => {
@@ -43,17 +44,22 @@ export default function OverallDashboard() {
   const summarize = (items) => {
     const uniqueGapsMap = {};
     const uniqueSohMap = {};
+    const uniqueWhStockMap = {};
     items.forEach(i => { 
       if (i.gap_id) {
         uniqueGapsMap[i.gap_id] = i.deficit || 0; 
         uniqueSohMap[i.gap_id] = i.current_soh || 0;
       }
+      if (i.allocated_item_code) {
+        uniqueWhStockMap[i.allocated_item_code] = i.initial_wh_stock || 0;
+      }
     });
     const deficit = Object.values(uniqueGapsMap).reduce((a, b) => a + b, 0);
     const soh = Object.values(uniqueSohMap).reduce((a, b) => a + b, 0);
+    const warehouseStock = Object.values(uniqueWhStockMap).reduce((a, b) => a + b, 0);
     const allocated = items.reduce((a, b) => a + (b.allocated_qty || 0), 0);
     const outOfStock = Math.max(0, deficit - allocated);
-    return { soh, deficit, allocated, outOfStock };
+    return { soh, deficit, allocated, outOfStock, warehouseStock };
   };
 
   const handleDispatchAction = () => {
@@ -98,25 +104,46 @@ export default function OverallDashboard() {
   };
 
   const getMetricCards = (summary) => {
-    const fulfillPct = summary.deficit > 0 ? (summary.allocated / summary.deficit) * 100 : 100;
     return (
-      <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr 1fr 1fr 1fr', gap: 16, marginBottom: 24, alignItems: 'stretch' }}>
-        <FulfillmentGauge pct={fulfillPct} />
-        <div className="summary-card info">
-          <h4 style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)' }}>STOCK IN HAND</h4>
-          <div style={{ fontSize: 24, fontWeight: 800, marginTop: 8 }}>{summary.soh.toLocaleString()}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 24, marginBottom: 32, alignItems: 'stretch' }}>
+        <div className="summary-card" style={{ padding: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+            <div style={{ background: 'rgba(76, 110, 245, 0.15)', padding: '10px', borderRadius: '10px', color: '#4c6ef5', display: 'flex' }}>
+              <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+            </div>
+            <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5 }}>WAREHOUSE STOCK</h4>
+          </div>
+          <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--text-primary)' }}>{summary.warehouseStock.toLocaleString()}</div>
         </div>
-        <div className="summary-card warning">
-          <h4 style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)' }}>TOTAL DEFICIT</h4>
-          <div style={{ fontSize: 24, fontWeight: 800, marginTop: 8 }}>{summary.deficit.toLocaleString()}</div>
+        
+        <div className="summary-card" style={{ padding: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+            <div style={{ background: 'rgba(32, 201, 151, 0.15)', padding: '10px', borderRadius: '10px', color: '#20c997', display: 'flex' }}>
+              <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+            </div>
+            <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5 }}>STOCK IN HAND</h4>
+          </div>
+          <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--text-primary)' }}>{summary.soh.toLocaleString()}</div>
         </div>
-        <div className="summary-card success">
-          <h4 style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)' }}>FULFILLED</h4>
-          <div style={{ fontSize: 24, fontWeight: 800, marginTop: 8, color: 'var(--success)' }}>{summary.allocated.toLocaleString()}</div>
+        
+        <div className="summary-card" style={{ padding: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+            <div style={{ background: 'rgba(255, 107, 107, 0.15)', padding: '10px', borderRadius: '10px', color: '#ff6b6b', display: 'flex' }}>
+              <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>
+            </div>
+            <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5 }}>TOTAL DEFICIT</h4>
+          </div>
+          <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--text-primary)' }}>{summary.deficit.toLocaleString()}</div>
         </div>
-        <div className="summary-card danger">
-          <h4 style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)' }}>OUT OF STOCK</h4>
-          <div style={{ fontSize: 24, fontWeight: 800, marginTop: 8, color: 'var(--danger)' }}>{summary.outOfStock.toLocaleString()}</div>
+        
+        <div className="summary-card" style={{ padding: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+            <div style={{ background: 'rgba(252, 196, 25, 0.15)', padding: '10px', borderRadius: '10px', color: '#fcc419', display: 'flex' }}>
+              <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+            </div>
+            <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5 }}>TOTAL PLANOGRAM</h4>
+          </div>
+          <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--text-primary)' }}>{(summary.soh + summary.deficit).toLocaleString()}</div>
         </div>
       </div>
     );
@@ -161,80 +188,78 @@ export default function OverallDashboard() {
       );
     };
 
-    return (
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
-        <div className="card" style={{ padding: 24, textAlign: 'center' }}>
-          <h4>Fulfillment vs Out of Stock</h4>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Click a slice to filter the drill-down chart below.</p>
-          <div style={{ width: '100%', height: 280 }}>
-            <ResponsiveContainer>
-              <PieChart>
-                <Pie data={fulfillData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={5} onClick={handlePieClick} label={renderCustomizedLabel} labelLine={false}>
-                  {fulfillData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} style={getPieStyle(entry.name)} />)}
-                </Pie>
-                <Tooltip formatter={(val) => val.toLocaleString()} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+    let leftTitle = 'Overall Stock vs Planogram %';
+    if (level === 'zones') leftTitle = `${selectedZone} Stock vs Planogram %`;
+    else if (level === 'regions') leftTitle = `${selectedRegion} Stock vs Planogram %`;
+    else if (level === 'stores') leftTitle = `${selectedStore} Stock vs Planogram %`;
+    else if (level === 'brands') leftTitle = `${selectedBrand} Stock vs Planogram %`;
 
-        <div className="card" style={{ padding: 24, textAlign: 'center' }}>
-          <h4>Stock vs Planogram Deficit</h4>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Click a slice to filter the drill-down chart below.</p>
-          <div style={{ width: '100%', height: 280 }}>
-            <ResponsiveContainer>
-              <PieChart>
-                <Pie data={stockData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={5} onClick={handlePieClick} label={renderCustomizedLabel} labelLine={false}>
-                  {stockData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} style={getPieStyle(entry.name)} />)}
-                </Pie>
-                <Tooltip formatter={(val) => val.toLocaleString()} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+    return (
+      <div className="card animate-in" style={{ padding: 24, textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <h4>{leftTitle}</h4>
+        <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Click a slice to filter the drill-down chart below.</p>
+        <div style={{ width: '100%', flex: 1, minHeight: 400 }}>
+          <ResponsiveContainer>
+            <PieChart>
+              <Pie data={stockData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={80} outerRadius={110} paddingAngle={5} onClick={handlePieClick} label={renderCustomizedLabel} labelLine={false}>
+                {stockData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} style={getPieStyle(entry.name)} />)}
+              </Pie>
+              <Tooltip formatter={(val) => val.toLocaleString()} />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
       </div>
     );
   };
 
-  const renderDrillDownGraph = (title, itemsMap, onClickHandler) => {
+  const renderDrillDownGraph = (entityLabel, itemsMap, onClickHandler) => {
+    const getColor = (ratio) => {
+      if (ratio === 0) return '#adb5bd';
+      if (ratio <= 30) return '#ff6b6b';
+      if (ratio <= 59) return '#fcc419';
+      return '#20c997';
+    };
+
     const barData = Object.keys(itemsMap).map((key) => {
       const s = summarize(itemsMap[key]);
+      const target = s.soh + s.deficit;
+      const stockRatio = target > 0 ? (s.soh / target) * 100 : 100;
       return {
         name: key,
-        Fulfilled: s.allocated,
-        'Out of Stock': s.outOfStock,
-        'Stock in Hand': s.soh,
-        'Planogram Deficit': s.deficit
+        'Stock Ratio (%)': Math.round(stockRatio),
+        fill: getColor(stockRatio)
       };
     });
     
-    if (metricFilter) {
-      barData.sort((a, b) => b[metricFilter] - a[metricFilter]);
-    } else {
-      barData.sort((a, b) => (b.Fulfilled + b['Out of Stock']) - (a.Fulfilled + a['Out of Stock']));
-    }
+    barData.sort((a, b) => a['Stock Ratio (%)'] - b['Stock Ratio (%)']);
 
     return (
-      <div className="card animate-in" style={{ padding: 24, textAlign: 'center' }}>
-        <h4 style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12 }}>
-          {title} 
-          {metricFilter && <span style={{ background: 'var(--primary)', color: '#fff', padding: '2px 8px', borderRadius: 12, fontSize: 11, fontWeight: 600 }}>Filtering: {metricFilter}</span>}
-        </h4>
-        <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 20 }}>Click any bar to drill down to the next level.</p>
-        <div style={{ width: '100%', height: 400 }}>
+      <div className="card animate-in" style={{ padding: 24, textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <div style={{ textAlign: 'left' }}>
+            <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>Stock Ratio by {entityLabel}</h4>
+          </div>
+          <div style={{ display: 'flex', gap: 12, fontSize: 12, fontWeight: 600 }}>
+            <span style={{ color: '#adb5bd' }}>No Stock: 0%</span>
+            <span style={{ color: '#ff6b6b' }}>Critical: 1-30%</span>
+            <span style={{ color: '#fcc419' }}>Warning: 31-59%</span>
+            <span style={{ color: '#20c997' }}>OK: 60%+</span>
+          </div>
+        </div>
+        <div style={{ width: '100%', flex: 1, minHeight: 400 }}>
           <ResponsiveContainer>
-            <BarChart data={barData} margin={{ top: 20, right: 30, left: 20, bottom: 80 }}>
-              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-              <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} tick={{ fontSize: 11 }} interval={0} />
-              <YAxis />
-              <Tooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-              <Legend verticalAlign="top" height={36}/>
-              {(!metricFilter || metricFilter === 'Fulfilled') && <Bar dataKey="Fulfilled" fill={COLORS.fulfilled} stackId={metricFilter ? undefined : 'a'} cursor="pointer" onClick={(data) => onClickHandler(data.name)} minPointSize={10} />}
-              {(!metricFilter || metricFilter === 'Out of Stock') && <Bar dataKey="Out of Stock" fill={COLORS.outOfStock} stackId={metricFilter ? undefined : 'a'} cursor="pointer" onClick={(data) => onClickHandler(data.name)} minPointSize={10} />}
-              {(metricFilter === 'Stock in Hand') && <Bar dataKey="Stock in Hand" fill={COLORS.soh} cursor="pointer" onClick={(data) => onClickHandler(data.name)} minPointSize={10} />}
-              {(metricFilter === 'Planogram Deficit') && <Bar dataKey="Planogram Deficit" fill={COLORS.deficit} cursor="pointer" onClick={(data) => onClickHandler(data.name)} minPointSize={10} />}
+            <BarChart data={barData} margin={{ top: 20, right: 10, left: 10, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.15} vertical={false} />
+              <XAxis dataKey="name" angle={-45} textAnchor="end" height={120} tick={{ fontSize: 12, fontWeight: 500, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
+              <YAxis domain={[0, 100]} tick={{ fontSize: 12, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
+              <Tooltip cursor={{ fill: 'rgba(0,0,0,0.03)' }} contentStyle={{ borderRadius: 8, border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 8px 24px rgba(0,0,0,0.08)' }} />
+              <Bar dataKey="Stock Ratio (%)" cursor="pointer" onClick={(data) => onClickHandler(data.name)} minPointSize={5} radius={[6, 6, 0, 0]} background={{ fill: 'rgba(0,0,0,0.02)', radius: [6, 6, 0, 0] }}>
+                {barData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.fill} style={{ transition: 'opacity 0.2s', outline: 'none' }} onMouseEnter={(e) => { e.target.style.opacity = 0.8; }} onMouseLeave={(e) => { e.target.style.opacity = 1; }} />
+                ))}
+                <LabelList dataKey="Stock Ratio (%)" position="top" formatter={(val) => `${val}%`} style={{ fontSize: 12, fontWeight: 700, fill: 'var(--text-primary)' }} />
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -242,75 +267,6 @@ export default function OverallDashboard() {
     );
   };
 
-  const renderUrgencyLeaderboard = (itemsMap, entityLabel) => {
-    const ranked = Object.keys(itemsMap).map((key) => {
-      const summary = summarize(itemsMap[key]);
-      const oosRatio = summary.deficit > 0 ? (summary.outOfStock / summary.deficit) * 100 : 0;
-      return { name: key, oosRatio, ...summary };
-    }).filter(r => r.deficit > 0).sort((a, b) => b.oosRatio - a.oosRatio).slice(0, 8);
-
-    if (ranked.length === 0) return null;
-
-    const getColor = (ratio) => {
-      if (ratio >= 60) return { bar: 'var(--danger)', bg: 'rgba(231,76,60,0.08)', badge: '#e74c3c', label: 'Critical' };
-      if (ratio >= 30) return { bar: 'var(--gold)', bg: 'rgba(241,196,15,0.08)', badge: '#f39c12', label: 'Warning' };
-      return { bar: 'var(--success)', bg: 'rgba(46,204,113,0.08)', badge: '#27ae60', label: 'OK' };
-    };
-
-    const getDispatchUrl = (name) => {
-      const params = new URLSearchParams();
-      if (level === 'network') params.set('zone', name);
-      else if (level === 'zones') { params.set('zone', selectedZone); params.set('region', name); }
-      else if (level === 'regions') { params.set('zone', selectedZone); params.set('region', selectedRegion); params.set('store_name', name); }
-      return `/dispatch?${params.toString()}`;
-    };
-
-    const getDrillHandler = (name) => {
-      if (level === 'network') { setSelectedZone(name); setLevel('zones'); setMetricFilter(null); }
-      else if (level === 'zones') { setSelectedRegion(name); setLevel('regions'); setMetricFilter(null); }
-      else if (level === 'regions') { setSelectedStore(name); setLevel('stores'); setMetricFilter(null); }
-    };
-
-    return (
-      <div className="card animate-in" style={{ padding: 20, marginTop: 24 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h4 style={{ margin: 0, fontSize: 14 }}>🚨 Top {entityLabel}s by Critical Shortage</h4>
-          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>% deficit unfulfilled · click row to drill down</span>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {ranked.map((r, idx) => {
-            const c = getColor(r.oosRatio);
-            const isDrillable = level !== 'stores';
-            return (
-              <div
-                key={idx}
-                onClick={isDrillable ? () => getDrillHandler(r.name) : undefined}
-                style={{ background: c.bg, borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 12, cursor: isDrillable ? 'pointer' : 'default' }}
-              >
-                <div style={{ width: 24, height: 24, borderRadius: '50%', background: c.badge, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 11, flexShrink: 0 }}>{idx + 1}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 4 }}>{r.name}</div>
-                  <div style={{ position: 'relative', height: 6, background: 'rgba(0,0,0,0.06)', borderRadius: 4, overflow: 'hidden' }}>
-                    <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${r.oosRatio}%`, background: c.bar, borderRadius: 4, transition: 'width 0.6s ease' }} />
-                  </div>
-                </div>
-                <div style={{ textAlign: 'right', flexShrink: 0, minWidth: 52 }}>
-                  <div style={{ fontWeight: 800, fontSize: 14, color: c.badge }}>{Math.round(r.oosRatio)}%</div>
-                  <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{c.label}</div>
-                </div>
-                <button
-                  onClick={(e) => { e.stopPropagation(); navigate(getDispatchUrl(r.name)); }}
-                  style={{ background: c.badge, color: '#fff', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}
-                >
-                  Dispatch
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
 
   // --- RENDER VIEWS ---
 
@@ -335,7 +291,8 @@ export default function OverallDashboard() {
     level === 'network' ? data :
     level === 'zones' ? data.filter(d => (d.zone || 'Unassigned') === selectedZone) :
     level === 'regions' ? data.filter(d => (d.zone || 'Unassigned') === selectedZone && (d.region || 'Unassigned') === selectedRegion) :
-    data.filter(d => (d.zone || 'Unassigned') === selectedZone && (d.region || 'Unassigned') === selectedRegion && d.store_name === selectedStore)
+    level === 'stores' ? data.filter(d => (d.zone || 'Unassigned') === selectedZone && (d.region || 'Unassigned') === selectedRegion && d.store_name === selectedStore) :
+    data.filter(d => (d.zone || 'Unassigned') === selectedZone && (d.region || 'Unassigned') === selectedRegion && d.store_name === selectedStore && d.brand_name === selectedBrand)
   );
 
   const totalTarget = currentSummary.soh + currentSummary.deficit;
@@ -345,112 +302,117 @@ export default function OverallDashboard() {
   return (
     <div className="animate-in" style={{ paddingBottom: 120 }}>
       {/* HEADER & CONTROLS */}
-      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32 }}>
         <div>
-          <h2 style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 0 }}>
-            {level === 'network' && 'Dashboard'}
-            {level === 'zones' && `Zone: ${selectedZone}`}
-            {level === 'regions' && `Region: ${selectedRegion}`}
-            {level === 'stores' && `Store: ${selectedStore}`}
-          </h2>
-          <div className="breadcrumbs" style={{ display: 'flex', gap: 8, marginTop: 12, marginBottom: 12 }}>
-            <button className={`btn btn-sm ${level === 'network' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => { setLevel('network'); setSelectedZone(null); setSelectedRegion(null); setSelectedStore(null); setMetricFilter(null); }}>Global</button>
-            {selectedZone && <button className={`btn btn-sm ${level === 'zones' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => { setLevel('zones'); setSelectedRegion(null); setSelectedStore(null); setMetricFilter(null); }}>{selectedZone}</button>}
-            {selectedRegion && <button className={`btn btn-sm ${level === 'regions' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => { setLevel('regions'); setSelectedStore(null); setMetricFilter(null); }}>{selectedRegion}</button>}
-            {selectedStore && <button className={`btn btn-sm ${level === 'stores' ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setLevel('stores')}>{selectedStore}</button>}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
+            <h2 style={{ margin: 0, fontSize: 32, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
+              Inventory Dashboard
+            </h2>
+            {isDanger && (
+              <div className="animate-in" style={{ background: 'rgba(255, 107, 107, 0.1)', border: '1px solid rgba(255, 107, 107, 0.2)', borderRadius: 20, padding: '4px 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <svg width="14" height="14" fill="none" stroke="#ff6b6b" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#ff6b6b' }}>Low Inventory Alert ({Math.round(healthPercent)}%)</span>
+              </div>
+            )}
+          </div>
+          
+          <div className="breadcrumbs-path" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 500, color: 'var(--text-muted)' }}>
+            <span style={{ cursor: 'pointer', color: level === 'network' ? 'var(--text-primary)' : 'inherit', transition: 'color 0.2s', fontWeight: level === 'network' ? 700 : 500 }} onClick={() => { setLevel('network'); setSelectedZone(null); setSelectedRegion(null); setSelectedStore(null); setSelectedBrand(null); setMetricFilter(null); }}>Global Network</span>
+            
+            {selectedZone && <>
+              <span>›</span>
+              <span style={{ cursor: 'pointer', color: level === 'zones' ? 'var(--text-primary)' : 'inherit', transition: 'color 0.2s', fontWeight: level === 'zones' ? 700 : 500 }} onClick={() => { setLevel('zones'); setSelectedRegion(null); setSelectedStore(null); setSelectedBrand(null); setMetricFilter(null); }}>{selectedZone}</span>
+            </>}
+            
+            {selectedRegion && <>
+              <span>›</span>
+              <span style={{ cursor: 'pointer', color: level === 'regions' ? 'var(--text-primary)' : 'inherit', transition: 'color 0.2s', fontWeight: level === 'regions' ? 700 : 500 }} onClick={() => { setLevel('regions'); setSelectedStore(null); setSelectedBrand(null); setMetricFilter(null); }}>{selectedRegion}</span>
+            </>}
+            
+            {selectedStore && <>
+              <span>›</span>
+              <span style={{ cursor: 'pointer', color: level === 'stores' ? 'var(--text-primary)' : 'inherit', transition: 'color 0.2s', fontWeight: level === 'stores' ? 700 : 500 }} onClick={() => { setLevel('stores'); setSelectedBrand(null); }}>{selectedStore}</span>
+            </>}
+            
+            {selectedBrand && <>
+              <span>›</span>
+              <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{selectedBrand}</span>
+            </>}
           </div>
         </div>
-        
-        {level !== 'network' && (
-          <button className="btn btn-primary animate-in" onClick={handleDispatchAction} style={{ background: 'var(--gold)', color: 'var(--bg-app)', border: 'none', padding: '10px 20px', fontWeight: 700 }}>
-            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ marginRight: 6, verticalAlign: 'text-bottom' }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-            Generate Dispatch Order
-          </button>
-        )}
       </div>
 
-      {isDanger && (
-        <div className="animate-in" style={{ position: 'fixed', top: 24, right: 24, zIndex: 9999, background: '#fff', borderLeft: '4px solid var(--danger)', boxShadow: '0 10px 25px rgba(0,0,0,0.15)', borderRadius: 8, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 16, maxWidth: 350 }}>
-          <div style={{ color: 'var(--danger)' }}>
-            <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-          </div>
-          <div style={{ flex: 1 }}>
-            <h4 style={{ margin: 0, fontSize: 13, fontWeight: 800, color: 'var(--text-primary)' }}>Low Inventory Alert</h4>
-            <p style={{ margin: 0, fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
-              Stock at {Math.round(healthPercent)}% of target.
-            </p>
-          </div>
-          <button className="btn btn-sm" onClick={handleDispatchAction} style={{ background: 'rgba(231,76,60,0.1)', color: 'var(--danger)', border: 'none', fontWeight: 700, padding: '6px 12px' }}>
-            Dispatch
-          </button>
-        </div>
-      )}
-
       {getMetricCards(currentSummary)}
-      {renderDualCharts(currentSummary)}
 
-      {/* DRILL DOWN VIEWS */}
-      {level === 'network' && (
-        renderDrillDownGraph('Deficit Breakdown by Zone', data.reduce((acc, i) => {
-          const z = i.zone || 'Unassigned';
-          if (!acc[z]) acc[z] = [];
-          acc[z].push(i);
-          return acc;
-        }, {}), (name) => {
-          setSelectedZone(name);
-          setLevel('zones');
-        })
-      )}
-
-      {level === 'zones' && (
-        renderDrillDownGraph(`Deficit Breakdown by Region (${selectedZone})`, data.filter(d => (d.zone || 'Unassigned') === selectedZone).reduce((acc, i) => {
-          const r = i.region || 'Unassigned';
-          if (!acc[r]) acc[r] = [];
-          acc[r].push(i);
-          return acc;
-        }, {}), (name) => {
-          setSelectedRegion(name);
-          setLevel('regions');
-        })
-      )}
-
-      {level === 'regions' && (
-        renderDrillDownGraph(`Deficit Breakdown by Store (${selectedRegion})`, data.filter(d => (d.zone || 'Unassigned') === selectedZone && (d.region || 'Unassigned') === selectedRegion).reduce((acc, i) => {
-          const s = i.store_name || 'Unassigned';
-          if (!acc[s]) acc[s] = [];
-          acc[s].push(i);
-          return acc;
-        }, {}), (name) => {
-          setSelectedStore(name);
-          setLevel('stores');
-        })
-      )}
-
-      {/* Urgency Leaderboard — drill-down aware */}
-      {level === 'network' && renderUrgencyLeaderboard(
-        data.reduce((acc, i) => { const z = i.zone || 'Unassigned'; if (!acc[z]) acc[z] = []; acc[z].push(i); return acc; }, {}),
-        'Zone'
-      )}
-      {level === 'zones' && selectedZone && renderUrgencyLeaderboard(
-        data.filter(d => (d.zone || 'Unassigned') === selectedZone).reduce((acc, i) => { const r = i.region || 'Unassigned'; if (!acc[r]) acc[r] = []; acc[r].push(i); return acc; }, {}),
-        'Region'
-      )}
-      {level === 'regions' && selectedRegion && renderUrgencyLeaderboard(
-        data.filter(d => (d.zone || 'Unassigned') === selectedZone && (d.region || 'Unassigned') === selectedRegion).reduce((acc, i) => { const s = i.store_name || 'Unassigned'; if (!acc[s]) acc[s] = []; acc[s].push(i); return acc; }, {}),
-        'Store'
-      )}
-      
-      {level === 'stores' && (
-        <div className="card animate-in" style={{ padding: 40, textAlign: 'center' }}>
-          <h3>Store Action Required</h3>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: 24 }}>You are viewing detailed metrics for {selectedStore}. Click the button below to review and print the dispatch order.</p>
-          <button className="btn btn-primary" onClick={handleDispatchAction} style={{ background: 'var(--gold)', color: 'var(--bg-app)', border: 'none', padding: '12px 24px', fontSize: 16 }}>
-            Proceed to Dispatch Queue ➔
-          </button>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 24, marginBottom: 24, alignItems: 'stretch' }}>
+        {/* Left Column: Pie Chart */}
+        <div>
+          {renderDualCharts(currentSummary)}
         </div>
-      )}
+
+        {/* Right Column: Drill Down Graph */}
+        <div>
+          {level === 'network' && (
+            renderDrillDownGraph('Zone', data.reduce((acc, i) => {
+              const z = i.zone || 'Unassigned';
+              if (!acc[z]) acc[z] = [];
+              acc[z].push(i);
+              return acc;
+            }, {}), (name) => {
+              setSelectedZone(name);
+              setLevel('zones');
+            })
+          )}
+
+          {level === 'zones' && (
+            renderDrillDownGraph('Region', data.filter(d => (d.zone || 'Unassigned') === selectedZone).reduce((acc, i) => {
+              const r = i.region || 'Unassigned';
+              if (!acc[r]) acc[r] = [];
+              acc[r].push(i);
+              return acc;
+            }, {}), (name) => {
+              setSelectedRegion(name);
+              setLevel('regions');
+            })
+          )}
+
+          {level === 'regions' && (
+            renderDrillDownGraph('Store', data.filter(d => (d.zone || 'Unassigned') === selectedZone && (d.region || 'Unassigned') === selectedRegion).reduce((acc, i) => {
+              const s = i.store_name || 'Unassigned';
+              if (!acc[s]) acc[s] = [];
+              acc[s].push(i);
+              return acc;
+            }, {}), (name) => {
+              setSelectedStore(name);
+              setLevel('stores');
+            })
+          )}
+          {level === 'stores' && (
+            renderDrillDownGraph('Brand', data.filter(d => (d.zone || 'Unassigned') === selectedZone && (d.region || 'Unassigned') === selectedRegion && (d.store_name || 'Unassigned') === selectedStore).reduce((acc, i) => {
+              const b = i.brand_name || 'Unassigned';
+              if (!acc[b]) acc[b] = [];
+              acc[b].push(i);
+              return acc;
+            }, {}), (name) => {
+              setSelectedBrand(name);
+              setLevel('brands');
+            })
+          )}
+
+          {level === 'brands' && (
+            renderDrillDownGraph('Commodity', data.filter(d => (d.zone || 'Unassigned') === selectedZone && (d.region || 'Unassigned') === selectedRegion && (d.store_name || 'Unassigned') === selectedStore && (d.brand_name || 'Unassigned') === selectedBrand).reduce((acc, i) => {
+              const c = i.commodity || 'Unassigned';
+              if (!acc[c]) acc[c] = [];
+              acc[c].push(i);
+              return acc;
+            }, {}), (name) => {
+              // No-op for now
+            })
+          )}
+        </div>
+      </div>
     </div>
   );
 }

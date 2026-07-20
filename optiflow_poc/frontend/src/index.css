@@ -272,32 +272,19 @@ body {
 }
 
 .summary-card {
-  background: var(--bg-card);
+  background: var(--glass-bg);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
-  padding: 20px 24px;
-  backdrop-filter: blur(10px);
-  transition: all var(--transition-base);
+  padding: 24px;
   position: relative;
   overflow: hidden;
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all var(--transition-base);
+  display: flex;
+  flex-direction: column;
 }
-
-.summary-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-}
-
-.summary-card.navy::before { background: var(--navy-light); }
-.summary-card.gold::before { background: var(--gold); }
-.summary-card.success::before { background: var(--success); }
-.summary-card.danger::before { background: var(--danger); }
-.summary-card.info::before { background: var(--info); }
-.summary-card.warning::before { background: var(--warning); }
 
 .summary-card:hover {
   transform: translateY(-2px);

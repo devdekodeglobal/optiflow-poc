@@ -286,6 +286,28 @@ def run_allocation(
     # store -> model -> list of colors allocated
     store_model_colors: Dict[str, Dict[str, List[str]]] = {}
 
+    store_total_deficit = {}
+    for idx, prow in prow_sorted.iterrows():
+        pl_store = str(prow["store_name"])
+        brand_name = str(prow["brand_name"])
+        commodity = str(prow["commodity"])
+        mapped_facility = STORE_NAME_MAP.get(pl_store, pl_store)
+        
+        live_soh = 0.0
+        stock_items = store_live_stock.get((mapped_facility, brand_name.lower(), commodity), [])
+        for ic, qty in stock_items:
+            live_soh += qty
+        
+        facing = float(prow["facing"])
+        back_stock = float(prow["back_stock"])
+        deficit = (facing + back_stock) - live_soh
+        
+        if deficit > 0:
+            store_total_deficit[pl_store] = store_total_deficit.get(pl_store, 0) + int(np.ceil(deficit))
+            
+    store_duplicate_budget = {s: int(d * 0.15) for s, d in store_total_deficit.items()}
+    store_allocated_skus = {s: set() for s in store_total_deficit.keys()}
+
     for idx, prow in prow_sorted.iterrows():
         pl_store = str(prow["store_name"])
         brand_name = str(prow["brand_name"])
@@ -372,6 +394,12 @@ def run_allocation(
                     if cand_color not in existing_colors and len(existing_colors) >= 3:
                         continue
                 
+                # 85% UNIQUENESS RULE: Reject candidate if it's a duplicate and we're out of budget
+                is_new_sku = cand_code not in store_allocated_skus.get(pl_store, set())
+                budget = store_duplicate_budget.get(pl_store, 0)
+                if not is_new_sku and budget <= 0:
+                    continue
+                
                 is_exact = any(si["item_code"] == cand_code for si in store_items)
                 sim_score = calculate_similarity(target_attrs, cand["attrs"])
                 
@@ -434,6 +462,24 @@ def run_allocation(
 
             initial_wh = wh_remaining[best_cand["item_code"]]
             qty_to_alloc = min(initial_wh, deficit_qty - allocated_qty)
+            
+            # Enforce duplicate budget capping
+            cand_code = best_cand["item_code"]
+            is_new_sku = cand_code not in store_allocated_skus.get(pl_store, set())
+            budget = store_duplicate_budget.get(pl_store, 0)
+            
+            dup_units_proposed = (qty_to_alloc - 1) if is_new_sku else qty_to_alloc
+            if dup_units_proposed > budget:
+                dup_units_allowed = budget
+                qty_to_alloc = (dup_units_allowed + 1) if is_new_sku else dup_units_allowed
+                
+            if qty_to_alloc > 0:
+                actual_dups = (qty_to_alloc - 1) if is_new_sku else qty_to_alloc
+                if pl_store in store_duplicate_budget:
+                    store_duplicate_budget[pl_store] -= actual_dups
+                if pl_store in store_allocated_skus:
+                    store_allocated_skus[pl_store].add(cand_code)
+            
             initial_gap = deficit_qty - allocated_qty
             
             wh_remaining[best_cand["item_code"]] -= qty_to_alloc
