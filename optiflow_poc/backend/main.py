@@ -93,6 +93,16 @@ def upload_to_gcs(filename, contents):
     except Exception as e:
         logging.error(f"Error uploading {filename} to GCS: {e}")
 
+def delete_from_gcs(filename):
+    try:
+        client = storage.Client()
+        bucket = client.bucket(GCS_BUCKET_NAME)
+        blob = bucket.blob(filename)
+        if blob.exists():
+            blob.delete()
+    except Exception as e:
+        logging.error(f"Error deleting {filename} from GCS: {e}")
+
 @app.on_event("startup")
 async def startup_event():
     print("Downloading data from GCS...")
@@ -162,6 +172,15 @@ async def startup_event():
         except Exception as e:
             print(f"Failed to load allocation results from GCS: {e}")
 
+    # Load pre-computed dashboard cache from GCS (avoids 10s recompute on cold start)
+    cache_bytes = download_from_gcs("dashboard_cache.json")
+    if cache_bytes:
+        try:
+            store.dashboard_all_stores_cache = json.loads(cache_bytes.decode("utf-8"))
+            print("Loaded dashboard_cache.json from GCS")
+        except Exception as e:
+            print(f"Failed to load dashboard cache from GCS: {e}")
+
     if store.planogram is not None and store.warehouse_stock is not None and not has_saved_results:
         try:
             print("Running initial allocation engine...")
@@ -206,6 +225,7 @@ async def upload_planogram(file: UploadFile = File(...)):
         store.allocations = []
         store.summary = None
         store.dashboard_all_stores_cache = None
+        delete_from_gcs("dashboard_cache.json")
         
         upload_to_gcs("Planogram.csv", contents)
         
@@ -233,6 +253,7 @@ async def upload_stock(file: UploadFile = File(...)):
         store.allocations = []
         store.summary = None
         store.dashboard_all_stores_cache = None
+        delete_from_gcs("dashboard_cache.json")
         
         upload_to_gcs("Stock data.csv", contents)
         
@@ -258,6 +279,7 @@ async def upload_sales(file: UploadFile = File(...)):
         store.allocations = []
         store.summary = None
         store.dashboard_all_stores_cache = None
+        delete_from_gcs("dashboard_cache.json")
         
         upload_to_gcs("Sales Data.csv", contents)
         
@@ -1309,6 +1331,12 @@ async def dashboard_all_stores():
     }
     
     store.dashboard_all_stores_cache = result
+    # Persist cache to GCS so it survives cold starts
+    try:
+        upload_to_gcs("dashboard_cache.json", json.dumps(result).encode("utf-8"))
+        print("Saved dashboard_cache.json to GCS")
+    except Exception as e:
+        print(f"Failed to save dashboard cache to GCS: {e}")
     return result
 
 
