@@ -27,7 +27,8 @@ export default function OverallDashboard() {
   const [metricFilter, setMetricFilter] = useState(null); // 'Fulfilled', 'Out of Stock', 'Stock in Hand', 'Planogram Deficit'
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/allocation/results?page_size=50000`)
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://optiflow-backend-977593391877.us-central1.run.app';
+    fetch(`${baseUrl}/api/allocation/results?page_size=50000`)
       .then(res => res.json())
       .then(json => {
         setData(json.allocations || []);

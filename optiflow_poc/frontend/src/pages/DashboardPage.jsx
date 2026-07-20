@@ -138,7 +138,8 @@ export default function DashboardPage() {
     setLoading(true);
     try {
       const q = new URLSearchParams({ page_size: 50000 }).toString();
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/allocation/results?${q}`);
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://optiflow-backend-977593391877.us-central1.run.app';
+      const res = await fetch(`${baseUrl}/api/allocation/results?${q}`);
       const json = await res.json();
       
       if (!res.ok) {
@@ -239,7 +240,8 @@ export default function DashboardPage() {
         commodity: filters.commodity.join(','),
         group_by: 'zone'
       }).toString();
-      window.open(`${import.meta.env.VITE_API_BASE_URL}/api/allocation/results/export?${q}`, '_blank');
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://optiflow-backend-977593391877.us-central1.run.app';
+      window.open(`${baseUrl}/api/allocation/results/export?${q}`, '_blank');
     }
   };
 
