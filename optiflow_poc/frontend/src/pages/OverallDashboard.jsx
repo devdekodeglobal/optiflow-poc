@@ -160,7 +160,7 @@ export default function OverallDashboard() {
     // We treat "Planogram Target" as the gap deficit that is remaining
     // Or Planogram Deficit vs SOH
     const stockData = [
-      { name: 'Stock in Hand', value: summary.soh, color: COLORS.soh },
+      { name: 'Stock in Store', value: summary.soh, color: COLORS.soh },
       { name: 'Planogram Deficit', value: summary.deficit, color: COLORS.deficit }
     ];
 
@@ -181,11 +181,11 @@ export default function OverallDashboard() {
       );
     };
 
-    let leftTitle = 'Overall Stock vs Planogram %';
-    if (level === 'zones') leftTitle = `${selectedZone} Stock vs Planogram %`;
-    else if (level === 'regions') leftTitle = `${selectedRegion} Stock vs Planogram %`;
-    else if (level === 'stores') leftTitle = `${selectedStore} Stock vs Planogram %`;
-    else if (level === 'brands') leftTitle = `${selectedBrand} Stock vs Planogram %`;
+    let leftTitle = 'Planogram vs Overall Stock %';
+    if (level === 'zones') leftTitle = `Planogram vs ${selectedZone} Stock %`;
+    else if (level === 'regions') leftTitle = `Planogram vs ${selectedRegion} Stock %`;
+    else if (level === 'stores') leftTitle = `Planogram vs ${selectedStore} Stock %`;
+    else if (level === 'brands') leftTitle = `Planogram vs ${selectedBrand} Stock %`;
 
     return (
       <div className="card animate-in" style={{ padding: 24, textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column' }}>
