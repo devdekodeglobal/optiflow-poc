@@ -1171,54 +1171,43 @@ async def get_dispatch_by_region(region_name: str):
 
 
 
-@app.get("/api/dashboard/raw")
-async def dashboard_raw():
+@app.get("/api/dashboard/all-stores")
+async def dashboard_all_stores():
     """
-    Returns raw planogram-level rows for the dashboard.
-    This is independent of allocation priority settings — it reflects ALL uploaded data.
-    Each row represents one planogram line: store × brand × commodity.
-    Fields: store_name, zone, region, store_category, brand_name, commodity, soh, deficit, gap_id
+    Dashboard endpoint that runs the full allocation engine with ALL stores active
+    (ignores the Set Priority strategy settings). Also returns the constant total
+    Corporate Office warehouse stock regardless of which items were allocated.
     """
     if store.planogram is None:
         return {"allocations": [], "warehouse_stock_total": 0}
+    if store.warehouse_stock is None:
+        return {"allocations": [], "warehouse_stock_total": 0}
 
-    from regions import get_store_region, get_store_zone
-    import hashlib
+    # Build all-stores strategy: every store in every tier, all tiers active
+    all_cats = ["A++", "A+", "A", "B+", "B", "C"]
+    stores_df = store.planogram[["store_name", "store_category"]].drop_duplicates()
+    all_store_lists: Dict[str, List[str]] = {cat: [] for cat in all_cats}
+    for _, row in stores_df.iterrows():
+        cat = str(row["store_category"])
+        sname = str(row["store_name"])
+        if cat in all_store_lists and sname not in all_store_lists[cat]:
+            all_store_lists[cat].append(sname)
 
-    df = store.planogram.copy()
-    df["soh_num"] = pd.to_numeric(df["soh"], errors="coerce").fillna(0)
-    df["facing_num"] = pd.to_numeric(df["facing"], errors="coerce").fillna(0)
+    allocations, _ = run_allocation(
+        planogram_df=store.planogram,
+        wh_stock_df=store.warehouse_stock,
+        store_stock_df=store.store_stock if store.store_stock is not None else pd.DataFrame(),
+        sales_df=store.sales_raw,
+        strategy_store_lists=all_store_lists,
+        active_categories=all_cats
+    )
 
-    rows = []
-    for _, row in df.iterrows():
-        soh = float(row["soh_num"])
-        target = float(row["facing_num"])
-        deficit = max(0.0, target - soh)
-        store_name = str(row.get("store_name", ""))
-        brand = str(row.get("brand_name", ""))
-        commodity = str(row.get("commodity", "Frame"))
-        gap_id = hashlib.md5(f"{store_name}|{brand}|{commodity}|{row.get('store_code','')}".encode()).hexdigest()
-        rows.append({
-            "store_name": store_name,
-            "zone": get_store_zone(store_name),
-            "region": get_store_region(store_name),
-            "store_category": str(row.get("store_category", "")),
-            "brand_name": brand,
-            "commodity": commodity,
-            "current_soh": soh,
-            "deficit": deficit,
-            "gap_id": gap_id,
-            "allocated_qty": 0,
-            "initial_wh_stock": 0,
-        })
-
-    wh_stock_total = 0
-    if store.warehouse_stock is not None:
-        wh_stock_total = store.warehouse_stock["batch_stock"].sum()
+    # Constant: total Corporate Office warehouse stock (not filtered by allocation)
+    wh_stock_total = float(store.warehouse_stock["batch_stock"].sum())
 
     return {
-        "allocations": rows,
-        "warehouse_stock_total": float(wh_stock_total)
+        "allocations": [a.model_dump() for a in allocations],
+        "warehouse_stock_total": wh_stock_total
     }
 
 
