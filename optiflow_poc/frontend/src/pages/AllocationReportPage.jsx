@@ -139,7 +139,7 @@ export default function AllocationReportPage() {
     setLoading(true);
     try {
       const q = new URLSearchParams({ page_size: 50000 }).toString();
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://optiflow-backend-977593391877.us-central1.run.app';
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://optiflow-backend-977593391877.asia-south1.run.app';
       const res = await fetch(`${baseUrl}/api/allocation/results?${q}`);
       const json = await res.json();
       
@@ -248,7 +248,7 @@ export default function AllocationReportPage() {
         commodity: filters.commodity.join(','),
         group_by: 'zone'
       }).toString();
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://optiflow-backend-977593391877.us-central1.run.app';
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://optiflow-backend-977593391877.asia-south1.run.app';
       window.open(`${baseUrl}/api/allocation/results/export?${q}`, '_blank');
     }
   };

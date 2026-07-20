@@ -27,7 +27,7 @@ export default function AllocationWizardPage() {
 
   // On mount: verify with backend in case sessionStorage is stale
   useEffect(() => {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://optiflow-backend-977593391877.us-central1.run.app';
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://optiflow-backend-977593391877.asia-south1.run.app';
     Promise.all([
       fetch(`${baseUrl}/api/upload/status`).then(r => r.ok ? r.json() : null),
       fetch(`${baseUrl}/api/allocation/status`).then(r => r.ok ? r.json() : null)
@@ -51,7 +51,7 @@ export default function AllocationWizardPage() {
 
   const handleReset = async () => {
     setIsResetting(true);
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://optiflow-backend-977593391877.us-central1.run.app';
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://optiflow-backend-977593391877.asia-south1.run.app';
     try {
       await fetch(`${baseUrl}/api/allocation/reset`, { method: 'POST' });
     } catch (e) {
