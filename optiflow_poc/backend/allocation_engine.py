@@ -143,6 +143,7 @@ def parse_planogram(df: pd.DataFrame) -> pd.DataFrame:
     df["store_name"] = df["store_name"].fillna("")
     df["brand_name"] = df["brand_name"].fillna("")
     df["commodity"] = df["commodity"].fillna("Frame")
+    df["commodity"] = df.apply(lambda row: _get_commodity_type(row["commodity"], row["store_brand_product"]), axis=1)
     df["store_category"] = df["store_category"].fillna("B")
     df["store_type"] = df["store_type"].fillna("")
     
@@ -163,6 +164,7 @@ def parse_stock(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
         
     df["batch_stock"] = pd.to_numeric(df["batch_stock"], errors="coerce").fillna(0)
     df["mrp"] = pd.to_numeric(df["mrp"], errors="coerce").fillna(0)
+    df["item_category"] = df.apply(lambda row: _get_commodity_type(row.get("item_category", ""), row.get("item_name", "")), axis=1)
     
     wh_stock = df[df["facility"] == WAREHOUSE_FACILITY].copy()
     store_stock = df[df["facility"] != WAREHOUSE_FACILITY].copy()
