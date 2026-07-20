@@ -1180,7 +1180,7 @@ async def dashboard_raw():
     Fields: store_name, zone, region, store_category, brand_name, commodity, soh, deficit, gap_id
     """
     if store.planogram is None:
-        return {"allocations": []}
+        return {"allocations": [], "warehouse_stock_total": 0}
 
     from regions import get_store_region, get_store_zone
     import hashlib
@@ -1205,14 +1205,21 @@ async def dashboard_raw():
             "store_category": str(row.get("store_category", "")),
             "brand_name": brand,
             "commodity": commodity,
-            "soh": soh,
+            "current_soh": soh,
             "deficit": deficit,
             "gap_id": gap_id,
             "allocated_qty": 0,
             "initial_wh_stock": 0,
         })
 
-    return {"allocations": rows}
+    wh_stock_total = 0
+    if store.warehouse_stock is not None:
+        wh_stock_total = store.warehouse_stock["batch_stock"].sum()
+
+    return {
+        "allocations": rows,
+        "warehouse_stock_total": float(wh_stock_total)
+    }
 
 
 @app.get("/api/stores")
