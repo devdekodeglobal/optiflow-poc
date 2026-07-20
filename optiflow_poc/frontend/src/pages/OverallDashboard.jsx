@@ -181,7 +181,7 @@ export default function OverallDashboard() {
       );
     };
 
-    let leftTitle = 'Planogram vs Overall Stock %';
+    let leftTitle = 'Planogram vs National Stock %';
     if (level === 'zones') leftTitle = `Planogram vs ${selectedZone} Stock %`;
     else if (level === 'regions') leftTitle = `Planogram vs ${selectedRegion} Stock %`;
     else if (level === 'stores') leftTitle = `Planogram vs ${selectedStore} Stock %`;
@@ -347,7 +347,7 @@ export default function OverallDashboard() {
           </div>
           
           <div className="breadcrumbs-path" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 500, color: 'var(--text-muted)' }}>
-            <span style={{ cursor: 'pointer', color: level === 'network' ? 'var(--text-primary)' : 'inherit', transition: 'color 0.2s', fontWeight: level === 'network' ? 700 : 500 }} onClick={() => { setLevel('network'); setSelectedZone(null); setSelectedRegion(null); setSelectedStore(null); setSelectedBrand(null); }}>Global Network</span>
+            <span style={{ cursor: 'pointer', color: level === 'network' ? 'var(--text-primary)' : 'inherit', transition: 'color 0.2s', fontWeight: level === 'network' ? 700 : 500 }} onClick={() => { setLevel('network'); setSelectedZone(null); setSelectedRegion(null); setSelectedStore(null); setSelectedBrand(null); }}>National Network</span>
             
             {selectedZone && <>
               <span>›</span>
