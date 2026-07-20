@@ -863,9 +863,9 @@ async def get_strategy():
     }
 
 @app.post("/api/settings/strategy")
-async def update_strategy(req: StrategyRequest):
+async def update_strategy(req: StrategyUpdate):
     store.strategy_active_categories = req.active_categories
-    store.strategy_store_lists = req.store_lists
+    store.strategy_store_lists = req.category_stores
     
     strategy_data = {
         "active_categories": store.strategy_active_categories,
