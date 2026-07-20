@@ -416,9 +416,41 @@ export default function DashboardPage() {
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Brand</label>
                 <MultiSelect placeholder="All Brands" options={dynamicMetadata.brands} value={filters.brand_name} onChange={(val) => handleFilterChange('brand_name', val)} />
               </div>
-              <div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Category</label>
-                <MultiSelect placeholder="All Categories" options={dynamicMetadata.commodities} value={filters.commodity} onChange={(val) => handleFilterChange('commodity', val)} />
+                <div style={{ display: 'flex', gap: 8, flex: 1, alignItems: 'center' }}>
+                  {dynamicMetadata.commodities.map(c => {
+                    const isSelected = filters.commodity.length === 0 || filters.commodity.includes(c);
+                    return (
+                      <button 
+                        key={c}
+                        style={{
+                          flex: 1, padding: '8px 4px', borderRadius: 6, fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
+                          border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border)',
+                          background: isSelected ? 'var(--accent)' : '#fff',
+                          color: isSelected ? '#fff' : 'var(--text-secondary)'
+                        }}
+                        onClick={() => {
+                          let next = [];
+                          if (filters.commodity.length === 0) {
+                            next = dynamicMetadata.commodities.filter(x => x !== c);
+                          } else {
+                            if (isSelected) {
+                              next = filters.commodity.filter(x => x !== c);
+                              if (next.length === 0) next = ['__NONE__'];
+                            } else {
+                              next = [...filters.commodity.filter(x => x !== '__NONE__'), c];
+                              if (next.length === dynamicMetadata.commodities.length) next = [];
+                            }
+                          }
+                          handleFilterChange('commodity', next);
+                        }}
+                      >
+                        {c}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
