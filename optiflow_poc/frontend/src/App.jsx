@@ -39,7 +39,7 @@ function App() {
           </button>
           
           <div className="sidebar-brand" style={{ textAlign: sidebarCollapsed ? 'center' : 'left' }}>
-            <h1 style={{ fontSize: '18px', lineHeight: '1.2', fontFamily: '"Montserrat", sans-serif', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{!sidebarCollapsed && 'Centre For Sight'}</h1>
+            <h1 style={{ fontSize: '18px', lineHeight: '1.2', fontFamily: '"Montserrat", sans-serif', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '-0.5px', transform: 'scaleX(0.95)', transformOrigin: sidebarCollapsed ? 'center' : 'left' }}>{!sidebarCollapsed && 'Centre For Sight'}</h1>
             {!sidebarCollapsed && <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.5px' }}>OptiFlow v0.1</p>}
           </div>
 

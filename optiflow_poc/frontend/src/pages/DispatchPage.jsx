@@ -339,7 +339,7 @@ export default function DispatchPage() {
       </div>
 
       <div className="print-only" style={{ display: 'none', marginBottom: 30, textAlign: 'center' }}>
-        <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: 'black', fontFamily: '"Montserrat", sans-serif', textTransform: 'uppercase', letterSpacing: '1px' }}>CENTER FOR SIGHT</h1>
+        <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: 'black', fontFamily: '"Montserrat", sans-serif', textTransform: 'uppercase', letterSpacing: '-0.5px', transform: 'scaleX(0.95)', transformOrigin: 'center' }}>CENTER FOR SIGHT</h1>
         <p style={{ margin: '4px 0 0 0', fontSize: 14, color: '#666' }}>Dispatch Order Pick-List (Hierarchy Generated: {new Date().toLocaleDateString()})</p>
         <hr style={{ marginTop: 16, borderColor: '#ccc' }} />
       </div>
