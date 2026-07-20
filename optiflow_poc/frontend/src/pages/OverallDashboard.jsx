@@ -17,7 +17,6 @@ const BREAKDOWN_COLORS = [
 export default function OverallDashboard() {
   const navigate = useNavigate();
   const [data, setData] = useState([]);
-  const [globalWhStock, setGlobalWhStock] = useState(0);
   const [loading, setLoading] = useState(true);
   
   // Drill-down state
@@ -30,13 +29,10 @@ export default function OverallDashboard() {
 
   useEffect(() => {
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://optiflow-backend-977593391877.us-central1.run.app';
-    fetch(`${baseUrl}/api/dashboard/raw`)
+    fetch(`${baseUrl}/api/allocation/results?page_size=50000`)
       .then(res => res.json())
       .then(json => {
         setData(json.allocations || []);
-        if (json.warehouse_stock_total !== undefined) {
-          setGlobalWhStock(json.warehouse_stock_total);
-        }
         setLoading(false);
       })
       .catch(err => {
@@ -54,19 +50,16 @@ export default function OverallDashboard() {
         uniqueGapsMap[i.gap_id] = i.deficit || 0; 
         uniqueSohMap[i.gap_id] = i.current_soh || 0;
       }
+      if (i.allocated_item_code) {
+        uniqueWhStockMap[i.allocated_item_code] = i.initial_wh_stock || 0;
+      }
     });
     const deficit = Object.values(uniqueGapsMap).reduce((a, b) => a + b, 0);
     const soh = Object.values(uniqueSohMap).reduce((a, b) => a + b, 0);
-    const warehouseStock = globalWhStock; // Use global total since raw data isn't itemized
+    const warehouseStock = Object.values(uniqueWhStockMap).reduce((a, b) => a + b, 0);
     const allocated = items.reduce((a, b) => a + (b.allocated_qty || 0), 0);
-    
-    return {
-      deficit,
-      soh,
-      warehouseStock,
-      allocated,
-      outOfStock: Math.max(0, deficit - allocated)
-    };
+    const outOfStock = Math.max(0, deficit - allocated);
+    return { soh, deficit, allocated, outOfStock, warehouseStock };
   };
 
   const handleDispatchAction = () => {
