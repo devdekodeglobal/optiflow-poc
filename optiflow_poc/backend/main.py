@@ -136,7 +136,32 @@ async def startup_event():
         except Exception as e:
             print(f"Failed to load Sales from GCS: {e}")
             
-    if store.planogram is not None and store.warehouse_stock is not None:
+    strategy_bytes = download_from_gcs("strategy_settings.json")
+    if strategy_bytes:
+        try:
+            strategy_data = json.loads(strategy_bytes.decode("utf-8"))
+            store.strategy_active_categories = strategy_data.get("active_categories", [])
+            store.strategy_store_lists = strategy_data.get("store_lists", {})
+            print("Loaded strategy_settings.json from GCS")
+        except Exception as e:
+            print(f"Failed to load strategy settings from GCS: {e}")
+
+    alloc_bytes = download_from_gcs("allocation_results.json")
+    has_saved_results = False
+    if alloc_bytes:
+        try:
+            alloc_data = json.loads(alloc_bytes.decode("utf-8"))
+            store.last_run_at = alloc_data.get("last_run_at")
+            store.allocations = [AllocationItem(**item) for item in alloc_data.get("results", [])]
+            if "summary" in alloc_data and alloc_data["summary"]:
+                from data_models import AllocationSummary
+                store.summary = AllocationSummary(**alloc_data["summary"])
+            has_saved_results = True
+            print("Loaded allocation_results.json from GCS")
+        except Exception as e:
+            print(f"Failed to load allocation results from GCS: {e}")
+
+    if store.planogram is not None and store.warehouse_stock is not None and not has_saved_results:
         try:
             print("Running initial allocation engine...")
             if not store.strategy_store_lists:
@@ -279,7 +304,20 @@ async def execute_allocation():
     store.summary = summary
     store.last_run_time = elapsed
     store.last_run_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
-    upload_to_gcs("last_run_metadata.json", json.dumps({"last_run_at": store.last_run_at}))
+    upload_to_gcs("last_run_metadata.json", json.dumps({"last_run_at": store.last_run_at}).encode("utf-8"))
+    
+    alloc_data = {
+        "last_run_at": store.last_run_at,
+        "results": [a.model_dump() for a in allocations],
+        "summary": summary.model_dump() if summary else None
+    }
+    upload_to_gcs("allocation_results.json", json.dumps(alloc_data).encode("utf-8"))
+    
+    strategy_data = {
+        "active_categories": store.strategy_active_categories,
+        "store_lists": store.strategy_store_lists
+    }
+    upload_to_gcs("strategy_settings.json", json.dumps(strategy_data).encode("utf-8"))
     
     return {
         "status": "success",
@@ -825,9 +863,16 @@ async def get_strategy():
     }
 
 @app.post("/api/settings/strategy")
-async def update_strategy(req: StrategyUpdate):
-    store.strategy_store_lists = req.category_stores
+async def update_strategy(req: StrategyRequest):
     store.strategy_active_categories = req.active_categories
+    store.strategy_store_lists = req.store_lists
+    
+    strategy_data = {
+        "active_categories": store.strategy_active_categories,
+        "store_lists": store.strategy_store_lists
+    }
+    upload_to_gcs("strategy_settings.json", json.dumps(strategy_data).encode("utf-8"))
+    
     return {"status": "success"}
 
 
@@ -1170,6 +1215,34 @@ async def get_dispatch_by_region(region_name: str):
     }
 
 
+
+@app.get("/api/allocation/status")
+async def allocation_status():
+    return {
+        "has_results": len(store.allocations) > 0,
+        "total_allocations": len(store.allocations),
+        "last_run_at": store.last_run_at
+    }
+
+@app.post("/api/allocation/reset")
+async def allocation_reset():
+    store.allocations = []
+    store.summary = None
+    store.last_run_time = None
+    store.last_run_at = None
+    store.strategy_store_lists = {}
+    store.strategy_active_categories = ["A++", "A+", "A", "B+", "B", "C"]
+    
+    empty_alloc = {"last_run_at": None, "results": [], "summary": None}
+    upload_to_gcs("allocation_results.json", json.dumps(empty_alloc).encode("utf-8"))
+    
+    strategy_data = {
+        "active_categories": store.strategy_active_categories,
+        "store_lists": store.strategy_store_lists
+    }
+    upload_to_gcs("strategy_settings.json", json.dumps(strategy_data).encode("utf-8"))
+    
+    return {"status": "success"}
 
 @app.get("/api/dashboard/all-stores")
 async def dashboard_all_stores():
