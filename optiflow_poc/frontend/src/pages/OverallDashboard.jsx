@@ -29,7 +29,7 @@ export default function OverallDashboard() {
 
   useEffect(() => {
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://optiflow-backend-977593391877.us-central1.run.app';
-    fetch(`${baseUrl}/api/allocation/results?page_size=50000`)
+    fetch(`${baseUrl}/api/dashboard/raw`)
       .then(res => res.json())
       .then(json => {
         setData(json.allocations || []);

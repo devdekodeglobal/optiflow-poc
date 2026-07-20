@@ -297,14 +297,81 @@ export default function AllocationReportPage() {
 
   if (loading && masterData.length === 0) {
     return (
-      <div className="animate-in" style={{ padding: '20px 0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
-          <div className="skeleton skeleton-title" style={{ width: 300 }}></div>
-          <div className="skeleton skeleton-card" style={{ width: 150, height: 40, borderRadius: 8 }}></div>
+      <div className="animate-in" style={{ padding: '4px 0' }}>
+        {/* Header bar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <div>
+            <div className="skeleton skeleton-title" style={{ width: 200, height: 22, marginBottom: 8 }}></div>
+            <div className="skeleton skeleton-text" style={{ width: 160, height: 16, borderRadius: 20 }}></div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <div className="skeleton" style={{ width: 110, height: 32, borderRadius: 8 }}></div>
+            <div className="skeleton" style={{ width: 130, height: 32, borderRadius: 8 }}></div>
+          </div>
         </div>
-        <div className="card" style={{ padding: 20 }}>
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="skeleton skeleton-text" style={{ width: '100%', height: 44, marginBottom: 12, borderRadius: 6 }}></div>
+
+        <div className="card" style={{ padding: 16, marginBottom: 16 }}>
+          {/* Filter bar label + reset */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div className="skeleton" style={{ width: 20, height: 20, borderRadius: 4 }}></div>
+              <div className="skeleton skeleton-text" style={{ width: 60, height: 16 }}></div>
+              <div className="skeleton skeleton-text" style={{ width: 120, height: 14, borderRadius: 20 }}></div>
+            </div>
+            <div className="skeleton skeleton-text" style={{ width: 80, height: 14 }}></div>
+          </div>
+
+          {/* Filter dropdowns row */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr) 1.4fr', gap: 10 }}>
+            {['Zone', 'Region', 'Store Grade', 'Store Name', 'Brand'].map(label => (
+              <div key={label}>
+                <div className="skeleton skeleton-text" style={{ width: 70, height: 12, marginBottom: 6 }}></div>
+                <div className="skeleton" style={{ width: '100%', height: 34, borderRadius: 8 }}></div>
+              </div>
+            ))}
+            <div>
+              <div className="skeleton skeleton-text" style={{ width: 60, height: 12, marginBottom: 6 }}></div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <div className="skeleton" style={{ flex: 1, height: 34, borderRadius: 8 }}></div>
+                <div className="skeleton" style={{ flex: 1, height: 34, borderRadius: 8 }}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Table card */}
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          {/* Column headers */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr repeat(6, 90px)', gap: 0, padding: '10px 16px', borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
+            <div className="skeleton skeleton-text" style={{ width: 80, height: 12 }}></div>
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="skeleton skeleton-text" style={{ width: 60, height: 12, justifySelf: 'end' }}></div>
+            ))}
+          </div>
+
+          {/* Zone rows */}
+          {[...Array(3)].map((_, z) => (
+            <div key={z}>
+              {/* Zone header row */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr repeat(6, 90px)', padding: '10px 16px', background: 'var(--bg-app)', borderBottom: '1px solid var(--border)', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div className="skeleton" style={{ width: 16, height: 16, borderRadius: 3 }}></div>
+                  <div className="skeleton skeleton-text" style={{ width: `${100 + z * 30}px`, height: 14 }}></div>
+                </div>
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="skeleton skeleton-text" style={{ width: 50, height: 13, justifySelf: 'end' }}></div>
+                ))}
+              </div>
+              {/* Region sub-rows */}
+              {[...Array(2)].map((_, r) => (
+                <div key={r} style={{ display: 'grid', gridTemplateColumns: '1fr repeat(6, 90px)', padding: '8px 16px 8px 36px', borderBottom: '1px solid var(--border)', alignItems: 'center' }}>
+                  <div className="skeleton skeleton-text" style={{ width: `${80 + r * 20}px`, height: 13 }}></div>
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="skeleton skeleton-text" style={{ width: 40, height: 12, justifySelf: 'end' }}></div>
+                  ))}
+                </div>
+              ))}
+            </div>
           ))}
         </div>
       </div>

@@ -1,12 +1,45 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import WizardUploadStep from '../components/wizard/WizardUploadStep';
 import WizardStrategyStep from '../components/wizard/WizardStrategyStep';
 import AllocationReportPage from './AllocationReportPage';
 
 export default function AllocationWizardPage() {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(() => {
+    const saved = sessionStorage.getItem('wizard_step');
+    return saved ? parseInt(saved, 10) : 1;
+  });
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isDataUploaded, setIsDataUploaded] = useState(false);
+  const [isDataUploaded, setIsDataUploaded] = useState(() => {
+    return sessionStorage.getItem('wizard_data_uploaded') === 'true';
+  });
+
+  // Keep sessionStorage in sync whenever step changes
+  const goToStep = (s) => {
+    sessionStorage.setItem('wizard_step', s);
+    setStep(s);
+  };
+  const markDataUploaded = () => {
+    sessionStorage.setItem('wizard_data_uploaded', 'true');
+    setIsDataUploaded(true);
+  };
+
+  // On mount: verify with backend in case sessionStorage is stale
+  useEffect(() => {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://optiflow-backend-977593391877.us-central1.run.app';
+    fetch(`${baseUrl}/api/upload/status`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.planogram_uploaded && data?.stock_uploaded) {
+          markDataUploaded();
+          setStep(prev => {
+            const next = prev === 1 ? 2 : prev;
+            sessionStorage.setItem('wizard_step', next);
+            return next;
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <div>
@@ -27,7 +60,7 @@ export default function AllocationWizardPage() {
           <>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center', flex: 1 }}>
           <div 
-            onClick={() => setStep(1)}
+            onClick={() => goToStep(1)}
             style={{ 
             display: 'flex', alignItems: 'center', gap: 8, 
             fontWeight: step >= 1 ? 700 : 500, 
@@ -47,7 +80,7 @@ export default function AllocationWizardPage() {
           </div>
           
           <div 
-            onClick={() => { if (isDataUploaded) setStep(2); }}
+            onClick={() => { if (isDataUploaded) goToStep(2); }}
             style={{ 
             display: 'flex', alignItems: 'center', gap: 8, 
             fontWeight: step >= 2 ? 700 : 500, 
@@ -68,7 +101,7 @@ export default function AllocationWizardPage() {
           </div>
           
           <div 
-            onClick={() => { if (isDataUploaded) setStep(3); }}
+            onClick={() => { if (isDataUploaded) goToStep(3); }}
             style={{ 
             display: 'flex', alignItems: 'center', gap: 8, 
             fontWeight: step >= 3 ? 700 : 500, 
@@ -92,12 +125,12 @@ export default function AllocationWizardPage() {
       </div>
 
       <div style={{ minHeight: 400 }}>
-        {step === 1 && <WizardUploadStep onComplete={() => { setIsDataUploaded(true); setStep(2); }} />}
-        {step === 2 && <WizardStrategyStep onComplete={() => setStep(3)} />}
+        {step === 1 && <WizardUploadStep onComplete={() => { markDataUploaded(); goToStep(2); }} />}
+        {step === 2 && <WizardStrategyStep onComplete={() => goToStep(3)} />}
         {step === 3 && (
           <div className="animate-in">
              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-                <button className="btn btn-ghost" onClick={() => setStep(2)}>← Back to Set Priority</button>
+                <button className="btn btn-ghost" onClick={() => goToStep(2)}>← Back to Set Priority</button>
              </div>
              <AllocationReportPage />
           </div>

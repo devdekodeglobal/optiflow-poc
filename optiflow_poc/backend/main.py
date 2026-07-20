@@ -1171,6 +1171,50 @@ async def get_dispatch_by_region(region_name: str):
 
 
 
+@app.get("/api/dashboard/raw")
+async def dashboard_raw():
+    """
+    Returns raw planogram-level rows for the dashboard.
+    This is independent of allocation priority settings — it reflects ALL uploaded data.
+    Each row represents one planogram line: store × brand × commodity.
+    Fields: store_name, zone, region, store_category, brand_name, commodity, soh, deficit, gap_id
+    """
+    if store.planogram is None:
+        return {"allocations": []}
+
+    from regions import get_store_region, get_store_zone
+    import hashlib
+
+    df = store.planogram.copy()
+    df["soh_num"] = pd.to_numeric(df["soh"], errors="coerce").fillna(0)
+    df["facing_num"] = pd.to_numeric(df["facing"], errors="coerce").fillna(0)
+
+    rows = []
+    for _, row in df.iterrows():
+        soh = float(row["soh_num"])
+        target = float(row["facing_num"])
+        deficit = max(0.0, target - soh)
+        store_name = str(row.get("store_name", ""))
+        brand = str(row.get("brand_name", ""))
+        commodity = str(row.get("commodity", "Frame"))
+        gap_id = hashlib.md5(f"{store_name}|{brand}|{commodity}|{row.get('store_code','')}".encode()).hexdigest()
+        rows.append({
+            "store_name": store_name,
+            "zone": get_store_zone(store_name),
+            "region": get_store_region(store_name),
+            "store_category": str(row.get("store_category", "")),
+            "brand_name": brand,
+            "commodity": commodity,
+            "soh": soh,
+            "deficit": deficit,
+            "gap_id": gap_id,
+            "allocated_qty": 0,
+            "initial_wh_stock": 0,
+        })
+
+    return {"allocations": rows}
+
+
 @app.get("/api/stores")
 async def list_stores():
     if store.planogram is None:

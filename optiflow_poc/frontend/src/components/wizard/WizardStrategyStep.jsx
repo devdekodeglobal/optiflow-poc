@@ -10,7 +10,7 @@ const TIER_COLORS = {
   'C':   { bg: '#9b3e3e', text: '#fff', bar: '25%' },
 };
 
-function PriorityLadder({ categories, onRun, running }) {
+function PriorityLadder({ categories, activeCategories, onToggle, onRun, running }) {
   return (
     <div className="card" style={{ padding: '14px 18px', marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
       <div>
@@ -21,18 +21,29 @@ function PriorityLadder({ categories, onRun, running }) {
         {categories.map((cat, i) => {
           const color = TIER_COLORS[cat] || { bg: 'var(--border)', text: 'var(--text-primary)' };
           const barWidth = TIER_COLORS[cat]?.bar || '30%';
+          const isEnabled = activeCategories.includes(cat);
           return (
             <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                <div style={{
-                  background: color.bg, color: color.text,
-                  borderRadius: 6, padding: '4px 12px',
-                  fontSize: 13, fontWeight: 800,
-                }}>
+                <div
+                  onClick={() => onToggle(cat)}
+                  title={isEnabled ? 'Click to exclude from allocation' : 'Click to include in allocation'}
+                  style={{
+                    background: isEnabled ? color.bg : 'var(--border)',
+                    color: isEnabled ? color.text : 'var(--text-muted)',
+                    borderRadius: 6, padding: '4px 12px',
+                    fontSize: 13, fontWeight: 800,
+                    cursor: 'pointer',
+                    opacity: isEnabled ? 1 : 0.45,
+                    transition: 'all 0.2s',
+                    userSelect: 'none',
+                    textDecoration: isEnabled ? 'none' : 'line-through',
+                  }}
+                >
                   {cat}
                 </div>
                 <div style={{ width: 40, height: 4, background: 'var(--border)', borderRadius: 2, overflow: 'hidden' }}>
-                  <div style={{ width: barWidth, height: '100%', background: color.bg, borderRadius: 2 }} />
+                  <div style={{ width: isEnabled ? barWidth : '0%', height: '100%', background: color.bg, borderRadius: 2, transition: 'width 0.3s' }} />
                 </div>
               </div>
               {i < categories.length - 1 && (
@@ -166,7 +177,7 @@ export default function WizardStrategyStep({ onComplete }) {
   return (
     <div className="animate-in">
       {/* Priority Ladder */}
-      <PriorityLadder categories={categories} onRun={handleRun} running={running} />
+      <PriorityLadder categories={categories} activeCategories={activeCategories} onToggle={toggleCategory} onRun={handleRun} running={running} />
 
       {/* Tab bar */}
       <div style={{ display: 'flex', gap: 0, marginBottom: 0, borderBottom: '2px solid var(--border)' }}>
