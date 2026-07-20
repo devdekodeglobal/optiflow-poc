@@ -129,7 +129,7 @@ export default function DispatchPage() {
         page_size: 50000, 
         dispatch_only: true 
       }).toString();
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://optiflow-backend-977593391877.asia-south1.run.app';
+      const baseUrl = 'https://optiflow-backend-977593391877.asia-south1.run.app';
       const res = await fetch(`${baseUrl}/api/allocation/results?${q}`);
       const json = await res.json();
       
@@ -239,7 +239,7 @@ export default function DispatchPage() {
         group_by: 'zone',
         dispatch_only: true 
       }).toString();
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://optiflow-backend-977593391877.asia-south1.run.app';
+      const baseUrl = 'https://optiflow-backend-977593391877.asia-south1.run.app';
       window.open(`${baseUrl}/api/allocation/results/export?${q}`, '_blank');
     }
   };

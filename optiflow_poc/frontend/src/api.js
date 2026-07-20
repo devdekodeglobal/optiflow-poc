@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://optiflow-backend-977593391877.asia-south1.run.app';
+const API_BASE = 'https://optiflow-backend-977593391877.asia-south1.run.app';
 
 export async function uploadFile(endpoint, file) {
   const formData = new FormData();
