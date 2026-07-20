@@ -104,6 +104,7 @@ export default function DispatchPage() {
   const [data, setData] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [lastRun, setLastRun] = useState(null);
   const [forceExpandAll, setForceExpandAll] = useState(false);
   const [printMenuOpen, setPrintMenuOpen] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
@@ -138,6 +139,15 @@ export default function DispatchPage() {
       }
       
       setMasterData(json.allocations || []);
+      
+      // Also fetch summary to get the last run date
+      const summaryRes = await fetch(`${baseUrl}/api/allocation/summary`);
+      if (summaryRes.ok) {
+        const summaryJson = await summaryRes.json();
+        if (summaryJson.last_run_at) {
+          setLastRun(new Date(summaryJson.last_run_at).toLocaleString());
+        }
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -265,7 +275,19 @@ export default function DispatchPage() {
   }, [filteredData]);
 
   if (loading && masterData.length === 0) {
-    return <div style={{ padding: 40, textAlign: 'center' }}>Loading Dispatch Orders...</div>;
+    return (
+      <div className="animate-in" style={{ padding: '20px 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
+          <div className="skeleton skeleton-title" style={{ width: 300 }}></div>
+          <div className="skeleton skeleton-card" style={{ width: 150, height: 40, borderRadius: 8 }}></div>
+        </div>
+        <div className="card" style={{ padding: 20 }}>
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="skeleton skeleton-text" style={{ width: '100%', height: 44, marginBottom: 12, borderRadius: 6 }}></div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   if (masterData.length === 0 && !Object.values(filters).some(v => v.length > 0)) {
@@ -282,7 +304,12 @@ export default function DispatchPage() {
   return (
     <div onClick={() => { setPrintMenuOpen(false); setExportMenuOpen(false); }}>
       <div className="page-header animate-in print-hide" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 100 }}>
-        <h2>Dispatch Pick-List</h2>
+        <div>
+          <h2>Dispatch Pick-List</h2>
+          <div style={{ marginTop: 8, fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500, display: 'inline-block', background: 'var(--bg-surface)', padding: '4px 12px', borderRadius: 20, border: '1px solid var(--border)' }}>
+            {lastRun ? `Last generated: ${lastRun}` : 'Not yet generated'}
+          </div>
+        </div>
         <div style={{ display: 'flex', gap: 12 }}>
           
           {/* PRINT DROPDOWN */}
@@ -339,8 +366,8 @@ export default function DispatchPage() {
       </div>
 
       <div className="print-only" style={{ display: 'none', marginBottom: 30, textAlign: 'center' }}>
-        <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: 'black', fontFamily: '"Montserrat", sans-serif', textTransform: 'uppercase', letterSpacing: '-0.5px', transform: 'scaleX(0.95)', transformOrigin: 'center' }}>CENTER FOR SIGHT</h1>
-        <p style={{ margin: '4px 0 0 0', fontSize: 14, color: '#666' }}>Dispatch Order Pick-List (Hierarchy Generated: {new Date().toLocaleDateString()})</p>
+        <h2 style={{ margin: 0, fontSize: 24 }}>Dispatch Pick-List</h2>
+        <p style={{ margin: '4px 0 0 0', fontSize: 14, color: '#666' }}>Dispatch Order Pick-List {lastRun ? `(Generated: ${lastRun})` : ''}</p>
         <hr style={{ marginTop: 16, borderColor: '#ccc' }} />
       </div>
 
@@ -348,7 +375,7 @@ export default function DispatchPage() {
         <div style={{ padding: 40, textAlign: 'center' }}>
           <div className="spinner" style={{ width: 32, height: 32, borderWidth: 3 }}></div>
         </div>
-      ) : data.length === 0 && dynamicMetadata.zones.length === 0 ? (
+      ) : masterData.length === 0 ? (
         <div className="empty-state card print-hide">
           <h3>No Dispatch Data</h3>
           <p>Run the allocation engine from the Upload page first to generate picking lists.</p>
@@ -401,18 +428,18 @@ export default function DispatchPage() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Category</label>
-                <div style={{ display: 'flex', background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.05)', borderRadius: 8, padding: 4, flex: 1, alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: 10, flex: 1, alignItems: 'center' }}>
                   {dynamicMetadata.commodities.map(c => {
                     const isSelected = filters.commodity.length === 0 || filters.commodity.includes(c);
                     return (
                       <button 
                         key={c}
                         style={{
-                          flex: 1, padding: '6px 0', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
-                          border: 'none',
-                          background: isSelected ? '#fff' : 'transparent',
-                          color: isSelected ? 'var(--primary-dark)' : 'var(--text-muted)',
-                          boxShadow: isSelected ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                          flex: 1, padding: '8px 0', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
+                          border: isSelected ? '1px solid var(--primary)' : '1px solid var(--border)',
+                          background: isSelected ? 'var(--primary)' : '#fff',
+                          color: isSelected ? '#fff' : 'var(--text-muted)',
+                          boxShadow: isSelected ? '0 2px 8px rgba(59, 35, 123, 0.25)' : 'none'
                         }}
                         onClick={() => {
                           let next = [];

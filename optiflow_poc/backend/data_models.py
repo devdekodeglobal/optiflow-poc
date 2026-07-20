@@ -29,6 +29,7 @@ class UploadStatus(BaseModel):
     sales_rows: int = 0
     stock_rows: int = 0
     warehouse_skus: int = 0
+    last_run_at: Optional[str] = None
 
 
 class AllocationItem(BaseModel):
@@ -84,6 +85,7 @@ class AllocationSummary(BaseModel):
     total_retail_value: float = 0.0
     tier_fulfillment: Dict[str, Dict[str, float]] = Field(default_factory=dict)
     brands: List[Dict] = Field(default_factory=list)
+    last_run_at: Optional[str] = None
 
 
 class AllocationResponse(BaseModel):

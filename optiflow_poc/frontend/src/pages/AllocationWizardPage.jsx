@@ -1,0 +1,108 @@
+import { useState } from 'react';
+import WizardUploadStep from '../components/wizard/WizardUploadStep';
+import WizardStrategyStep from '../components/wizard/WizardStrategyStep';
+import AllocationReportPage from './AllocationReportPage';
+
+export default function AllocationWizardPage() {
+  const [step, setStep] = useState(1);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isDataUploaded, setIsDataUploaded] = useState(false);
+
+  return (
+    <div>
+
+
+      <div className="card animate-in" style={{ marginBottom: 24, padding: isCollapsed ? '8px 24px' : '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        
+        {isCollapsed ? (
+          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+            <span style={{ fontWeight: 600, color: 'var(--text-secondary)', fontSize: 14 }}>
+              Step {step} of 3: {step === 1 ? 'Upload Data' : step === 2 ? 'Set Priority' : 'View Report'}
+            </span>
+            <button className="btn btn-ghost" style={{ padding: '4px 8px', fontSize: 13 }} onClick={() => setIsCollapsed(false)}>
+              Expand Wizard
+            </button>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flex: 1 }}>
+          <div 
+            onClick={() => setStep(1)}
+            style={{ 
+            display: 'flex', alignItems: 'center', gap: 8, 
+            fontWeight: step >= 1 ? 700 : 500, 
+            color: step >= 1 ? 'var(--primary)' : 'var(--text-muted)',
+            cursor: 'pointer'
+          }}>
+            <div style={{ 
+              width: 24, height: 24, borderRadius: '50%', 
+              background: step >= 1 ? 'var(--primary)' : 'var(--border)', 
+              color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13 
+            }}>1</div>
+            Upload Data
+          </div>
+          
+          <div style={{ height: 2, flex: 1, background: 'var(--border)', margin: '0 12px' }}>
+            <div style={{ height: '100%', width: step >= 2 ? '100%' : '0%', background: 'var(--primary)', transition: 'width 0.3s' }} />
+          </div>
+          
+          <div 
+            onClick={() => { if (isDataUploaded) setStep(2); }}
+            style={{ 
+            display: 'flex', alignItems: 'center', gap: 8, 
+            fontWeight: step >= 2 ? 700 : 500, 
+            color: step >= 2 ? 'var(--primary)' : 'var(--text-muted)',
+            cursor: isDataUploaded ? 'pointer' : 'not-allowed',
+            opacity: isDataUploaded || step >= 2 ? 1 : 0.5
+          }}>
+            <div style={{ 
+              width: 24, height: 24, borderRadius: '50%', 
+              background: step >= 2 ? 'var(--primary)' : 'var(--border)', 
+              color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13 
+            }}>2</div>
+            Set Priority
+          </div>
+          
+          <div style={{ height: 2, flex: 1, background: 'var(--border)', margin: '0 12px' }}>
+            <div style={{ height: '100%', width: step >= 3 ? '100%' : '0%', background: 'var(--primary)', transition: 'width 0.3s' }} />
+          </div>
+          
+          <div 
+            onClick={() => { if (isDataUploaded) setStep(3); }}
+            style={{ 
+            display: 'flex', alignItems: 'center', gap: 8, 
+            fontWeight: step >= 3 ? 700 : 500, 
+            color: step >= 3 ? 'var(--primary)' : 'var(--text-muted)',
+            cursor: isDataUploaded ? 'pointer' : 'not-allowed',
+            opacity: isDataUploaded || step >= 3 ? 1 : 0.5
+          }}>
+            <div style={{ 
+              width: 24, height: 24, borderRadius: '50%', 
+              background: step >= 3 ? 'var(--primary)' : 'var(--border)', 
+              color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13 
+            }}>3</div>
+            View Report
+          </div>
+          </div>
+          <button className="btn btn-ghost" style={{ marginLeft: 16, padding: '4px 8px', fontSize: 13 }} onClick={() => setIsCollapsed(true)} title="Collapse wizard header">
+            Collapse
+          </button>
+          </>
+        )}
+      </div>
+
+      <div style={{ minHeight: 400 }}>
+        {step === 1 && <WizardUploadStep onComplete={() => { setIsDataUploaded(true); setStep(2); }} />}
+        {step === 2 && <WizardStrategyStep onComplete={() => setStep(3)} />}
+        {step === 3 && (
+          <div className="animate-in">
+             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+                <button className="btn btn-ghost" onClick={() => setStep(2)}>← Back to Set Priority</button>
+             </div>
+             <AllocationReportPage />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

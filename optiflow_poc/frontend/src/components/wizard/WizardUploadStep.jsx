@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { uploadFile, runAllocation } from '../api';
+import { uploadFile } from '../../api';
 
 const UPLOAD_CONFIGS = [
   {
@@ -38,12 +37,10 @@ const UPLOAD_CONFIGS = [
   },
 ];
 
-export default function UploadPage() {
-  const navigate = useNavigate();
+export default function WizardUploadStep({ onComplete }) {
   const fileInputRefs = useRef({});
   const [uploads, setUploads] = useState({});
   const [uploading, setUploading] = useState({});
-  const [processing, setProcessing] = useState(false);
   const [error, setError] = useState(null);
 
   const handleUpload = useCallback(async (config, file) => {
@@ -66,27 +63,10 @@ export default function UploadPage() {
 
   const allUploaded = uploads.planogram && uploads.stock && uploads.sales;
 
-  const handleRunEngine = async () => {
-    setProcessing(true);
-    setError(null);
-    try {
-      await runAllocation();
-      navigate('/dashboard');
-    } catch (err) {
-      setError(`Allocation failed: ${err.message}`);
-    } finally {
-      setProcessing(false);
-    }
-  };
-
   return (
-    <div>
-      <div className="page-header animate-in">
-        <h2>Upload Data</h2>
-      </div>
-
+    <div className="animate-in">
       {error && (
-        <div className="card animate-in" style={{
+        <div className="card" style={{
           marginBottom: 20,
           borderColor: 'var(--danger)',
           background: 'var(--danger-bg)',
@@ -136,24 +116,21 @@ export default function UploadPage() {
         })}
       </div>
 
-      {processing ? (
-        <div className="card animate-in" style={{ textAlign: 'center', padding: '32px' }}>
-          <div className="spinner" style={{ margin: '0 auto' }}></div>
-          <p style={{ marginTop: 16 }}>Running allocation engine across all stores...</p>
-        </div>
-      ) : (
-        <div className="card animate-in" style={{ textAlign: 'center', padding: '32px' }}>
-          <h3 style={{ marginBottom: 24, fontSize: 18 }}>Distribute Stock</h3>
-          <button 
-            className="btn btn-primary" 
-            style={{ width: '100%', padding: '16px', fontSize: 16 }}
-            disabled={!allUploaded}
-            onClick={handleRunEngine}
-          >
-            Generate Allocation Report →
-          </button>
-        </div>
-      )}
+      <div className="card animate-in" style={{ textAlign: 'center', padding: '32px' }}>
+        <h3 style={{ marginBottom: 24, fontSize: 18 }}>Ready to set priority?</h3>
+        <button 
+          className="btn btn-primary" 
+          style={{ 
+            width: '100%', maxWidth: 350, margin: '0 auto', 
+            padding: '14px 24px', fontSize: 16, fontWeight: 700,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10
+          }}
+          disabled={!allUploaded}
+          onClick={onComplete}
+        >
+          Next: Set Priority <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+        </button>
+      </div>
     </div>
   );
 }

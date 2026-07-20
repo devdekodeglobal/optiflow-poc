@@ -115,7 +115,7 @@ function CollapsibleRow({ node, depth = 0, forceExpandAll }) {
 }
 
 
-export default function DashboardPage() {
+export default function AllocationReportPage() {
   const navigate = useNavigate();
   const [masterData, setMasterData] = useState([]);
 
@@ -133,6 +133,7 @@ export default function DashboardPage() {
   });
 
   const [loading, setLoading] = useState(true);
+  const [lastRun, setLastRun] = useState(null);
   
   const fetchData = async () => {
     setLoading(true);
@@ -146,8 +147,15 @@ export default function DashboardPage() {
         if (res.status === 404) setMasterData([]);
         return;
       }
-      
       setMasterData(json.allocations || []);
+      
+      const summaryRes = await fetch(`${baseUrl}/api/allocation/summary`);
+      if (summaryRes.ok) {
+        const summaryJson = await summaryRes.json();
+        if (summaryJson.last_run_at) {
+          setLastRun(new Date(summaryJson.last_run_at).toLocaleString());
+        }
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -288,10 +296,22 @@ export default function DashboardPage() {
   }, [filteredData]);
 
   if (loading && masterData.length === 0) {
-    return <div style={{ padding: 40, textAlign: 'center' }}>Loading Report...</div>;
+    return (
+      <div className="animate-in" style={{ padding: '20px 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
+          <div className="skeleton skeleton-title" style={{ width: 300 }}></div>
+          <div className="skeleton skeleton-card" style={{ width: 150, height: 40, borderRadius: 8 }}></div>
+        </div>
+        <div className="card" style={{ padding: 20 }}>
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="skeleton skeleton-text" style={{ width: '100%', height: 44, marginBottom: 12, borderRadius: 6 }}></div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
-  if (masterData.length === 0 && !Object.values(filters).some(v => v.length > 0)) {
+  if (masterData.length === 0) {
     return (
       <div style={{ padding: 40, textAlign: 'center', marginTop: 100 }}>
         <div className="card animate-in" style={{ display: 'inline-block', padding: 40 }}>
@@ -306,23 +326,19 @@ export default function DashboardPage() {
     <div className="report-container" onClick={() => { setPrintMenuOpen(false); setExportMenuOpen(false); }}>
       
       {/* OFFICIAL PRINT HEADER (ONLY VISIBLE ON PRINT) */}
-      <div className="print-only" style={{ marginBottom: 30, paddingBottom: 20, borderBottom: '2px solid #000' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 10 }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>Center For Sight</h1>
-            <h3 style={{ margin: 0, fontSize: 16, color: '#444', fontWeight: 500 }}>OptiFlow - Heuristic Allocation System</h3>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <p style={{ margin: 0, fontSize: 12, fontWeight: 600 }}>GENERATED ON: {new Date().toLocaleString()}</p>
-          </div>
-        </div>
-        <p style={{ margin: 0, fontSize: 14 }}>
-          <strong>Report Filters:</strong> {Object.entries(filters).filter(([k,v]) => v).map(([k,v]) => `${k.toUpperCase()}: ${v}`).join(' | ') || 'FULL REPORT (UNFILTERED)'}
-        </p>
+      <div className="print-only" style={{ display: 'none', marginBottom: 30, textAlign: 'center' }}>
+        <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: 'black', fontFamily: '"Montserrat", sans-serif', textTransform: 'uppercase', letterSpacing: '-0.5px', transform: 'scaleX(0.95)', transformOrigin: 'center' }}>CENTER FOR SIGHT</h1>
+        <p style={{ margin: '4px 0 0 0', fontSize: 14, color: '#666' }}>Allocation Report {lastRun ? `(Generated: ${lastRun})` : ''}</p>
+        <hr style={{ marginTop: 16, borderColor: '#ccc' }} />
       </div>
 
-      <div className="page-header animate-in print-hide" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 9999 }}>
-        <h2>Allocation Report</h2>
+      <div className="page-header animate-in print-hide" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 100 }}>
+        <div>
+          <h2>Allocation Report</h2>
+          <div style={{ marginTop: 8, fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500, display: 'inline-block', background: 'var(--bg-surface)', padding: '4px 12px', borderRadius: 20, border: '1px solid var(--border)' }}>
+            {lastRun ? `Last generated: ${lastRun}` : 'Not yet generated'}
+          </div>
+        </div>
         <div style={{ display: 'flex', gap: 12 }}>
           
           {/* PRINT DROPDOWN */}
@@ -418,18 +434,18 @@ export default function DashboardPage() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Category</label>
-                <div style={{ display: 'flex', background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.05)', borderRadius: 8, padding: 4, flex: 1, alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: 10, flex: 1, alignItems: 'center' }}>
                   {dynamicMetadata.commodities.map(c => {
                     const isSelected = filters.commodity.length === 0 || filters.commodity.includes(c);
                     return (
                       <button 
                         key={c}
                         style={{
-                          flex: 1, padding: '6px 0', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
-                          border: 'none',
-                          background: isSelected ? '#fff' : 'transparent',
-                          color: isSelected ? 'var(--primary-dark)' : 'var(--text-muted)',
-                          boxShadow: isSelected ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                          flex: 1, padding: '8px 0', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
+                          border: isSelected ? '1px solid var(--primary)' : '1px solid var(--border)',
+                          background: isSelected ? 'var(--primary)' : '#fff',
+                          color: isSelected ? '#fff' : 'var(--text-muted)',
+                          boxShadow: isSelected ? '0 2px 8px rgba(59, 35, 123, 0.25)' : 'none'
                         }}
                         onClick={() => {
                           let next = [];

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getAllocationSummary, getStores, getBrands, getRegions } from '../api';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, LabelList } from 'recharts';
 
-export default function AllocationDashboardPage() {
+export default function AllocationSummaryPage() {
   const navigate = useNavigate();
   const [summary, setSummary] = useState(null);
   const [storeList, setStoreList] = useState([]);

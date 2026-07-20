@@ -15,6 +15,8 @@ import pandas as pd
 import io
 import time
 import csv
+import json
+import datetime
 from fastapi.responses import StreamingResponse
 import openpyxl
 from openpyxl.styles import PatternFill, Font, Alignment
@@ -64,6 +66,7 @@ class DataStore:
         self.allocations: List[AllocationItem] = []
         self.summary: Optional[AllocationSummary] = None
         self.last_run_time: Optional[float] = None
+        self.last_run_at: Optional[str] = None
 
 store = DataStore()
 
@@ -92,6 +95,15 @@ def upload_to_gcs(filename, contents):
 @app.on_event("startup")
 async def startup_event():
     print("Downloading data from GCS...")
+    metadata_bytes = download_from_gcs("last_run_metadata.json")
+    if metadata_bytes:
+        try:
+            metadata = json.loads(metadata_bytes.decode("utf-8"))
+            store.last_run_at = metadata.get("last_run_at")
+            print("Loaded last_run_metadata.json from GCS")
+        except Exception as e:
+            print(f"Failed to load metadata from GCS: {e}")
+
     planogram_bytes = download_from_gcs("Planogram.csv")
     if planogram_bytes:
         try:
@@ -227,7 +239,8 @@ async def upload_status():
         planogram_rows=len(store.planogram) if store.planogram is not None else 0,
         sales_rows=len(store.sales_raw) if store.sales_raw is not None else 0,
         stock_rows=len(store.stock_raw) if store.stock_raw is not None else 0,
-        warehouse_skus=store.warehouse_stock["item_code"].nunique() if store.warehouse_stock is not None else 0
+        warehouse_skus=store.warehouse_stock["item_code"].nunique() if store.warehouse_stock is not None else 0,
+        last_run_at=store.last_run_at
     )
 
 
@@ -265,6 +278,8 @@ async def execute_allocation():
     store.allocations = allocations
     store.summary = summary
     store.last_run_time = elapsed
+    store.last_run_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    upload_to_gcs("last_run_metadata.json", json.dumps({"last_run_at": store.last_run_at}))
     
     return {
         "status": "success",
@@ -820,10 +835,14 @@ async def update_strategy(req: StrategyUpdate):
 async def get_summary():
     if store.summary is None:
         return {"status": "no_data", "summary": None}
+        
+    store.summary.last_run_at = store.last_run_at
+    
     return {
         "status": "ready",
         "summary": store.summary.model_dump(),
-        "processing_time": store.last_run_time
+        "processing_time": store.last_run_time,
+        "last_run_at": store.last_run_at
     }
 
 

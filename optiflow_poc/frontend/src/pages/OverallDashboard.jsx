@@ -25,7 +25,7 @@ export default function OverallDashboard() {
   const [selectedRegion, setSelectedRegion] = useState(null);
   const [selectedStore, setSelectedStore] = useState(null);
   const [selectedBrand, setSelectedBrand] = useState(null);
-  const [metricFilter, setMetricFilter] = useState(null); // 'Fulfilled', 'Out of Stock', 'Stock in Hand', 'Planogram Deficit'
+
 
   useEffect(() => {
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://optiflow-backend-977593391877.us-central1.run.app';
@@ -138,10 +138,10 @@ export default function OverallDashboard() {
         
         <div className="summary-card" style={{ padding: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-            <div style={{ background: 'rgba(252, 196, 25, 0.15)', padding: '10px', borderRadius: '10px', color: '#fcc419', display: 'flex' }}>
-              <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+            <div style={{ background: 'rgba(245, 159, 0, 0.15)', padding: '10px', borderRadius: '10px', color: '#f59f00', display: 'flex' }}>
+              <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
             </div>
-            <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5 }}>TOTAL PLANOGRAM</h4>
+            <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5 }}>PLANOGRAM TARGET</h4>
           </div>
           <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--text-primary)' }}>{(summary.soh + summary.deficit).toLocaleString()}</div>
         </div>
@@ -161,18 +161,8 @@ export default function OverallDashboard() {
       { name: 'Planogram Deficit', value: summary.deficit, color: COLORS.deficit }
     ];
 
-    const handlePieClick = (data) => {
-      if (metricFilter === data.name) {
-        setMetricFilter(null); // Toggle off
-      } else {
-        setMetricFilter(data.name); // Toggle on
-      }
-    };
-
     const getPieStyle = (name) => ({
-      cursor: 'pointer',
-      opacity: metricFilter === name ? 1 : (metricFilter ? 0.3 : 1),
-      stroke: metricFilter === name ? 'var(--bg-card)' : 'none',
+      stroke: 'none',
       strokeWidth: 2
     });
 
@@ -182,7 +172,7 @@ export default function OverallDashboard() {
       const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
       if (percent < 0.05) return null;
       return (
-        <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" style={{ fontSize: 13, fontWeight: 700, pointerEvents: 'none' }}>
+        <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" style={{ fontSize: 13, fontWeight: 700, textShadow: '0px 1px 3px rgba(0,0,0,0.6)', pointerEvents: 'none' }}>
           {`${(percent * 100).toFixed(0)}%`}
         </text>
       );
@@ -197,11 +187,10 @@ export default function OverallDashboard() {
     return (
       <div className="card animate-in" style={{ padding: 24, textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column' }}>
         <h4>{leftTitle}</h4>
-        <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Click a slice to filter the drill-down chart below.</p>
         <div style={{ width: '100%', flex: 1, minHeight: 400 }}>
           <ResponsiveContainer>
             <PieChart>
-              <Pie data={stockData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={80} outerRadius={110} paddingAngle={5} onClick={handlePieClick} label={renderCustomizedLabel} labelLine={false}>
+              <Pie data={stockData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={70} outerRadius={120} paddingAngle={5} label={renderCustomizedLabel} labelLine={false}>
                 {stockData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} style={getPieStyle(entry.name)} />)}
               </Pie>
               <Tooltip formatter={(val) => val.toLocaleString()} />
@@ -228,6 +217,8 @@ export default function OverallDashboard() {
       return {
         name: key,
         'Stock Ratio (%)': Math.round(stockRatio),
+        planogram: target,
+        stockInHand: s.soh,
         fill: getColor(stockRatio)
       };
     });
@@ -253,7 +244,34 @@ export default function OverallDashboard() {
               <CartesianGrid strokeDasharray="3 3" opacity={0.15} vertical={false} />
               <XAxis dataKey="name" angle={-45} textAnchor="end" height={120} tick={{ fontSize: 12, fontWeight: 500, fill: 'var(--text-secondary)' }} axisLine={false} tickLine={false} />
               <YAxis domain={[0, 100]} tick={{ fontSize: 12, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
-              <Tooltip cursor={{ fill: 'rgba(0,0,0,0.03)' }} contentStyle={{ borderRadius: 8, border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 8px 24px rgba(0,0,0,0.08)' }} />
+              <Tooltip 
+                cursor={{ fill: 'rgba(0,0,0,0.03)' }} 
+                content={({ active, payload, label }) => {
+                  if (active && payload && payload.length) {
+                    const data = payload[0].payload;
+                    return (
+                      <div style={{ backgroundColor: '#fff', padding: '12px 16px', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.08)' }}>
+                        <p style={{ margin: '0 0 8px 0', fontWeight: 700, fontSize: 14, color: 'var(--primary-dark)' }}>{label}</p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 13, color: 'var(--text-secondary)' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+                            <span>Stock Ratio:</span>
+                            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{data['Stock Ratio (%)']}%</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+                            <span>Planogram:</span>
+                            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{data.planogram.toLocaleString()}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+                            <span>Stock in Hand:</span>
+                            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{data.stockInHand.toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                }} 
+              />
               <Bar dataKey="Stock Ratio (%)" cursor="pointer" onClick={(data) => onClickHandler(data.name)} minPointSize={5} radius={[6, 6, 0, 0]} background={{ fill: 'rgba(0,0,0,0.02)', radius: [6, 6, 0, 0] }}>
                 {barData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.fill} style={{ transition: 'opacity 0.2s', outline: 'none' }} onMouseEnter={(e) => { e.target.style.opacity = 0.8; }} onMouseLeave={(e) => { e.target.style.opacity = 1; }} />
@@ -272,8 +290,23 @@ export default function OverallDashboard() {
 
   if (loading) {
     return (
-      <div style={{ padding: 40, textAlign: 'center' }}>
-        <div className="spinner" style={{ width: 32, height: 32, borderWidth: 3 }}></div>
+      <div className="animate-in">
+        <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between' }}>
+          <div>
+            <div className="skeleton skeleton-title"></div>
+            <div className="skeleton skeleton-text" style={{ width: '200px' }}></div>
+          </div>
+        </div>
+        <div className="summary-grid">
+          <div className="skeleton skeleton-card"></div>
+          <div className="skeleton skeleton-card"></div>
+          <div className="skeleton skeleton-card"></div>
+          <div className="skeleton skeleton-card"></div>
+        </div>
+        <div style={{ display: 'flex', gap: 24, marginTop: 24 }}>
+          <div className="skeleton skeleton-chart" style={{ flex: 1 }}></div>
+          <div className="skeleton skeleton-chart" style={{ flex: 1 }}></div>
+        </div>
       </div>
     );
   }
@@ -306,29 +339,21 @@ export default function OverallDashboard() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8 }}>
             <h2 style={{ margin: 0, fontSize: 32, fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
-              Inventory Dashboard
+              Dashboard
             </h2>
-            {isDanger && (
-              <div className="animate-in" style={{ background: 'rgba(255, 107, 107, 0.1)', border: '1px solid rgba(255, 107, 107, 0.2)', borderRadius: 20, padding: '4px 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <svg width="14" height="14" fill="none" stroke="#ff6b6b" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#ff6b6b' }}>Low Inventory Alert ({Math.round(healthPercent)}%)</span>
-              </div>
-            )}
           </div>
           
           <div className="breadcrumbs-path" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 500, color: 'var(--text-muted)' }}>
-            <span style={{ cursor: 'pointer', color: level === 'network' ? 'var(--text-primary)' : 'inherit', transition: 'color 0.2s', fontWeight: level === 'network' ? 700 : 500 }} onClick={() => { setLevel('network'); setSelectedZone(null); setSelectedRegion(null); setSelectedStore(null); setSelectedBrand(null); setMetricFilter(null); }}>Global Network</span>
+            <span style={{ cursor: 'pointer', color: level === 'network' ? 'var(--text-primary)' : 'inherit', transition: 'color 0.2s', fontWeight: level === 'network' ? 700 : 500 }} onClick={() => { setLevel('network'); setSelectedZone(null); setSelectedRegion(null); setSelectedStore(null); setSelectedBrand(null); }}>Global Network</span>
             
             {selectedZone && <>
               <span>›</span>
-              <span style={{ cursor: 'pointer', color: level === 'zones' ? 'var(--text-primary)' : 'inherit', transition: 'color 0.2s', fontWeight: level === 'zones' ? 700 : 500 }} onClick={() => { setLevel('zones'); setSelectedRegion(null); setSelectedStore(null); setSelectedBrand(null); setMetricFilter(null); }}>{selectedZone}</span>
+              <span style={{ cursor: 'pointer', color: level === 'zones' ? 'var(--text-primary)' : 'inherit', transition: 'color 0.2s', fontWeight: level === 'zones' ? 700 : 500 }} onClick={() => { setLevel('zones'); setSelectedRegion(null); setSelectedStore(null); setSelectedBrand(null); }}>{selectedZone}</span>
             </>}
             
             {selectedRegion && <>
               <span>›</span>
-              <span style={{ cursor: 'pointer', color: level === 'regions' ? 'var(--text-primary)' : 'inherit', transition: 'color 0.2s', fontWeight: level === 'regions' ? 700 : 500 }} onClick={() => { setLevel('regions'); setSelectedStore(null); setSelectedBrand(null); setMetricFilter(null); }}>{selectedRegion}</span>
+              <span style={{ cursor: 'pointer', color: level === 'regions' ? 'var(--text-primary)' : 'inherit', transition: 'color 0.2s', fontWeight: level === 'regions' ? 700 : 500 }} onClick={() => { setLevel('regions'); setSelectedStore(null); setSelectedBrand(null); }}>{selectedRegion}</span>
             </>}
             
             {selectedStore && <>
