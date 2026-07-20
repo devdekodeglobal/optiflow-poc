@@ -418,17 +418,18 @@ export default function DashboardPage() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Category</label>
-                <div style={{ display: 'flex', gap: 8, flex: 1, alignItems: 'center' }}>
+                <div style={{ display: 'flex', background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.05)', borderRadius: 8, padding: 4, flex: 1, alignItems: 'center' }}>
                   {dynamicMetadata.commodities.map(c => {
                     const isSelected = filters.commodity.length === 0 || filters.commodity.includes(c);
                     return (
                       <button 
                         key={c}
                         style={{
-                          flex: 1, padding: '8px 4px', borderRadius: 6, fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s',
-                          border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border)',
-                          background: isSelected ? 'var(--accent)' : '#fff',
-                          color: isSelected ? '#fff' : 'var(--text-secondary)'
+                          flex: 1, padding: '6px 0', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
+                          border: 'none',
+                          background: isSelected ? '#fff' : 'transparent',
+                          color: isSelected ? 'var(--primary-dark)' : 'var(--text-muted)',
+                          boxShadow: isSelected ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
                         }}
                         onClick={() => {
                           let next = [];
