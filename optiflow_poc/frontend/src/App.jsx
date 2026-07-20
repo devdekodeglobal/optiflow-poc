@@ -43,22 +43,22 @@ function App() {
           </div>
 
           <nav className="sidebar-nav">
-            {user.role === 'admin' && (
-              <NavLink to="/" end className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                </svg>
-                <span>Upload Data</span>
-              </NavLink>
-            )}
-
-            <NavLink to="/overall-dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+            <NavLink to="/" end className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
               </svg>
               <span>Dashboard</span>
             </NavLink>
+
+            {user.role === 'admin' && (
+              <NavLink to="/upload" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                <span>Upload Data</span>
+              </NavLink>
+            )}
 
             <NavLink to="/dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -166,8 +166,9 @@ function App() {
         {/* Main Content */}
         <main className={`main-content ${sidebarCollapsed ? 'collapsed' : ''}`}>
           <Routes>
-            <Route path="/" element={user.role === 'admin' ? <UploadPage /> : <Navigate to="/overall-dashboard" replace />} />
-            <Route path="/overall-dashboard" element={<OverallDashboard />} />
+            <Route path="/" element={<OverallDashboard />} />
+            <Route path="/overall-dashboard" element={<Navigate to="/" replace />} />
+            <Route path="/upload" element={user.role === 'admin' ? <UploadPage /> : <Navigate to="/" replace />} />
             <Route path="/allocation-dashboard" element={<AllocationDashboardPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
