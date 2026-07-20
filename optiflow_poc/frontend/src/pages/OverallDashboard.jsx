@@ -134,7 +134,7 @@ export default function OverallDashboard() {
             <div style={{ background: 'rgba(32, 201, 151, 0.15)', padding: '10px', borderRadius: '10px', color: '#20c997', display: 'flex' }}>
               <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
             </div>
-            <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5 }}>STOCK IN STORES</h4>
+            <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5 }}>STOCK IN STORE</h4>
           </div>
           <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--text-primary)' }}>{summary.soh.toLocaleString()}</div>
         </div>
@@ -144,7 +144,7 @@ export default function OverallDashboard() {
             <div style={{ background: 'rgba(255, 107, 107, 0.15)', padding: '10px', borderRadius: '10px', color: '#ff6b6b', display: 'flex' }}>
               <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>
             </div>
-            <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5 }}>DEFICIT IN STORES</h4>
+            <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5 }}>TOTAL DEFICIT</h4>
           </div>
           <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--text-primary)' }}>{summary.deficit.toLocaleString()}</div>
         </div>
@@ -181,11 +181,11 @@ export default function OverallDashboard() {
       );
     };
 
-    let leftTitle = 'Planogram vs National Stock %';
-    if (level === 'zones') leftTitle = `Planogram vs ${selectedZone} Stock %`;
-    else if (level === 'regions') leftTitle = `Planogram vs ${selectedRegion} Stock %`;
-    else if (level === 'stores') leftTitle = `Planogram vs ${selectedStore} Stock %`;
-    else if (level === 'brands') leftTitle = `Planogram vs ${selectedBrand} Stock %`;
+    let leftTitle = 'Planogram vs National Stock';
+    if (level === 'zones') leftTitle = `Planogram vs ${selectedZone} Stock`;
+    else if (level === 'regions') leftTitle = `Planogram vs ${selectedRegion} Stock`;
+    else if (level === 'stores') leftTitle = `Planogram vs ${selectedStore} Stock`;
+    else if (level === 'brands') leftTitle = `Planogram vs ${selectedBrand} Stock`;
 
     return (
       <div className="card animate-in" style={{ padding: 24, textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column' }}>
