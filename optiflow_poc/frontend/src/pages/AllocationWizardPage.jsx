@@ -175,9 +175,6 @@ export default function AllocationWizardPage() {
         {step === 2 && <WizardStrategyStep onComplete={() => goToStep(3)} />}
         {step === 3 && (
           <div className="animate-in">
-             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-                <button className="btn btn-ghost" onClick={() => goToStep(2)}>← Back to Set Priority</button>
-             </div>
              <AllocationReportPage />
           </div>
         )}
