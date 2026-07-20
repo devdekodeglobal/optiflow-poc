@@ -193,7 +193,7 @@ export default function OverallDashboard() {
         <div style={{ width: '100%', flex: 1, minHeight: 400 }}>
           <ResponsiveContainer>
             <PieChart>
-              <Pie data={stockData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={70} outerRadius={120} paddingAngle={5} label={renderCustomizedLabel} labelLine={false}>
+              <Pie data={stockData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={70} outerRadius={120} paddingAngle={0} label={renderCustomizedLabel} labelLine={false}>
                 {stockData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} style={getPieStyle(entry.name)} />)}
               </Pie>
               <Tooltip formatter={(val) => val.toLocaleString()} />
