@@ -103,83 +103,99 @@ def delete_from_gcs(filename):
     except Exception as e:
         logging.error(f"Error deleting {filename} from GCS: {e}")
 
+
+import concurrent.futures
+
 @app.on_event("startup")
 async def startup_event():
-    print("Downloading data from GCS...")
-    metadata_bytes = download_from_gcs("last_run_metadata.json")
-    if metadata_bytes:
-        try:
-            metadata = json.loads(metadata_bytes.decode("utf-8"))
-            store.last_run_at = metadata.get("last_run_at")
-            print("Loaded last_run_metadata.json from GCS")
-        except Exception as e:
-            print(f"Failed to load metadata from GCS: {e}")
+    print("Downloading data from GCS in parallel...")
+    files_to_download = [
+        "last_run_metadata.json",
+        "Planogram.csv",
+        "Stock data.csv",
+        "Sales Data.csv",
+        "strategy_settings.json",
+        "allocation_results.json",
+        "dashboard_cache.json"
+    ]
+    
+    downloaded_data = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=7) as executor:
+        future_to_file = {executor.submit(download_from_gcs, f): f for f in files_to_download}
+        for future in concurrent.futures.as_completed(future_to_file):
+            filename = future_to_file[future]
+            try:
+                downloaded_data[filename] = future.result()
+                print(f"Downloaded {filename}")
+            except Exception as e:
+                print(f"Failed to download {filename}: {e}")
 
-    planogram_bytes = download_from_gcs("Planogram.csv")
-    if planogram_bytes:
+    # Process metadata
+    if downloaded_data.get("last_run_metadata.json"):
         try:
-            df = pd.read_csv(io.BytesIO(planogram_bytes), encoding="utf-8", on_bad_lines="skip")
-            if "Unnamed: 0" in df.columns or "Unnamed: 1" in df.columns:
-                df = pd.read_csv(io.BytesIO(planogram_bytes), encoding="utf-8", header=1, on_bad_lines="skip")
-            store.planogram = parse_planogram(df.copy())
-            print("Loaded Planogram.csv from GCS")
+            metadata = json.loads(downloaded_data["last_run_metadata.json"].decode("utf-8"))
+            store.last_run_at = metadata.get("last_run_at")
         except Exception as e:
-            print(f"Failed to load Planogram from GCS: {e}")
-            
-    stock_bytes = download_from_gcs("Stock data.csv")
-    if stock_bytes:
+            print(f"Failed to load metadata: {e}")
+
+    # Process planogram
+    if downloaded_data.get("Planogram.csv"):
         try:
-            df = pd.read_csv(io.BytesIO(stock_bytes), encoding="utf-8", on_bad_lines="skip")
+            df = pd.read_csv(io.BytesIO(downloaded_data["Planogram.csv"]), encoding="utf-8", on_bad_lines="skip")
+            if "Unnamed: 0" in df.columns or "Unnamed: 1" in df.columns:
+                df = pd.read_csv(io.BytesIO(downloaded_data["Planogram.csv"]), encoding="utf-8", header=1, on_bad_lines="skip")
+            store.planogram = parse_planogram(df.copy())
+        except Exception as e:
+            print(f"Failed to load Planogram: {e}")
+            
+    # Process stock
+    if downloaded_data.get("Stock data.csv"):
+        try:
+            df = pd.read_csv(io.BytesIO(downloaded_data["Stock data.csv"]), encoding="utf-8", on_bad_lines="skip")
             store.stock_raw = df
             wh_stock, st_stock = parse_stock(df.copy())
             store.warehouse_stock = wh_stock
             store.store_stock = st_stock
-            print("Loaded Stock data.csv from GCS")
         except Exception as e:
-            print(f"Failed to load Stock from GCS: {e}")
+            print(f"Failed to load Stock: {e}")
             
-    sales_bytes = download_from_gcs("Sales Data.csv")
-    if sales_bytes:
+    # Process sales
+    if downloaded_data.get("Sales Data.csv"):
         try:
-            df = pd.read_csv(io.BytesIO(sales_bytes), encoding="utf-8", on_bad_lines="skip")
+            df = pd.read_csv(io.BytesIO(downloaded_data["Sales Data.csv"]), encoding="utf-8", on_bad_lines="skip")
             store.sales_raw = df
-            print("Loaded Sales Data.csv from GCS")
         except Exception as e:
-            print(f"Failed to load Sales from GCS: {e}")
+            print(f"Failed to load Sales: {e}")
             
-    strategy_bytes = download_from_gcs("strategy_settings.json")
-    if strategy_bytes:
+    # Process strategy
+    if downloaded_data.get("strategy_settings.json"):
         try:
-            strategy_data = json.loads(strategy_bytes.decode("utf-8"))
+            strategy_data = json.loads(downloaded_data["strategy_settings.json"].decode("utf-8"))
             store.strategy_active_categories = strategy_data.get("active_categories", [])
             store.strategy_store_lists = strategy_data.get("store_lists", {})
-            print("Loaded strategy_settings.json from GCS")
         except Exception as e:
-            print(f"Failed to load strategy settings from GCS: {e}")
+            print(f"Failed to load strategy: {e}")
 
-    alloc_bytes = download_from_gcs("allocation_results.json")
+    # Process allocations
     has_saved_results = False
-    if alloc_bytes:
+    if downloaded_data.get("allocation_results.json"):
         try:
-            alloc_data = json.loads(alloc_bytes.decode("utf-8"))
+            alloc_data = json.loads(downloaded_data["allocation_results.json"].decode("utf-8"))
             store.last_run_at = alloc_data.get("last_run_at")
             store.allocations = [AllocationItem(**item) for item in alloc_data.get("results", [])]
             if "summary" in alloc_data and alloc_data["summary"]:
                 from data_models import AllocationSummary
                 store.summary = AllocationSummary(**alloc_data["summary"])
             has_saved_results = True
-            print("Loaded allocation_results.json from GCS")
         except Exception as e:
-            print(f"Failed to load allocation results from GCS: {e}")
+            print(f"Failed to load allocation results: {e}")
 
-    # Load pre-computed dashboard cache from GCS (avoids 10s recompute on cold start)
-    cache_bytes = download_from_gcs("dashboard_cache.json")
-    if cache_bytes:
+    # Process cache
+    if downloaded_data.get("dashboard_cache.json"):
         try:
-            store.dashboard_all_stores_cache = json.loads(cache_bytes.decode("utf-8"))
-            print("Loaded dashboard_cache.json from GCS")
+            store.dashboard_all_stores_cache = json.loads(downloaded_data["dashboard_cache.json"].decode("utf-8"))
         except Exception as e:
-            print(f"Failed to load dashboard cache from GCS: {e}")
+            print(f"Failed to load dashboard cache: {e}")
 
     if store.planogram is not None and store.warehouse_stock is not None and not has_saved_results:
         try:
