@@ -14,11 +14,18 @@ export default function AllocationWizardPage() {
   const [isDataUploaded, setIsDataUploaded] = useState(() => {
     return sessionStorage.getItem('wizard_data_uploaded') === 'true';
   });
+  const [hasResults, setHasResults] = useState(() => {
+    return sessionStorage.getItem('wizard_has_results') === 'true';
+  });
   const [showConfirm, setShowConfirm] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
 
   const goToStep = (s) => {
     sessionStorage.setItem('wizard_step', s);
+    if (s === 3) {
+      sessionStorage.setItem('wizard_has_results', 'true');
+      setHasResults(true);
+    }
     setStep(s);
   };
   const markDataUploaded = () => {
@@ -40,10 +47,14 @@ export default function AllocationWizardPage() {
       const dataUploaded = uploadData?.planogram_uploaded && uploadData?.stock_uploaded;
       if (dataUploaded) markDataUploaded();
 
-      // If backend has no results, clear wizard state so old report isn't shown
-      if (!allocData?.has_results) {
+      if (allocData?.has_results) {
+        setHasResults(true);
+        sessionStorage.setItem('wizard_has_results', 'true');
+      } else {
         sessionStorage.removeItem('wizard_step');
         sessionStorage.removeItem('wizard_data_uploaded');
+        sessionStorage.removeItem('wizard_has_results');
+        setHasResults(false);
       }
       
       setStep(prev => {
@@ -70,7 +81,9 @@ export default function AllocationWizardPage() {
     }
     sessionStorage.removeItem('wizard_step');
     sessionStorage.removeItem('wizard_data_uploaded');
+    sessionStorage.removeItem('wizard_has_results');
     setIsDataUploaded(false);
+    setHasResults(false);
     setStep(1);
     setShowConfirm(false);
     setIsResetting(false);
@@ -153,13 +166,13 @@ export default function AllocationWizardPage() {
           </div>
           
           <div 
-            onClick={() => { if (isDataUploaded) goToStep(3); }}
+            onClick={() => { if (hasResults) goToStep(3); }}
             style={{ 
             display: 'flex', alignItems: 'center', gap: 8, 
             fontWeight: step >= 3 ? 700 : 500, 
             color: step >= 3 ? 'var(--primary)' : 'var(--text-muted)',
-            cursor: isDataUploaded ? 'pointer' : 'not-allowed',
-            opacity: isDataUploaded || step >= 3 ? 1 : 0.5
+            cursor: hasResults ? 'pointer' : 'not-allowed',
+            opacity: hasResults || step >= 3 ? 1 : 0.5
           }}>
             <div style={{ 
               width: 24, height: 24, borderRadius: '50%', 
