@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DataContext } from '../DataContext';
 import MultiSelect from '../components/MultiSelect';
-
 import AllocationDrillDown from '../components/AllocationDrillDown';
+import PrintLayout from '../components/PrintLayout';
 
 export default function DispatchPage() {
   const navigate = useNavigate();

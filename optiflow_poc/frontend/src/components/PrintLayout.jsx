@@ -73,19 +73,22 @@ export default function PrintLayout({ data, isDispatch, title, subtitle, groupBy
                       </tr>
                     </thead>
                     <tbody>
-                      {skus.map((item, i) => (
-                        <tr key={i} style={{ borderBottom: '1px solid #f1f1f1' }}>
-                          <td style={{ padding: '6px 8px', fontWeight: 600 }}>{item.allocated_item_code || "-"}</td>
-                          <td style={{ padding: '6px 8px', color: '#444' }}>{item.allocated_item_name || "-"}</td>
-                          {!isDispatch && <td style={{ padding: '6px 8px' }}>{item.expected_qty}</td>}
-                          <td style={{ padding: '6px 8px', fontWeight: 700, color: 'var(--primary)' }}>{item.allocated_qty}</td>
-                          {!isDispatch && (
-                            <td style={{ padding: '6px 8px', color: item.expected_qty - item.allocated_qty > 0 ? 'var(--critical)' : 'inherit' }}>
-                              {item.expected_qty - item.allocated_qty}
-                            </td>
-                          )}
-                        </tr>
-                      ))}
+                      {skus.map((item, i) => {
+                        const expected = (item.facing || 0) + (item.back_stock || 0);
+                        return (
+                          <tr key={i} style={{ borderBottom: '1px solid #f1f1f1' }}>
+                            <td style={{ padding: '6px 8px', fontWeight: 600 }}>{item.allocated_item_code || "-"}</td>
+                            <td style={{ padding: '6px 8px', color: '#444' }}>{item.allocated_item_name || "-"}</td>
+                            {!isDispatch && <td style={{ padding: '6px 8px' }}>{expected}</td>}
+                            <td style={{ padding: '6px 8px', fontWeight: 700, color: 'var(--primary)' }}>{item.allocated_qty}</td>
+                            {!isDispatch && (
+                              <td style={{ padding: '6px 8px', color: expected - item.allocated_qty > 0 ? 'var(--critical)' : 'inherit' }}>
+                                {expected - item.allocated_qty}
+                              </td>
+                            )}
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
