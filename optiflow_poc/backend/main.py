@@ -6,6 +6,7 @@ Web service layer exposing CSV uploads, similar-item heuristics, and dispatch or
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 import os
 from typing import Optional, List, Dict
 from pydantic import BaseModel
@@ -53,6 +54,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Compress large JSON responses (reduces 4MB -> ~400KB)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 class DataStore:
     def __init__(self):
