@@ -53,7 +53,7 @@ export default function AllocationWizardPage() {
     setIsResetting(true);
     const baseUrl = 'https://optiflow-backend-977593391877.asia-south1.run.app';
     try {
-      await fetch(`${baseUrl}/api/allocation/reset`, { method: 'POST' });
+      await fetch(`${baseUrl}/api/upload/reset`, { method: 'POST' });
     } catch (e) {
       console.error(e);
     }
