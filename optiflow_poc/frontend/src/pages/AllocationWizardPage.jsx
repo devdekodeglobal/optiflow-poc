@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import WizardUploadStep from '../components/wizard/WizardUploadStep';
 import WizardStrategyStep from '../components/wizard/WizardStrategyStep';
 import AllocationReportPage from './AllocationReportPage';
+import { DataContext } from '../DataContext';
 
 export default function AllocationWizardPage() {
+  const { refreshData } = useContext(DataContext);
   const [step, setStep] = useState(() => {
     const saved = sessionStorage.getItem('wizard_step');
     return saved ? parseInt(saved, 10) : 1;
@@ -34,6 +36,12 @@ export default function AllocationWizardPage() {
     ]).then(([uploadData, allocData]) => {
       const dataUploaded = uploadData?.planogram_uploaded && uploadData?.stock_uploaded;
       if (dataUploaded) markDataUploaded();
+
+      // If backend has no results, clear wizard state so old report isn't shown
+      if (!allocData?.has_results) {
+        sessionStorage.removeItem('wizard_step');
+        sessionStorage.removeItem('wizard_data_uploaded');
+      }
       
       setStep(prev => {
         const hasSavedStep = !!sessionStorage.getItem('wizard_step');
@@ -63,6 +71,7 @@ export default function AllocationWizardPage() {
     setStep(1);
     setShowConfirm(false);
     setIsResetting(false);
+    refreshData(); // Clear the frontend DataContext cache with fresh (empty) data
   };
 
   return (

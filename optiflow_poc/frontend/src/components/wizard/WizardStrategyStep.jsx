@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { getStrategy, updateStrategy, runAllocation } from '../../api';
+import { DataContext } from '../../DataContext';
 
 const TIER_COLORS = {
   'A++': { bg: '#4f2dbd', text: '#fff', bar: '100%' },
