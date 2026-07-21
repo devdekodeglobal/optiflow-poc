@@ -10,6 +10,7 @@ export default function DispatchPage() {
   const { allocationData: masterData, lastRun, isLoadingData: loading, refreshData } = useContext(DataContext);
   const [printMenuOpen, setPrintMenuOpen] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [printMode, setPrintMode] = useState(null); // { full: boolean, groupBy: string }
   const [showFilters, setShowFilters] = useState(false);
   
   const searchParams = new URLSearchParams(window.location.search);
@@ -62,36 +63,26 @@ export default function DispatchPage() {
   }, [dispatchMasterData, filters]);
 
   useEffect(() => {
-    if (!loading && sessionStorage.getItem('pending_print_dispatch_full') === 'true') {
-      sessionStorage.removeItem('pending_print_dispatch_full');
-      setForceExpandAll(true);
-      setTimeout(() => {
-        window.print();
-        setForceExpandAll(false);
-      }, 500);
-    }
+    // legacy pending_print check removed
   }, [loading]);
 
   const handleFilterChange = (key, val) => {
     setFilters(f => ({ ...f, [key]: val }));
   };
 
-  const handlePrint = (full) => {
+  const handlePrint = (full, groupBy) => {
     setPrintMenuOpen(false);
-    if (full) {
-      setFilters({ zone: [], region: [], store_category: [], store_name: [], brand_name: [], commodity: [] });
-      sessionStorage.setItem('pending_print_dispatch_full', 'true');
-    } else {
-      setTimeout(() => {
-        window.print();
-      }, 500);
-    }
+    setPrintMode({ full, groupBy });
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => setPrintMode(null), 500);
+    }, 500);
   };
 
-  const handleDownloadExcel = (full) => {
+  const handleDownloadExcel = (full, groupBy) => {
     setExportMenuOpen(false);
     if (full) {
-      window.open(`${import.meta.env.VITE_API_BASE_URL}/api/allocation/results/export?group_by=store&dispatch_only=true`, '_blank');
+      window.open(`${import.meta.env.VITE_API_BASE_URL}/api/allocation/results/export?group_by=${groupBy}&dispatch_only=true`, '_blank');
     } else {
       const q = new URLSearchParams({ 
         zone: filters.zone.join(','),
@@ -100,7 +91,7 @@ export default function DispatchPage() {
         store_name: filters.store_name.join(','),
         brand_name: filters.brand_name.join(','),
         commodity: filters.commodity.join(','),
-        group_by: 'store',
+        group_by: groupBy,
         dispatch_only: 'true'
       }).toString();
       const baseUrl = 'http://127.0.0.1:8000';
@@ -213,20 +204,18 @@ export default function DispatchPage() {
               Print Report ▼
             </button>
             {printMenuOpen && (
-              <div style={{ position: 'absolute', top: '100%', right: 0, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 9999, minWidth: 180, marginTop: 4, overflow: 'hidden' }}>
-                <div 
-                  onClick={() => handlePrint(false)} 
-                  style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}
-                  className="hover-row"
-                >
-                  Filtered
+              <div style={{ position: 'absolute', top: '100%', right: 0, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 9999, minWidth: 200, marginTop: 4, overflow: 'hidden' }}>
+                <div onClick={() => handlePrint(false, 'store')} style={{ padding: '10px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }} className="hover-row">
+                  Filtered (Store-wise)
                 </div>
-                <div 
-                  onClick={() => handlePrint(true)} 
-                  style={{ padding: '12px 16px', cursor: 'pointer', fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}
-                  className="hover-row"
-                >
-                  Full
+                <div onClick={() => handlePrint(false, 'brand')} style={{ padding: '10px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }} className="hover-row">
+                  Filtered (Brand-wise)
+                </div>
+                <div onClick={() => handlePrint(true, 'store')} style={{ padding: '10px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }} className="hover-row">
+                  Full (Store-wise)
+                </div>
+                <div onClick={() => handlePrint(true, 'brand')} style={{ padding: '10px 16px', cursor: 'pointer', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }} className="hover-row">
+                  Full (Brand-wise)
                 </div>
               </div>
             )}
@@ -237,20 +226,18 @@ export default function DispatchPage() {
               Download Report ▼
             </button>
             {exportMenuOpen && (
-              <div style={{ position: 'absolute', top: '100%', right: 0, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 9999, minWidth: 180, marginTop: 4, overflow: 'hidden' }}>
-                <div 
-                  onClick={() => handleDownloadExcel(false)} 
-                  style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}
-                  className="hover-row"
-                >
-                  Filtered
+              <div style={{ position: 'absolute', top: '100%', right: 0, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 9999, minWidth: 200, marginTop: 4, overflow: 'hidden' }}>
+                <div onClick={() => handleDownloadExcel(false, 'store')} style={{ padding: '10px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }} className="hover-row">
+                  Filtered (Store-wise)
                 </div>
-                <div 
-                  onClick={() => handleDownloadExcel(true)} 
-                  style={{ padding: '12px 16px', cursor: 'pointer', fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}
-                  className="hover-row"
-                >
-                  Full
+                <div onClick={() => handleDownloadExcel(false, 'brand')} style={{ padding: '10px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }} className="hover-row">
+                  Filtered (Brand-wise)
+                </div>
+                <div onClick={() => handleDownloadExcel(true, 'store')} style={{ padding: '10px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }} className="hover-row">
+                  Full (Store-wise)
+                </div>
+                <div onClick={() => handleDownloadExcel(true, 'brand')} style={{ padding: '10px 16px', cursor: 'pointer', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }} className="hover-row">
+                  Full (Brand-wise)
                 </div>
               </div>
             )}
@@ -370,7 +357,7 @@ export default function DispatchPage() {
           </div>
 
           {/* DRILL DOWN UI */}
-          <div style={{ marginTop: 12 }}>
+          <div className="print-hide" style={{ marginTop: 12 }}>
             <AllocationDrillDown 
               filteredData={filteredData} 
               filters={filters} 
@@ -379,6 +366,16 @@ export default function DispatchPage() {
             />
           </div>
         </div>
+      )}
+
+      {printMode && (
+        <PrintLayout 
+          data={printMode.full ? dispatchMasterData : filteredData} 
+          isDispatch={true} 
+          title="Warehouse Dispatch Pick-List" 
+          subtitle={printMode.full ? `Full List (${printMode.groupBy}-wise)` : `Filtered List (${printMode.groupBy}-wise)`} 
+          groupBy={printMode.groupBy}
+        />
       )}
     </div>
   );

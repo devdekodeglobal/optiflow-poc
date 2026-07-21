@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo, useRef, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DataContext } from '../DataContext';
 import MultiSelect from '../components/MultiSelect';
-
 import AllocationDrillDown from '../components/AllocationDrillDown';
+import PrintLayout from '../components/PrintLayout';
 
 export default function AllocationReportPage() {
   const navigate = useNavigate();
@@ -11,6 +11,7 @@ export default function AllocationReportPage() {
 
   const [printMenuOpen, setPrintMenuOpen] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [printMode, setPrintMode] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
 
   const [filters, setFilters] = useState({
@@ -61,14 +62,7 @@ export default function AllocationReportPage() {
 
 
   useEffect(() => {
-    if (!loading && sessionStorage.getItem('pending_print_full') === 'true') {
-      sessionStorage.removeItem('pending_print_full');
-      setForceExpandAll(true);
-      setTimeout(() => {
-        window.print();
-        setForceExpandAll(false);
-      }, 500);
-    }
+    // legacy pending_print check removed
   }, [loading]);
 
   const handleFilterChange = (key, val) => {
@@ -77,14 +71,11 @@ export default function AllocationReportPage() {
 
   const handlePrint = (full) => {
     setPrintMenuOpen(false);
-    if (full) {
-      setFilters({ zone: [], region: [], store_category: [], store_name: [], brand_name: [], commodity: [] });
-      sessionStorage.setItem('pending_print_full', 'true');
-    } else {
-      setTimeout(() => {
-        window.print();
-      }, 500);
-    }
+    setPrintMode(full ? 'full' : 'filtered');
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => setPrintMode(null), 500);
+    }, 500);
   };
 
   const handleDownloadCsv = (full) => {
@@ -360,8 +351,8 @@ export default function AllocationReportPage() {
             )}
           </div>
 
-                    {/* DRILL DOWN UI */}
-          <div style={{ marginTop: 24 }}>
+          {/* DRILL DOWN UI */}
+          <div className="print-hide" style={{ marginTop: 24 }}>
             <AllocationDrillDown 
               filteredData={filteredData} 
               filters={filters} 
@@ -371,6 +362,16 @@ export default function AllocationReportPage() {
           </div>
         </div>
       </div>
+
+      {printMode && (
+        <PrintLayout 
+          data={printMode === 'full' ? masterData : filteredData} 
+          isDispatch={false} 
+          title="Warehouse Allocation Report" 
+          subtitle={printMode === 'full' ? 'Full Global List' : 'Filtered List'} 
+          groupBy="store"
+        />
+      )}
     </div>
   );
 }
