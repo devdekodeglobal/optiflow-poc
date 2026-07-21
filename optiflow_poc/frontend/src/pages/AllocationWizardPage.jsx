@@ -10,7 +10,6 @@ export default function AllocationWizardPage() {
     const saved = sessionStorage.getItem('wizard_step');
     return saved ? parseInt(saved, 10) : 1;
   });
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [isDataUploaded, setIsDataUploaded] = useState(() => {
     return sessionStorage.getItem('wizard_data_uploaded') === 'true';
   });
@@ -32,10 +31,6 @@ export default function AllocationWizardPage() {
     sessionStorage.setItem('wizard_data_uploaded', 'true');
     setIsDataUploaded(true);
   };
-
-  useEffect(() => {
-    if (step === 3) setIsCollapsed(true);
-  }, [step]);
 
   // On mount: verify with backend in case sessionStorage is stale
   useEffect(() => {
@@ -110,20 +105,9 @@ export default function AllocationWizardPage() {
       )}
 
 
-      <div className="card animate-in" style={{ marginBottom: 12, padding: isCollapsed ? '6px 16px' : '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="card animate-in" style={{ marginBottom: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         
-        {isCollapsed ? (
-          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-            <span style={{ fontWeight: 600, color: 'var(--text-secondary)', fontSize: 14 }}>
-              Step {step} of 3: {step === 1 ? 'Upload Data' : step === 2 ? 'Set Priority' : 'View Report'}
-            </span>
-            <button className="btn btn-ghost" style={{ padding: '4px 8px', fontSize: 13 }} onClick={() => setIsCollapsed(false)}>
-              Expand Wizard
-            </button>
-          </div>
-        ) : (
-          <>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flex: 1 }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flex: 1 }}>
           <div 
             onClick={() => goToStep(1)}
             style={{ 
@@ -182,17 +166,11 @@ export default function AllocationWizardPage() {
             View Report
           </div>
           </div>
-          {step === 3 ? (
+          {step === 3 && (
             <button className="btn btn-outline" style={{ marginLeft: 16, padding: '6px 12px', fontSize: 13, borderColor: 'var(--text-muted)' }} onClick={() => setShowConfirm(true)}>
               Start New Allocation
             </button>
-          ) : (
-            <button className="btn btn-ghost" style={{ marginLeft: 16, padding: '4px 8px', fontSize: 13 }} onClick={() => setIsCollapsed(true)} title="Collapse wizard header">
-              Collapse
-            </button>
           )}
-          </>
-        )}
       </div>
 
       <div style={{ minHeight: 400 }}>
