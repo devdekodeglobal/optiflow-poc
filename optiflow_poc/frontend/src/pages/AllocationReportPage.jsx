@@ -135,37 +135,7 @@ export default function AllocationReportPage() {
   const [loading, setLoading] = useState(true);
   const [lastRun, setLastRun] = useState(null);
   
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const q = new URLSearchParams({ page_size: 50000 }).toString();
-      const baseUrl = 'https://optiflow-backend-977593391877.asia-south1.run.app';
-      const res = await fetch(`${baseUrl}/api/allocation/results?${q}`);
-      const json = await res.json();
-      
-      if (!res.ok) {
-        if (res.status === 404) setMasterData([]);
-        return;
-      }
-      setMasterData(json.allocations || []);
-      
-      const summaryRes = await fetch(`${baseUrl}/api/allocation/summary`);
-      if (summaryRes.ok) {
-        const summaryJson = await summaryRes.json();
-        if (summaryJson.last_run_at) {
-          setLastRun(new Date(summaryJson.last_run_at).toLocaleString());
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []); // Run ONCE on mount
+   // Run ONCE on mount
 
   const filteredData = useMemo(() => {
     return masterData.filter(item => {

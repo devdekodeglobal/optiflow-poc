@@ -69,6 +69,7 @@ function PriorityLadder({ categories, activeCategories, onToggle, onRun, running
 }
 
 export default function WizardStrategyStep({ onComplete }) {
+  const { refreshData } = useContext(DataContext);
   const [categories, setCategories] = useState([]);
   const [activeCategories, setActiveCategories] = useState([]);
   const [columns, setColumns] = useState({});
@@ -145,6 +146,7 @@ export default function WizardStrategyStep({ onComplete }) {
       });
       await updateStrategy(payload);
       await runAllocation();
+      refreshData();
       onComplete();
     } catch (err) {
       setError(err.message);

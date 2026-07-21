@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { DataContext } from '../DataContext';
 import MultiSelect from '../components/MultiSelect';
 
 function CollapsibleRow({ node, depth = 0, forceExpandAll }) {
@@ -101,10 +102,7 @@ function CollapsibleRow({ node, depth = 0, forceExpandAll }) {
 
 export default function DispatchPage() {
   const navigate = useNavigate();
-  const [data, setData] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [lastRun, setLastRun] = useState(null);
+  const { allocationData: masterData, lastRun, isLoadingData: loading, refreshData } = useContext(DataContext);
   const [forceExpandAll, setForceExpandAll] = useState(false);
   const [printMenuOpen, setPrintMenuOpen] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
@@ -119,45 +117,6 @@ export default function DispatchPage() {
     brand_name: searchParams.get('brand_name') ? searchParams.get('brand_name').split(',') : [],
     commodity: searchParams.get('commodity') ? searchParams.get('commodity').split(',') : []
   });
-
-  const [masterData, setMasterData] = useState([]);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const q = new URLSearchParams({ 
-        page_size: 50000, 
-        dispatch_only: true 
-      }).toString();
-      const baseUrl = 'https://optiflow-backend-977593391877.asia-south1.run.app';
-      const res = await fetch(`${baseUrl}/api/allocation/results?${q}`);
-      const json = await res.json();
-      
-      if (!res.ok) {
-        if (res.status === 404) setMasterData([]);
-        return;
-      }
-      
-      setMasterData(json.allocations || []);
-      
-      // Also fetch summary to get the last run date
-      const summaryRes = await fetch(`${baseUrl}/api/allocation/summary`);
-      if (summaryRes.ok) {
-        const summaryJson = await summaryRes.json();
-        if (summaryJson.last_run_at) {
-          setLastRun(new Date(summaryJson.last_run_at).toLocaleString());
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   const filteredData = useMemo(() => {
     return masterData.filter(item => {
@@ -277,7 +236,6 @@ export default function DispatchPage() {
   if (loading && masterData.length === 0) {
     return (
       <div className="animate-in" style={{ padding: '4px 0' }}>
-        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div>
             <div className="skeleton skeleton-title" style={{ width: 200, height: 22, marginBottom: 8 }}></div>
@@ -289,7 +247,6 @@ export default function DispatchPage() {
           </div>
         </div>
 
-        {/* Filter bar */}
         <div className="card" style={{ padding: 16, marginBottom: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -316,9 +273,7 @@ export default function DispatchPage() {
           </div>
         </div>
 
-        {/* Table */}
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          {/* Column headers */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr repeat(4, 80px) 100px', padding: '10px 16px', borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)', gap: 0, alignItems: 'center' }}>
             <div className="skeleton skeleton-text" style={{ width: 80, height: 12 }}></div>
             {[...Array(5)].map((_, i) => (
@@ -326,10 +281,8 @@ export default function DispatchPage() {
             ))}
           </div>
 
-          {/* Zone rows with stores */}
           {[...Array(3)].map((_, z) => (
             <div key={z}>
-              {/* Zone header */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr repeat(4, 80px) 100px', padding: '10px 16px', background: 'var(--bg-app)', borderBottom: '1px solid var(--border)', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <div className="skeleton" style={{ width: 16, height: 16, borderRadius: 3 }}></div>
@@ -339,7 +292,6 @@ export default function DispatchPage() {
                   <div key={i} className="skeleton skeleton-text" style={{ width: 45, height: 13, justifySelf: 'end' }}></div>
                 ))}
               </div>
-              {/* Store rows */}
               {[...Array(3)].map((_, s) => (
                 <div key={s} style={{ display: 'grid', gridTemplateColumns: '1fr repeat(4, 80px) 100px', padding: '8px 16px 8px 32px', borderBottom: '1px solid var(--border)', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -380,7 +332,6 @@ export default function DispatchPage() {
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
           
-          {/* PRINT DROPDOWN */}
           <div style={{ position: 'relative', zIndex: 9999 }} onClick={e => e.stopPropagation()}>
             <button className="btn btn-ghost" onClick={() => { setPrintMenuOpen(!printMenuOpen); setExportMenuOpen(false); }}>
               Print Report ▼
@@ -405,7 +356,6 @@ export default function DispatchPage() {
             )}
           </div>
 
-          {/* EXPORT DROPDOWN */}
           <div style={{ position: 'relative', zIndex: 9999 }} onClick={e => e.stopPropagation()}>
             <button className="btn btn-ghost" onClick={() => { setExportMenuOpen(!exportMenuOpen); setPrintMenuOpen(false); }}>
               Download Report ▼
@@ -447,14 +397,13 @@ export default function DispatchPage() {
         <div className="empty-state card print-hide">
           <h3>No Dispatch Data</h3>
           <p>Run the allocation engine from the Upload page first to generate picking lists.</p>
-          <button className="btn btn-primary" style={{ marginTop: 20 }} onClick={() => navigate('/')}>
-            Go to Ingestion
+          <button className="btn btn-primary" onClick={refreshData} disabled={loading}>
+            {loading ? 'Refreshing...' : 'Refresh Data'}
           </button>
         </div>
       ) : (
         <div className="animate-in" style={{ animationDelay: '0.1s' }}>
           
-          {/* FILTERS */}
           <div className="print-hide" style={{ background: 'var(--bg-app)', padding: '24px', borderRadius: 16, border: '1px solid var(--border)', marginBottom: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
               <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>

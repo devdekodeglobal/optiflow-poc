@@ -13,6 +13,7 @@ import StorePage from './pages/StorePage';
 import BrandPage from './pages/BrandPage';
 import RegionPage from './pages/RegionPage';
 import LoginPage from './pages/LoginPage';
+import { DataProvider } from './DataContext';
 
 function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -27,7 +28,8 @@ function App() {
   };
 
   return (
-    <Router>
+    <DataProvider>
+      <Router>
       <div className="app-layout">
         <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
           <button 
@@ -176,6 +178,7 @@ function App() {
         </main>
       </div>
     </Router>
+    </DataProvider>
   );
 }
 
