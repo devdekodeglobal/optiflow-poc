@@ -129,13 +129,13 @@ export default function AllocationWizardPage() {
           </div>
           
           <div 
-            onClick={() => { if (isDataUploaded) goToStep(2); }}
+            onClick={() => { if (isDataUploaded || step >= 2) goToStep(2); }}
             style={{ 
             display: 'flex', alignItems: 'center', gap: 8, 
             fontWeight: step >= 2 ? 700 : 500, 
             color: step >= 2 ? 'var(--primary)' : 'var(--text-muted)',
-            cursor: isDataUploaded ? 'pointer' : 'not-allowed',
-            opacity: isDataUploaded || step >= 2 ? 1 : 0.5
+            cursor: (isDataUploaded || step >= 2) ? 'pointer' : 'not-allowed',
+            opacity: (isDataUploaded || step >= 2) ? 1 : 0.5
           }}>
             <div style={{ 
               width: 24, height: 24, borderRadius: '50%', 
@@ -150,13 +150,13 @@ export default function AllocationWizardPage() {
           </div>
           
           <div 
-            onClick={() => { if (hasResults) goToStep(3); }}
+            onClick={() => { if (hasResults || step === 3) goToStep(3); }}
             style={{ 
             display: 'flex', alignItems: 'center', gap: 8, 
             fontWeight: step >= 3 ? 700 : 500, 
             color: step >= 3 ? 'var(--primary)' : 'var(--text-muted)',
-            cursor: hasResults ? 'pointer' : 'not-allowed',
-            opacity: hasResults || step >= 3 ? 1 : 0.5
+            cursor: (hasResults || step === 3) ? 'pointer' : 'not-allowed',
+            opacity: (hasResults || step >= 3) ? 1 : 0.5
           }}>
             <div style={{ 
               width: 24, height: 24, borderRadius: '50%', 
