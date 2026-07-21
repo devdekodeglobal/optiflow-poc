@@ -33,7 +33,7 @@ export default function OverallDashboard() {
     const uniqueSohMap = {};
     const uniqueWhStockMap = {};
     items.forEach(i => { 
-      if (i.gap_id) {
+      if (i.gap_id !== undefined && i.gap_id !== null) {
         uniqueGapsMap[i.gap_id] = i.deficit || 0; 
         uniqueSohMap[i.gap_id] = i.current_soh || 0;
       }

@@ -17,7 +17,6 @@ export default function AllocationWizardPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
 
-  // Keep sessionStorage in sync whenever step changes
   const goToStep = (s) => {
     sessionStorage.setItem('wizard_step', s);
     setStep(s);
@@ -27,9 +26,13 @@ export default function AllocationWizardPage() {
     setIsDataUploaded(true);
   };
 
+  useEffect(() => {
+    if (step === 3) setIsCollapsed(true);
+  }, [step]);
+
   // On mount: verify with backend in case sessionStorage is stale
   useEffect(() => {
-    const baseUrl = 'https://optiflow-backend-977593391877.asia-south1.run.app';
+    const baseUrl = 'http://127.0.0.1:8000';
     Promise.all([
       fetch(`${baseUrl}/api/upload/status`).then(r => r.ok ? r.json() : null),
       fetch(`${baseUrl}/api/allocation/status`).then(r => r.ok ? r.json() : null)
@@ -59,7 +62,7 @@ export default function AllocationWizardPage() {
 
   const handleReset = async () => {
     setIsResetting(true);
-    const baseUrl = 'https://optiflow-backend-977593391877.asia-south1.run.app';
+    const baseUrl = 'http://127.0.0.1:8000';
     try {
       await fetch(`${baseUrl}/api/upload/reset`, { method: 'POST' });
     } catch (e) {
@@ -94,7 +97,7 @@ export default function AllocationWizardPage() {
       )}
 
 
-      <div className="card animate-in" style={{ marginBottom: 24, padding: isCollapsed ? '8px 24px' : '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="card animate-in" style={{ marginBottom: 12, padding: isCollapsed ? '6px 16px' : '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         
         {isCollapsed ? (
           <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>

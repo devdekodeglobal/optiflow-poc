@@ -307,6 +307,7 @@ def run_allocation(
             
     store_duplicate_budget = {s: int(d * 0.15) for s, d in store_total_deficit.items()}
     store_allocated_skus = {s: set() for s in store_total_deficit.keys()}
+    store_sku_counts = {s: {} for s in store_total_deficit.keys()}
 
     for idx, prow in prow_sorted.iterrows():
         pl_store = str(prow["store_name"])
@@ -394,6 +395,12 @@ def run_allocation(
                     if cand_color not in existing_colors and len(existing_colors) >= 3:
                         continue
                 
+                # HARD LIMIT: Max 3 units of the same exact SKU per store
+                MAX_UNITS_PER_SKU = 3
+                sku_alloc_count = store_sku_counts.get(pl_store, {}).get(cand_code, 0)
+                if sku_alloc_count >= MAX_UNITS_PER_SKU:
+                    continue
+                
                 # 85% UNIQUENESS RULE: Reject candidate if it's a duplicate and we're out of budget
                 is_new_sku = cand_code not in store_allocated_skus.get(pl_store, set())
                 budget = store_duplicate_budget.get(pl_store, 0)
@@ -461,7 +468,8 @@ def run_allocation(
                 break
 
             initial_wh = wh_remaining[best_cand["item_code"]]
-            qty_to_alloc = min(initial_wh, deficit_qty - allocated_qty)
+            max_can_alloc = 3 - store_sku_counts.get(pl_store, {}).get(best_cand["item_code"], 0)
+            qty_to_alloc = min(initial_wh, deficit_qty - allocated_qty, max_can_alloc)
             
             # Enforce duplicate budget capping
             cand_code = best_cand["item_code"]
@@ -479,6 +487,10 @@ def run_allocation(
                     store_duplicate_budget[pl_store] -= actual_dups
                 if pl_store in store_allocated_skus:
                     store_allocated_skus[pl_store].add(cand_code)
+                
+                if pl_store not in store_sku_counts:
+                    store_sku_counts[pl_store] = {}
+                store_sku_counts[pl_store][cand_code] = store_sku_counts[pl_store].get(cand_code, 0) + qty_to_alloc
             
             initial_gap = deficit_qty - allocated_qty
             
