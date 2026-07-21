@@ -13,34 +13,34 @@ export const DataProvider = ({ children }) => {
     setIsLoadingData(true);
     try {
       const baseUrl = 'https://optiflow-backend-977593391877.asia-south1.run.app';
-      
-      // Fetch 50,000 results once
       const q = new URLSearchParams({ page_size: 50000 }).toString();
-      const res = await fetch(`${baseUrl}/api/allocation/results?${q}`);
-      
-      if (res.ok) {
-        const json = await res.json();
+
+      // Fetch all 3 in parallel
+      const [allocRes, summaryRes, dashRes] = await Promise.all([
+        fetch(`${baseUrl}/api/allocation/results?${q}`).catch(() => null),
+        fetch(`${baseUrl}/api/allocation/summary`).catch(() => null),
+        fetch(`${baseUrl}/api/dashboard/all-stores`).catch(() => null),
+      ]);
+
+      if (allocRes?.ok) {
+        const json = await allocRes.json();
         setAllocationData(json.allocations || []);
-      } else if (res.status === 404) {
+      } else {
         setAllocationData([]);
       }
 
-      // Fetch summary
-      const summaryRes = await fetch(`${baseUrl}/api/allocation/summary`);
-      if (summaryRes.ok) {
+      if (summaryRes?.ok) {
         const summaryJson = await summaryRes.json();
         setAllocationSummary(summaryJson);
         if (summaryJson.last_run_at) {
           setLastRun(new Date(summaryJson.last_run_at).toLocaleString());
         }
-      } else if (summaryRes.status === 404) {
+      } else {
         setAllocationSummary(null);
         setLastRun(null);
       }
 
-      // Fetch dashboard data
-      const dashRes = await fetch(`${baseUrl}/api/dashboard/all-stores`);
-      if (dashRes.ok) {
+      if (dashRes?.ok) {
         const dashJson = await dashRes.json();
         setDashboardData(dashJson);
       }

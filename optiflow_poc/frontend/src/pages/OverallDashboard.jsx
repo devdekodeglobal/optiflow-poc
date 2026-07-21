@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { DataContext } from '../DataContext';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, Label, BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList } from 'recharts';
 
 const COLORS = {
@@ -16,32 +17,16 @@ const BREAKDOWN_COLORS = [
 
 export default function OverallDashboard() {
   const navigate = useNavigate();
-  const [data, setData] = useState([]);
-  const [globalWhStock, setGlobalWhStock] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const { dashboardData, isLoadingData: loading, refreshData } = useContext(DataContext);
+  const data = dashboardData?.allocations || [];
+  const globalWhStock = dashboardData?.warehouse_stock_total || 0;
   
   // Drill-down state
-  const [level, setLevel] = useState('network'); // 'network', 'zones', 'regions', 'stores'
+  const [level, setLevel] = useState('network');
   const [selectedZone, setSelectedZone] = useState(null);
   const [selectedRegion, setSelectedRegion] = useState(null);
   const [selectedStore, setSelectedStore] = useState(null);
   const [selectedBrand, setSelectedBrand] = useState(null);
-
-
-  useEffect(() => {
-    const baseUrl = 'https://optiflow-backend-977593391877.asia-south1.run.app';
-    fetch(`${baseUrl}/api/dashboard/all-stores`)
-      .then(res => res.json())
-      .then(json => {
-        setData(json.allocations || []);
-        if (json.warehouse_stock_total !== undefined) setGlobalWhStock(json.warehouse_stock_total);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setLoading(false);
-      });
-  }, []);
 
   const summarize = (items) => {
     const uniqueGapsMap = {};

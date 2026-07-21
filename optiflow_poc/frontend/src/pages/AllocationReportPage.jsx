@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { DataContext } from '../DataContext';
 import MultiSelect from '../components/MultiSelect';
 
 function CollapsibleRow({ node, depth = 0, forceExpandAll }) {
@@ -117,7 +118,7 @@ function CollapsibleRow({ node, depth = 0, forceExpandAll }) {
 
 export default function AllocationReportPage() {
   const navigate = useNavigate();
-  const [masterData, setMasterData] = useState([]);
+  const { allocationData: masterData, lastRun, isLoadingData: loading, refreshData } = useContext(DataContext);
 
   const [printMenuOpen, setPrintMenuOpen] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
@@ -131,12 +132,7 @@ export default function AllocationReportPage() {
     brand_name: [],
     commodity: []
   });
-
-  const [loading, setLoading] = useState(true);
-  const [lastRun, setLastRun] = useState(null);
   
-   // Run ONCE on mount
-
   const filteredData = useMemo(() => {
     return masterData.filter(item => {
       if (filters.zone.length > 0 && !filters.zone.includes(item.zone)) return false;
