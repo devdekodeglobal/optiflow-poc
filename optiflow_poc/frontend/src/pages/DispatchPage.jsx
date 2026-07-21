@@ -120,6 +120,7 @@ export default function DispatchPage() {
 
   const filteredData = useMemo(() => {
     return masterData.filter(item => {
+      if (item.allocated_qty === 0) return false;
       if (filters.zone.length > 0 && !filters.zone.includes(item.zone)) return false;
       if (filters.region.length > 0 && !filters.region.includes(item.region)) return false;
       if (filters.store_category.length > 0 && !filters.store_category.includes(item.store_category)) return false;
@@ -186,7 +187,7 @@ export default function DispatchPage() {
   const handleDownloadExcel = (full) => {
     setExportMenuOpen(false);
     if (full) {
-      window.open(`${import.meta.env.VITE_API_BASE_URL}/api/allocation/results/export?group_by=zone&dispatch_only=true`, '_blank');
+      window.open(`${import.meta.env.VITE_API_BASE_URL}/api/allocation/results/export?group_by=store&dispatch_only=true`, '_blank');
     } else {
       const q = new URLSearchParams({ 
         zone: filters.zone.join(','),
@@ -195,8 +196,8 @@ export default function DispatchPage() {
         store_name: filters.store_name.join(','),
         brand_name: filters.brand_name.join(','),
         commodity: filters.commodity.join(','),
-        group_by: 'zone',
-        dispatch_only: true 
+        group_by: 'store',
+        dispatch_only: 'true'
       }).toString();
       const baseUrl = 'https://optiflow-backend-977593391877.asia-south1.run.app';
       window.open(`${baseUrl}/api/allocation/results/export?${q}`, '_blank');

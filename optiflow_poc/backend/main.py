@@ -242,10 +242,6 @@ async def upload_planogram(file: UploadFile = File(...)):
             df = pd.read_csv(io.BytesIO(contents), encoding="utf-8", header=1, on_bad_lines="skip")
             
         store.planogram = parse_planogram(df.copy())
-        store.allocations = []
-        store.summary = None
-        store.dashboard_all_stores_cache = None
-        delete_from_gcs("dashboard_cache.json")
         
         upload_to_gcs("Planogram.csv", contents)
         
@@ -270,10 +266,6 @@ async def upload_stock(file: UploadFile = File(...)):
         wh_stock, st_stock = parse_stock(df.copy())
         store.warehouse_stock = wh_stock
         store.store_stock = st_stock
-        store.allocations = []
-        store.summary = None
-        store.dashboard_all_stores_cache = None
-        delete_from_gcs("dashboard_cache.json")
         
         upload_to_gcs("Stock data.csv", contents)
         
@@ -296,10 +288,6 @@ async def upload_sales(file: UploadFile = File(...)):
         contents = await file.read()
         df = pd.read_csv(io.BytesIO(contents), encoding="utf-8", on_bad_lines="skip")
         store.sales_raw = df
-        store.allocations = []
-        store.summary = None
-        store.dashboard_all_stores_cache = None
-        delete_from_gcs("dashboard_cache.json")
         
         upload_to_gcs("Sales Data.csv", contents)
         
@@ -536,6 +524,9 @@ async def export_results(
     dispatch_only: bool = Query(False)
 ):
     results = store.allocations
+    if dispatch_only:
+        results = [a for a in results if a.allocated_qty > 0]
+        
     if store_name:
         store_list = [s.strip().lower() for s in store_name.split(',')]
         results = [a for a in results if any(s in a.store_name.lower() for s in store_list)]
@@ -1289,16 +1280,8 @@ async def reset_data():
     store.stock_raw = None
     store.warehouse_stock = None
     store.store_stock = None
-    store.allocations = []
-    store.summary = None
-    store.last_run_time = None
-    store.last_run_at = None
-    store.dashboard_all_stores_cache = None
     store.strategy_store_lists = {}
     store.strategy_active_categories = ["A++", "A+", "A", "B+", "B", "C"]
-    
-    empty_alloc = {"last_run_at": None, "results": [], "summary": None}
-    upload_to_gcs("allocation_results.json", json.dumps(empty_alloc).encode("utf-8"))
     
     strategy_data = {
         "active_categories": store.strategy_active_categories,
