@@ -39,7 +39,7 @@ export default function AllocationWizardPage() {
       fetch(`${baseUrl}/api/upload/status`).then(r => r.ok ? r.json() : null),
       fetch(`${baseUrl}/api/allocation/status`).then(r => r.ok ? r.json() : null)
     ]).then(([uploadData, allocData]) => {
-      const dataUploaded = uploadData?.planogram_uploaded && uploadData?.stock_uploaded;
+      const dataUploaded = uploadData?.planogram && uploadData?.stock;
       if (dataUploaded) markDataUploaded();
 
       if (allocData?.has_results) {
