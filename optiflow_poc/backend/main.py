@@ -1298,13 +1298,13 @@ async def dashboard_all_stores():
     (ignores the Set Priority strategy settings). Also returns the constant total
     Corporate Office warehouse stock regardless of which items were allocated.
     """
+    if store.dashboard_all_stores_cache is not None:
+        return store.dashboard_all_stores_cache
+
     if store.planogram is None:
         return {"allocations": [], "warehouse_stock_total": 0}
     if store.warehouse_stock is None:
         return {"allocations": [], "warehouse_stock_total": 0}
-
-    if store.dashboard_all_stores_cache is not None:
-        return store.dashboard_all_stores_cache
 
     # Build all-stores strategy: every store in every tier, all tiers active
     all_cats = ["A++", "A+", "A", "B+", "B", "C"]
