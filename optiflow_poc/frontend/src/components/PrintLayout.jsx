@@ -45,7 +45,7 @@ export default function PrintLayout({ data, isDispatch, title, subtitle, groupBy
   };
 
   return (
-    <div className="print-layout-container">
+    <div className="print-only">
       <div style={{ textAlign: 'center', marginBottom: 30 }}>
         <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800 }}>{title}</h1>
         <p style={{ margin: '4px 0 0 0', color: '#666', fontSize: 14 }}>{subtitle}</p>
