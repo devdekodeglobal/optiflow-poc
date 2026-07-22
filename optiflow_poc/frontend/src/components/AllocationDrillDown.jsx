@@ -34,14 +34,28 @@ export default function AllocationDrillDown({
 
   // Determine current drill down level based on active filters
   const currentLevelIndex = useMemo(() => {
-    let index = 0;
-    if (filters.zone && filters.zone.length === 1) index = 1;
-    if (index === 1 && filters.region && filters.region.length === 1) index = 2;
-    if (index === 2 && filters.store_category && filters.store_category.length === 1) index = 3;
-    if (index === 3 && filters.store_name && filters.store_name.length === 1) index = 4;
-    if (index === 4 && filters.brand_name && filters.brand_name.length === 1) index = 5;
-    if (index === 5 && filters.commodity && filters.commodity.length === 1) index = 6;
-    return index;
+    // Find the deepest level that has filter selections
+    let deepestActiveLevel = -1; // -1 means no filters
+    
+    if (filters.commodity && filters.commodity.length > 0) deepestActiveLevel = 6;
+    else if (filters.brand_name && filters.brand_name.length > 0) deepestActiveLevel = 5;
+    else if (filters.store_name && filters.store_name.length > 0) deepestActiveLevel = 4;
+    else if (filters.store_category && filters.store_category.length > 0) deepestActiveLevel = 3;
+    else if (filters.region && filters.region.length > 0) deepestActiveLevel = 2;
+    else if (filters.zone && filters.zone.length > 0) deepestActiveLevel = 1;
+
+    if (deepestActiveLevel === -1) {
+      return 0; // Network level
+    }
+
+    const fieldName = HIERARCHY[deepestActiveLevel];
+    const selection = filters[fieldName] || [];
+    
+    if (selection.length === 1) {
+      return deepestActiveLevel;
+    } else {
+      return deepestActiveLevel - 1;
+    }
   }, [filters]);
 
   const currentLevelName = HIERARCHY[currentLevelIndex];
@@ -190,7 +204,7 @@ export default function AllocationDrillDown({
       </span>
     );
 
-    if (currentLevelIndex >= 1) {
+    if (filters.zone && filters.zone.length === 1) {
       crumbs.push(<span key="sep1" style={{ margin: '0 8px', color: 'var(--text-secondary)' }}>/</span>);
       crumbs.push(
         <span key="zone" style={{ cursor: 'pointer', color: currentLevelIndex === 1 ? 'var(--text-primary)' : 'var(--brand-primary)', fontWeight: currentLevelIndex === 1 ? 700 : 500 }} onClick={() => handleBreadcrumbClick(1)}>
@@ -198,7 +212,7 @@ export default function AllocationDrillDown({
         </span>
       );
     }
-    if (currentLevelIndex >= 2) {
+    if (filters.region && filters.region.length === 1) {
       crumbs.push(<span key="sep2" style={{ margin: '0 8px', color: 'var(--text-secondary)' }}>/</span>);
       crumbs.push(
         <span key="region" style={{ cursor: 'pointer', color: currentLevelIndex === 2 ? 'var(--text-primary)' : 'var(--brand-primary)', fontWeight: currentLevelIndex === 2 ? 700 : 500 }} onClick={() => handleBreadcrumbClick(2)}>
@@ -206,7 +220,7 @@ export default function AllocationDrillDown({
         </span>
       );
     }
-    if (currentLevelIndex >= 3) {
+    if (filters.store_category && filters.store_category.length === 1) {
       crumbs.push(<span key="sep3" style={{ margin: '0 8px', color: 'var(--text-secondary)' }}>/</span>);
       crumbs.push(
         <span key="grade" style={{ cursor: 'pointer', color: currentLevelIndex === 3 ? 'var(--text-primary)' : 'var(--brand-primary)', fontWeight: currentLevelIndex === 3 ? 700 : 500 }} onClick={() => handleBreadcrumbClick(3)}>
@@ -214,7 +228,7 @@ export default function AllocationDrillDown({
         </span>
       );
     }
-    if (currentLevelIndex >= 4) {
+    if (filters.store_name && filters.store_name.length === 1) {
       crumbs.push(<span key="sep4" style={{ margin: '0 8px', color: 'var(--text-secondary)' }}>/</span>);
       crumbs.push(
         <span key="store" style={{ cursor: 'pointer', color: currentLevelIndex === 4 ? 'var(--text-primary)' : 'var(--brand-primary)', fontWeight: currentLevelIndex === 4 ? 700 : 500 }} onClick={() => handleBreadcrumbClick(4)}>
@@ -222,7 +236,7 @@ export default function AllocationDrillDown({
         </span>
       );
     }
-    if (currentLevelIndex >= 5) {
+    if (filters.brand_name && filters.brand_name.length === 1) {
       crumbs.push(<span key="sep5" style={{ margin: '0 8px', color: 'var(--text-secondary)' }}>/</span>);
       crumbs.push(
         <span key="brand" style={{ cursor: 'pointer', color: currentLevelIndex === 5 ? 'var(--text-primary)' : 'var(--brand-primary)', fontWeight: currentLevelIndex === 5 ? 700 : 500 }} onClick={() => handleBreadcrumbClick(5)}>
@@ -230,7 +244,7 @@ export default function AllocationDrillDown({
         </span>
       );
     }
-    if (currentLevelIndex >= 6) {
+    if (filters.commodity && filters.commodity.length === 1) {
       crumbs.push(<span key="sep6" style={{ margin: '0 8px', color: 'var(--text-secondary)' }}>/</span>);
       crumbs.push(
         <span key="commodity" style={{ cursor: 'pointer', color: currentLevelIndex === 6 ? 'var(--text-primary)' : 'var(--brand-primary)', fontWeight: currentLevelIndex === 6 ? 700 : 500 }} onClick={() => handleBreadcrumbClick(6)}>
