@@ -50,7 +50,13 @@ export const DataProvider = ({ children }) => {
         const summaryJson = await summaryRes.json();
         setAllocationSummary(summaryJson);
         if (summaryJson.last_run_at) {
-          setLastRun(new Date(summaryJson.last_run_at).toLocaleString());
+          const rawDateStr = summaryJson.last_run_at;
+          // Convert space-separated timestamp to ISO format for browser compatibility (e.g. Safari)
+          const isoDateStr = rawDateStr.includes(' ') && !rawDateStr.includes('T') 
+            ? rawDateStr.replace(' ', 'T') 
+            : rawDateStr;
+          const date = new Date(isoDateStr);
+          setLastRun(!isNaN(date.getTime()) ? date.toLocaleString() : rawDateStr);
         }
       } else {
         setAllocationSummary(null);

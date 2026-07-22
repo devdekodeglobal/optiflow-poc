@@ -217,7 +217,7 @@ export default function DispatchPage() {
                   {/* Left Side: Last Generated Pill */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', background: '#fff', padding: '8px 16px', borderRadius: 24, border: '1px solid var(--border)', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
                     <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--success)' }}></div>
-                    Last generated: {lastRun ? new Date(lastRun).toLocaleString() : 'No data'}
+                    Last generated: {lastRun || 'No data'}
                   </div>
 
                   {/* Right Side: Action Buttons */}

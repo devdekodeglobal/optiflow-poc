@@ -208,7 +208,9 @@ function App() {
         {/* Main Content */}
         <main className={`main-content ${sidebarCollapsed ? 'collapsed' : ''}`}>
           <Routes>
-            <Route path="/" element={<OverallDashboard />} />
+            <Route path="/" element={
+              user.role === 'admin' ? <Navigate to="/allocation-report" replace /> : <Navigate to="/dispatch" replace />
+            } />
             <Route path="/overall-dashboard" element={<Navigate to="/" replace />} />
             <Route path="/allocation-summary" element={<AllocationSummaryPage />} />
             <Route path="/allocation-report" element={<AllocationReportPage />} />
