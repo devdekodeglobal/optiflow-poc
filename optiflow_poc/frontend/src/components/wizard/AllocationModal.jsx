@@ -8,20 +8,11 @@ export default function AllocationModal({ isOpen, onClose }) {
   const [step, setStep] = useState(1);
   const [isDataUploaded, setIsDataUploaded] = useState(false);
 
-  // When modal opens, check status
+  // When modal opens, reset step and uploaded state
   useEffect(() => {
     if (isOpen) {
       setStep(1);
-      const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-        ? 'http://127.0.0.1:8000'
-        : 'https://optiflow-backend-977593391877.asia-south1.run.app';
-      fetch(`${baseUrl}/api/upload/status`)
-        .then(r => r.ok ? r.json() : null)
-        .then(uploadData => {
-          const dataUploaded = uploadData?.planogram && uploadData?.stock;
-          setIsDataUploaded(dataUploaded);
-        })
-        .catch(() => {});
+      setIsDataUploaded(false);
     }
   }, [isOpen]);
 
