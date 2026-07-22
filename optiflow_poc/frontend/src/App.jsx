@@ -17,8 +17,14 @@ import { DataProvider } from './DataContext';
 
 const SidebarItemWithFilters = ({ to, label, icon, sidebarCollapsed }) => {
   const location = useLocation();
-  const [isExpanded, setIsExpanded] = useState(false);
   const isActive = location.pathname === to;
+  const [isExpanded, setIsExpanded] = useState(isActive);
+
+  React.useEffect(() => {
+    if (isActive) {
+      setIsExpanded(true);
+    }
+  }, [isActive]);
 
   return (
     <>
