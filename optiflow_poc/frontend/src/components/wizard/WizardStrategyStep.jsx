@@ -77,7 +77,26 @@ export default function WizardStrategyStep({ onComplete }) {
   const [activeTab, setActiveTab] = useState(null);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(0);
   const [error, setError] = useState(null);
+
+  const loadingTexts = [
+    "Checking warehouse inventory...",
+    "Analyzing store sales history...",
+    "Matching styles to store tiers...",
+    "Generating dispatch lists...",
+    "Finalizing optimal allocation..."
+  ];
+
+  useEffect(() => {
+    if (running) {
+      setLoadingStep(0);
+      const interval = setInterval(() => {
+        setLoadingStep(prev => Math.min(prev + 1, loadingTexts.length - 1));
+      }, 2000);
+      return () => clearInterval(interval);
+    }
+  }, [running]);
 
   useEffect(() => { fetchSettings(); }, []);
 
@@ -146,7 +165,16 @@ export default function WizardStrategyStep({ onComplete }) {
         payload.category_stores[cat] = columns[cat].map(s => s.store_name);
       });
       await updateStrategy(payload);
+      
+      const startTime = Date.now();
       const runResult = await runAllocation();
+      
+      // Ensure minimum 10s display for the animation
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 10000) {
+        await new Promise(resolve => setTimeout(resolve, 10000 - elapsed));
+      }
+      
       refreshData(runResult);
       onComplete();
     } catch (err) {
@@ -158,9 +186,9 @@ export default function WizardStrategyStep({ onComplete }) {
   if (running) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 40px', minHeight: 320, textAlign: 'center' }}>
-        <h3 style={{ marginBottom: 8, fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>Calculating Optimal Allocation...</h3>
-        <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24, maxWidth: 450, lineHeight: 1.5 }}>
-          Running multi-tier matching logic, inventory constraints, store historical stock, and style fallback rules. This will take a few seconds.
+        <h3 style={{ marginBottom: 12, fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>Calculating Allocation...</h3>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 15, marginBottom: 28, height: 22, fontWeight: 500, transition: 'opacity 0.3s' }}>
+          {loadingTexts[loadingStep]}
         </p>
         
         {/* Progress Bar Container */}
@@ -169,26 +197,21 @@ export default function WizardStrategyStep({ onComplete }) {
             height: '100%',
             background: 'linear-gradient(90deg, var(--primary) 0%, var(--gold) 100%)',
             borderRadius: 4,
-            animation: 'loaderProgress 8s cubic-bezier(0.4, 0, 0.2, 1) forwards'
+            animation: 'loaderProgress 10s cubic-bezier(0.4, 0, 0.2, 1) forwards'
           }} />
         </div>
         
         <style dangerouslySetInnerHTML={{__html: `
           @keyframes loaderProgress {
             0% { width: 0%; }
-            5% { width: 15%; }
-            15% { width: 35%; }
-            30% { width: 55%; }
-            55% { width: 75%; }
-            75% { width: 90%; }
-            90% { width: 96%; }
+            10% { width: 10%; }
+            30% { width: 30%; }
+            50% { width: 50%; }
+            70% { width: 70%; }
+            90% { width: 90%; }
             100% { width: 99%; }
           }
         `}} />
-        
-        <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase' }}>
-          Processing Tiers & Store Rules
-        </span>
       </div>
     );
   }
