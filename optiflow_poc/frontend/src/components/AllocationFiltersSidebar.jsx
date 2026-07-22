@@ -56,9 +56,8 @@ export default function AllocationFiltersSidebar({ isDispatch }) {
         <MultiSelect placeholder="All Grades" options={dynamicMetadata.categories} value={filters.store_category} onChange={(val) => handleFilterChange('store_category', val)} />
         <MultiSelect placeholder="All Stores" options={dynamicMetadata.stores} value={filters.store_name} onChange={(val) => handleFilterChange('store_name', val)} />
         <MultiSelect placeholder="All Brands" options={dynamicMetadata.brands} value={filters.brand_name} onChange={(val) => handleFilterChange('brand_name', val)} />
-        
         <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-          {dynamicMetadata.commodities.map(c => {
+          {(dynamicMetadata.commodities.length > 0 ? dynamicMetadata.commodities : ['Frame', 'Sunglass']).map(c => {
             const isSelected = filters.commodity && filters.commodity.length > 0 ? filters.commodity.includes(c) : true;
             return (
               <button 
@@ -73,8 +72,9 @@ export default function AllocationFiltersSidebar({ isDispatch }) {
                 onMouseOut={e => e.currentTarget.style.background = isSelected ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.1)'}
                 onClick={() => {
                   let next = [];
+                  const commoditiesList = dynamicMetadata.commodities.length > 0 ? dynamicMetadata.commodities : ['Frame', 'Sunglass'];
                   if (!filters.commodity || filters.commodity.length === 0) {
-                    next = dynamicMetadata.commodities.filter(x => x !== c);
+                    next = commoditiesList.filter(x => x !== c);
                   } else {
                     if (isSelected) {
                       next = filters.commodity.filter(x => x !== c);
