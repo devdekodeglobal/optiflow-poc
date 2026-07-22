@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, NavLink, Navigate } from 'react-router-dom';
-import AllocationWizardPage from './pages/AllocationWizardPage';
+import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom';
 import AllocationReportPage from './pages/AllocationReportPage';
+import AllocationFiltersSidebar from './components/AllocationFiltersSidebar';
 import OverallDashboard from './pages/OverallDashboard';
 import AllocationSummaryPage from './pages/AllocationSummaryPage';
 import DispatchPage from './pages/DispatchPage';
@@ -14,6 +14,40 @@ import BrandPage from './pages/BrandPage';
 import RegionPage from './pages/RegionPage';
 import LoginPage from './pages/LoginPage';
 import { DataProvider } from './DataContext';
+
+const SidebarItemWithFilters = ({ to, label, icon, sidebarCollapsed }) => {
+  const location = useLocation();
+  const [isExpanded, setIsExpanded] = useState(false);
+  const isActive = location.pathname === to;
+
+  return (
+    <>
+      <NavLink 
+        to={to} 
+        className={`nav-link ${isActive ? 'active' : ''}`}
+        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {icon}
+          <span>{label}</span>
+        </div>
+        {!sidebarCollapsed && isActive && (
+          <div 
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsExpanded(!isExpanded); }}
+            style={{ padding: 4, cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+          >
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        )}
+      </NavLink>
+      {!sidebarCollapsed && isActive && isExpanded && (
+        <AllocationFiltersSidebar isDispatch={to === '/dispatch'} />
+      )}
+    </>
+  );
+};
 
 function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -46,6 +80,7 @@ function App() {
           </div>
 
           <nav className="sidebar-nav">
+            {/*
             <NavLink to="/" end className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
               <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
@@ -53,14 +88,20 @@ function App() {
               </svg>
               <span>Dashboard</span>
             </NavLink>
+            */}
+
 
             {user.role === 'admin' && (
-              <NavLink to="/wizard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                </svg>
-                <span>Allocation</span>
-              </NavLink>
+              <SidebarItemWithFilters 
+                to="/allocation-report" 
+                label="Allocation" 
+                sidebarCollapsed={sidebarCollapsed}
+                icon={
+                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ width: 20, height: 20 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                  </svg>
+                }
+              />
             )}
 
             {/* 
@@ -73,13 +114,17 @@ function App() {
             </NavLink>
             */}
 
-            <NavLink to="/dispatch" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <span>Dispatch Orders</span>
-            </NavLink>
+            <SidebarItemWithFilters 
+              to="/dispatch" 
+              label="Dispatch Orders" 
+              sidebarCollapsed={sidebarCollapsed}
+              icon={
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ width: 20, height: 20 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              }
+            />
 
             {/*
             <NavLink to="/allocation-dashboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
@@ -114,6 +159,8 @@ function App() {
             */}
 
           </nav>
+
+
 
           <div className="sidebar-footer" style={{ borderTop: '1px solid rgba(255,255,255,0.1)', padding: '16px 20px' }}>
             {!sidebarCollapsed ? (
@@ -173,7 +220,6 @@ function App() {
             <Route path="/store/:storeName" element={<StorePage />} />
             <Route path="/brand/:brandName" element={<BrandPage />} />
             <Route path="/region/:regionName" element={<RegionPage />} />
-            <Route path="/wizard" element={<AllocationWizardPage />} />
           </Routes>
         </main>
       </div>

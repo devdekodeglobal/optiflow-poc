@@ -27,7 +27,8 @@ export default function AllocationDrillDown({
   filteredData, 
   filters, 
   setFilters,
-  isDispatch = false
+  isDispatch = false,
+  headerStrip
 }) {
   const [viewMode, setViewMode] = useState('cards'); // 'cards' or 'table'
 
@@ -103,8 +104,9 @@ export default function AllocationDrillDown({
       const ratio = expected > 0 ? (allocated / expected) * 100 : 0;
       
       const uniqueSkus = isDispatch ? new Set(items.map(i => i.allocated_item_code)).size : 0;
+      const stores = isDispatch ? new Set(items.map(i => i.store_name)).size : 0;
 
-      return { name: key, displayName: groupObj.displayName, expected, soh, allocated, outOfStock, ratio, count: items.length, uniqueSkus };
+      return { name: key, displayName: groupObj.displayName, expected, soh, allocated, outOfStock, ratio, count: items.length, uniqueSkus, stores };
     }).sort((a, b) => isDispatch ? b.allocated - a.allocated : b.expected - a.expected);
   }, [filteredData, nextLevelName, isDispatch]);
 
@@ -140,15 +142,15 @@ export default function AllocationDrillDown({
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
           <div className="card animate-in" style={{ padding: '12px 16px', background: '#fff', border: '1px solid var(--border)' }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, marginBottom: 2 }}>TOTAL UNITS TO PICK</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)' }}>{unitsToPick.toLocaleString()}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: COLORS.fulfilled }}>{unitsToPick.toLocaleString()}</div>
           </div>
           <div className="card animate-in" style={{ padding: '12px 16px', background: '#fff', border: '1px solid var(--border)' }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, marginBottom: 2 }}>UNIQUE SKUS</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)' }}>{uniqueSkus.toLocaleString()}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--primary)' }}>{uniqueSkus.toLocaleString()}</div>
           </div>
           <div className="card animate-in" style={{ padding: '12px 16px', background: '#fff', border: '1px solid var(--border)' }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, marginBottom: 2 }}>STORES TO FULFILL</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)' }}>{stores.toLocaleString()}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--primary)' }}>{stores.toLocaleString()}</div>
           </div>
         </div>
       );
@@ -184,7 +186,7 @@ export default function AllocationDrillDown({
     const crumbs = [];
     crumbs.push(
       <span key="network" style={{ cursor: 'pointer', color: currentLevelIndex === 0 ? 'var(--text-primary)' : 'var(--brand-primary)', fontWeight: currentLevelIndex === 0 ? 700 : 500 }} onClick={() => handleBreadcrumbClick(0)}>
-        {isDispatch ? 'All Dispatch Orders' : 'All Zones'}
+        All Zones
       </span>
     );
 
@@ -228,9 +230,17 @@ export default function AllocationDrillDown({
         </span>
       );
     }
+    if (currentLevelIndex >= 6) {
+      crumbs.push(<span key="sep6" style={{ margin: '0 8px', color: 'var(--text-secondary)' }}>/</span>);
+      crumbs.push(
+        <span key="commodity" style={{ cursor: 'pointer', color: currentLevelIndex === 6 ? 'var(--text-primary)' : 'var(--brand-primary)', fontWeight: currentLevelIndex === 6 ? 700 : 500 }} onClick={() => handleBreadcrumbClick(6)}>
+          {filters.commodity[0]}
+        </span>
+      );
+    }
 
     return (
-      <div style={{ display: 'flex', alignItems: 'center', fontSize: 14, marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', fontSize: 14 }}>
         {crumbs}
       </div>
     );
@@ -241,7 +251,6 @@ export default function AllocationDrillDown({
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
         {childrenData.map((child, idx) => {
           if (isDispatch) {
-            const pct = summary.allocated > 0 ? (child.allocated / summary.allocated) * 100 : 0;
             return (
               <div 
                 key={idx} 
@@ -262,21 +271,27 @@ export default function AllocationDrillDown({
                   e.currentTarget.style.borderColor = 'var(--border)';
                 }}
               >
-                <div style={{ marginBottom: 16 }}>
-                  <h4 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--text-primary)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <h4 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>
                     {isDispatch && nextLevelName === 'store_name' ? child.name.split('/')[0] : child.displayName}
                   </h4>
+                  <svg width="16" height="16" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                 </div>
-                <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 2 }}>UNITS</div>
-                    <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--primary)' }}>{child.allocated}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, borderBottom: '1px solid #f1f3f5', paddingBottom: 4 }}>
+                    <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Units</span>
+                    <span style={{ fontWeight: 800, color: COLORS.fulfilled }}>{child.allocated.toLocaleString()}</span>
                   </div>
-                  <div style={{ width: 1, height: 28, background: 'var(--border)' }}></div>
-                  <div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 2 }}>SKUS</div>
-                    <div style={{ fontSize: 22, fontWeight: 800 }}>{child.uniqueSkus}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, borderBottom: '1px solid #f1f3f5', paddingBottom: 4 }}>
+                    <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>SKUs</span>
+                    <span style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{child.uniqueSkus.toLocaleString()}</span>
                   </div>
+                  {currentLevelIndex < 3 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                      <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Stores</span>
+                      <span style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{child.stores.toLocaleString()}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -295,22 +310,23 @@ export default function AllocationDrillDown({
             <div 
               key={idx} 
               className="card animate-in" 
-              style={{ padding: 20, cursor: 'pointer', transition: 'all 0.2s' }}
+              style={{ padding: 20, cursor: 'pointer', transition: 'all 0.2s', border: '1px solid var(--border)' }}
               onClick={() => handleDrillDown(child.name)}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-2px)';
                 e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)';
+                e.currentTarget.style.borderColor = 'var(--primary)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
                 e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+                e.currentTarget.style.borderColor = 'var(--border)';
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <h4 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>{child.name}</h4>
                 <svg width="16" height="16" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
               </div>
-              <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>{child.expected.toLocaleString()} expected qty</div>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                 <div style={{ width: 80, height: 80, position: 'relative' }}>
@@ -320,8 +336,6 @@ export default function AllocationDrillDown({
                         data={gaugeData}
                         cx="50%"
                         cy="50%"
-                        startAngle={225}
-                        endAngle={-45}
                         innerRadius={30}
                         outerRadius={40}
                         paddingAngle={0}
@@ -335,23 +349,27 @@ export default function AllocationDrillDown({
                       </Pie>
                     </PieChart>
                   </ResponsiveContainer>
-                  <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: ratioColor }}>
+                  <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: ratioColor }}>
                     {child.ratio.toFixed(0)}%
                   </div>
                 </div>
 
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 13 }}>
-                    <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>Fulfilled</span>
-                    <span style={{ fontWeight: 700 }}>{child.allocated.toLocaleString()}</span>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                    <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Expected</span>
+                    <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{child.expected.toLocaleString()}</span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 13 }}>
-                    <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>Out of stock</span>
-                    <span style={{ fontWeight: 700 }}>{child.outOfStock.toLocaleString()}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                    <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>In Hand</span>
+                    <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{child.soh.toLocaleString()}</span>
                   </div>
-                  <div style={{ height: 6, background: '#f1f3f5', borderRadius: 3, display: 'flex', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${child.ratio}%`, background: COLORS.ok }} />
-                    <div style={{ height: '100%', flex: 1, background: COLORS.critical }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                    <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Fulfilled</span>
+                    <span style={{ fontWeight: 700, color: COLORS.fulfilled }}>{child.allocated.toLocaleString()}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                    <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Out of Stock</span>
+                    <span style={{ fontWeight: 700, color: COLORS.outOfStock }}>{child.outOfStock.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
@@ -374,13 +392,13 @@ export default function AllocationDrillDown({
           return (
             <span 
               style={{ 
-                color: currentLevelIndex < 5 ? 'var(--primary)' : 'inherit', 
-                cursor: currentLevelIndex < 5 ? 'pointer' : 'default',
-                textDecoration: currentLevelIndex < 5 ? 'underline' : 'none',
+                color: currentLevelIndex < 6 ? 'var(--primary)' : 'inherit', 
+                cursor: currentLevelIndex < 6 ? 'pointer' : 'default',
+                textDecoration: currentLevelIndex < 6 ? 'underline' : 'none',
                 fontWeight: 600
               }}
               onClick={() => {
-                if (currentLevelIndex < 5) handleDrillDown(rawName);
+                if (currentLevelIndex < 6) handleDrillDown(rawName);
               }}
             >
               {p.row.displayName || p.row.name}
@@ -395,6 +413,11 @@ export default function AllocationDrillDown({
         { key: 'allocated', name: 'ITEMS TO PICK', resizable: true, renderCell: (p) => <span style={{fontWeight: 700, color: 'var(--primary)'}}>{p.row.allocated.toLocaleString()}</span> },
         { key: 'uniqueSkus', name: 'UNIQUE SKUS', resizable: true, renderCell: (p) => <span style={{fontWeight: 600}}>{p.row.uniqueSkus.toLocaleString()}</span> }
       );
+      if (currentLevelIndex < 3) {
+        columns.push(
+          { key: 'stores', name: 'STORES', resizable: true, renderCell: (p) => <span style={{fontWeight: 600}}>{p.row.stores.toLocaleString()}</span> }
+        );
+      }
     } else {
       columns.push(
         { key: 'expected', name: 'EXPECTED', resizable: true, renderCell: (p) => p.row.expected.toLocaleString() },
@@ -417,29 +440,15 @@ export default function AllocationDrillDown({
           rows={childrenData}
           rowKeyGetter={(row) => row.name}
           className="rdg-light"
-          style={{ height: 'auto', border: '1px solid var(--border)', borderRadius: 12 }}
+          style={{ height: 'auto' }}
+          rowHeight={52}
+          headerRowHeight={48}
           onRowClick={(row) => {
             // Only drill down further if we are not already at the commodity level
             const rawName = (isDispatch && nextLevelName === 'store_name') ? row.name.split(' / ')[0] : row.name;
-            if (currentLevelIndex < 5) handleDrillDown(rawName);
+            if (currentLevelIndex < 6) handleDrillDown(rawName);
           }}
         />
-      </div>
-    );
-  };
-
-  const renderBrandLevel = () => {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-        <div style={{ background: '#e3fafc', color: '#0b7285', padding: '12px 16px', borderRadius: 8, fontSize: 13, fontWeight: 500, border: '1px solid #c5f6fa' }}>
-          This is the finest level of this hierarchy — category mix is shown as a table here since exact SKU-level numbers matter more than a visual at this depth.
-        </div>
-        
-        {renderTable()}
-        
-        <div style={{ marginTop: 24 }}>
-          {renderFinalDetails()}
-        </div>
       </div>
     );
   };
@@ -512,29 +521,40 @@ export default function AllocationDrillDown({
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+      <div style={{ marginBottom: 16 }}>
         {renderBreadcrumbs()}
-        
-        {currentLevelIndex < 5 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            {!isDispatch && viewMode === 'cards' && (
-              <div style={{ display: 'flex', gap: 16, fontSize: 12, color: 'var(--text-secondary)', background: '#fff', padding: '6px 16px', borderRadius: 20, border: '1px solid var(--border)' }}>
+      </div>
+
+      {headerStrip && (
+        <div style={{ marginBottom: 16 }}>
+          {headerStrip}
+        </div>
+      )}
+
+      {renderKPIBar()}
+
+      {currentLevelIndex < 6 && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <div>
+            {!isDispatch && (
+              <div style={{ display: 'flex', gap: 16, fontSize: 12, color: 'var(--text-secondary)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <div style={{ width: 10, height: 10, borderRadius: 2, background: COLORS.ok }}></div>
-                  <span style={{ fontWeight: 600 }}>OK 60%+</span>
+                  <div style={{ width: 10, height: 10, borderRadius: 2, background: COLORS.critical }}></div>
+                  <span style={{ fontWeight: 600 }}>Critical &lt;30%</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <div style={{ width: 10, height: 10, borderRadius: 2, background: COLORS.warning }}></div>
                   <span style={{ fontWeight: 600 }}>Warning 30–59%</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <div style={{ width: 10, height: 10, borderRadius: 2, background: COLORS.critical }}></div>
-                  <span style={{ fontWeight: 600 }}>Critical &lt;30%</span>
+                  <div style={{ width: 10, height: 10, borderRadius: 2, background: COLORS.ok }}></div>
+                  <span style={{ fontWeight: 600 }}>OK 60%+</span>
                 </div>
               </div>
             )}
-            <div style={{ display: 'flex', background: '#f8f9fa', borderRadius: 8, padding: 4, border: '1px solid var(--border)' }}>
-              <button
+          </div>
+          <div style={{ display: 'flex', background: '#f8f9fa', borderRadius: 8, padding: 4, border: '1px solid var(--border)' }}>
+            <button
               onClick={() => setViewMode('cards')}
               style={{
                 padding: '6px 16px',
@@ -566,19 +586,14 @@ export default function AllocationDrillDown({
             >
               Table
             </button>
-            </div>
           </div>
-        )}
-      </div>
-
-      {renderKPIBar()}
+        </div>
+      )}
 
       {/* Redundant bar chart removed */}
 
-      {currentLevelIndex < 5 ? (
+      {currentLevelIndex < 6 ? (
         viewMode === 'cards' ? renderCards() : renderTable()
-      ) : currentLevelIndex === 5 ? (
-        renderBrandLevel()
       ) : (
         renderFinalDetails()
       )}

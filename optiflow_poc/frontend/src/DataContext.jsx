@@ -9,6 +9,23 @@ export const DataProvider = ({ children }) => {
   const [lastRun, setLastRun] = useState(null);
   const [isLoadingData, setIsLoadingData] = useState(false);
 
+  const initialFilters = {
+    zone: [],
+    region: [],
+    store_category: [],
+    store_name: [],
+    brand_name: [],
+    commodity: []
+  };
+
+  // Global Filter State for Allocation Report
+  const [filters, setFilters] = useState(initialFilters);
+  // Global Filter State for Dispatch Orders
+  const [dispatchFilters, setDispatchFilters] = useState(initialFilters);
+
+  const resetFilters = () => setFilters(initialFilters);
+  const resetDispatchFilters = () => setDispatchFilters(initialFilters);
+
   const fetchData = async () => {
     setIsLoadingData(true);
     try {
@@ -63,7 +80,13 @@ export const DataProvider = ({ children }) => {
       dashboardData,
       lastRun,
       isLoadingData,
-      refreshData: fetchData
+      refreshData: fetchData,
+      filters,
+      setFilters,
+      resetFilters,
+      dispatchFilters,
+      setDispatchFilters,
+      resetDispatchFilters
     }}>
       {children}
     </DataContext.Provider>

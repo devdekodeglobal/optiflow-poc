@@ -7,22 +7,10 @@ import PrintLayout from '../components/PrintLayout';
 
 export default function DispatchPage() {
   const navigate = useNavigate();
-  const { allocationData: masterData, lastRun, isLoadingData: loading, refreshData } = useContext(DataContext);
+  const { allocationData: masterData, lastRun, isLoadingData: loading, refreshData, dispatchFilters: filters, setDispatchFilters: setFilters } = useContext(DataContext);
   const [printMenuOpen, setPrintMenuOpen] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [printMode, setPrintMode] = useState(null); // { full: boolean, groupBy: string }
-  const [showFilters, setShowFilters] = useState(false);
-  
-  const searchParams = new URLSearchParams(window.location.search);
-  
-  const [filters, setFilters] = useState({
-    zone: searchParams.get('zone') ? searchParams.get('zone').split(',') : [],
-    region: searchParams.get('region') ? searchParams.get('region').split(',') : [],
-    store_category: searchParams.get('store_category') ? searchParams.get('store_category').split(',') : [],
-    store_name: searchParams.get('store_name') ? searchParams.get('store_name').split(',') : [],
-    brand_name: searchParams.get('brand_name') ? searchParams.get('brand_name').split(',') : [],
-    commodity: searchParams.get('commodity') ? searchParams.get('commodity').split(',') : []
-  });
 
   const dispatchMasterData = useMemo(() => masterData.filter(i => (i.allocated_qty || 0) > 0), [masterData]);
 
@@ -189,60 +177,10 @@ export default function DispatchPage() {
   }
 
   return (
-    <div onClick={() => { setPrintMenuOpen(false); setExportMenuOpen(false); }}>
-      <div className="page-header animate-in print-hide" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 100 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <h2 style={{ margin: 0 }}>Dispatch Orders</h2>
-          <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500, background: 'var(--bg-surface)', padding: '4px 12px', borderRadius: 20, border: '1px solid var(--border)' }}>
-            {lastRun ? `Last generated: ${lastRun}` : 'Not yet generated'}
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: 12 }}>
-          
-          <div style={{ position: 'relative', zIndex: 9999 }} onClick={e => e.stopPropagation()}>
-            <button className="btn btn-ghost" onClick={() => { setPrintMenuOpen(!printMenuOpen); setExportMenuOpen(false); }}>
-              Print Report ▼
-            </button>
-            {printMenuOpen && (
-              <div style={{ position: 'absolute', top: '100%', right: 0, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 9999, minWidth: 200, marginTop: 4, overflow: 'hidden' }}>
-                <div onClick={() => handlePrint(false, 'store')} style={{ padding: '10px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }} className="hover-row">
-                  Filtered (Store-wise)
-                </div>
-                <div onClick={() => handlePrint(false, 'brand')} style={{ padding: '10px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }} className="hover-row">
-                  Filtered (Brand-wise)
-                </div>
-                <div onClick={() => handlePrint(true, 'store')} style={{ padding: '10px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }} className="hover-row">
-                  Full (Store-wise)
-                </div>
-                <div onClick={() => handlePrint(true, 'brand')} style={{ padding: '10px 16px', cursor: 'pointer', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }} className="hover-row">
-                  Full (Brand-wise)
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div style={{ position: 'relative', zIndex: 9999 }} onClick={e => e.stopPropagation()}>
-            <button className="btn btn-ghost" onClick={() => { setExportMenuOpen(!exportMenuOpen); setPrintMenuOpen(false); }}>
-              Download Report ▼
-            </button>
-            {exportMenuOpen && (
-              <div style={{ position: 'absolute', top: '100%', right: 0, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 9999, minWidth: 200, marginTop: 4, overflow: 'hidden' }}>
-                <div onClick={() => handleDownloadExcel(false, 'store')} style={{ padding: '10px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }} className="hover-row">
-                  Filtered (Store-wise)
-                </div>
-                <div onClick={() => handleDownloadExcel(false, 'brand')} style={{ padding: '10px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }} className="hover-row">
-                  Filtered (Brand-wise)
-                </div>
-                <div onClick={() => handleDownloadExcel(true, 'store')} style={{ padding: '10px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }} className="hover-row">
-                  Full (Store-wise)
-                </div>
-                <div onClick={() => handleDownloadExcel(true, 'brand')} style={{ padding: '10px 16px', cursor: 'pointer', fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }} className="hover-row">
-                  Full (Brand-wise)
-                </div>
-              </div>
-            )}
-          </div>
-          
+    <div className="report-container" onClick={() => { setPrintMenuOpen(false); setExportMenuOpen(false); }}>
+      <div className="page-header animate-in print-hide" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, position: 'relative', zIndex: 100 }}>
+        <div>
+          <h1 style={{ margin: '0 0 4px 0', fontSize: 28, fontWeight: 800 }}>Dispatch Orders</h1>
         </div>
       </div>
 
@@ -267,102 +205,62 @@ export default function DispatchPage() {
       ) : (
         <div className="animate-in" style={{ animationDelay: '0.1s' }}>
           
-          <div className="print-hide" style={{ background: 'var(--bg-app)', padding: showFilters ? '16px' : '8px 16px', borderRadius: 12, border: '1px solid var(--border)', marginBottom: 16, transition: 'padding 0.2s' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: showFilters ? 16 : 0 }}>
-              <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
-              <h3 
-                style={{ margin: 0, fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, userSelect: 'none' }} 
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                Filters
-                <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                  {showFilters ? '▼' : '▶'}
-                </span>
-              </h3>
-              <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 16 }}>
-                <span style={{ fontSize: 15, color: 'var(--text-secondary)', fontWeight: 600 }}>
-                  {filteredData.length.toLocaleString()} dispatch orders created
-                </span>
-                <button 
-                  className="btn btn-ghost btn-sm" 
-                  onClick={() => setFilters({ zone: [], region: [], store_category: [], store_name: [], brand_name: [], commodity: [] })} 
-                  style={{ fontSize: 14, color: 'var(--primary)' }}
-                >
-                  Reset Filters
-                </button>
-              </div>
-            </div>
-
-            {showFilters && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
-              <div>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Zone</label>
-                <MultiSelect placeholder="All Zones" options={dynamicMetadata.zones} value={filters.zone} onChange={(val) => handleFilterChange('zone', val)} />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Region</label>
-                <MultiSelect placeholder="All Regions" options={dynamicMetadata.regions} value={filters.region} onChange={(val) => handleFilterChange('region', val)} />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Store Grade</label>
-                <MultiSelect placeholder="All Grades" options={dynamicMetadata.categories} value={filters.store_category} onChange={(val) => handleFilterChange('store_category', val)} />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Store Name</label>
-                <MultiSelect placeholder="All Stores" options={dynamicMetadata.stores} value={filters.store_name} onChange={(val) => handleFilterChange('store_name', val)} />
-              </div>
-              <div>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Brand</label>
-                <MultiSelect placeholder="All Brands" options={dynamicMetadata.brands} value={filters.brand_name} onChange={(val) => handleFilterChange('brand_name', val)} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Category</label>
-                <div style={{ display: 'flex', gap: 10, flex: 1, alignItems: 'center' }}>
-                  {dynamicMetadata.commodities.map(c => {
-                    const isSelected = filters.commodity.length === 0 || filters.commodity.includes(c);
-                    return (
-                      <button 
-                        key={c}
-                        style={{
-                          flex: 1, padding: '8px 0', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
-                          border: isSelected ? '1px solid var(--primary)' : '1px solid var(--border)',
-                          background: isSelected ? 'var(--primary)' : '#fff',
-                          color: isSelected ? '#fff' : 'var(--text-muted)',
-                          boxShadow: isSelected ? '0 2px 8px rgba(59, 35, 123, 0.25)' : 'none'
-                        }}
-                        onClick={() => {
-                          let next = [];
-                          if (filters.commodity.length === 0) {
-                            next = dynamicMetadata.commodities.filter(x => x !== c);
-                          } else {
-                            if (isSelected) {
-                              next = filters.commodity.filter(x => x !== c);
-                              if (next.length === 0) next = ['__NONE__'];
-                            } else {
-                              next = [...filters.commodity.filter(x => x !== '__NONE__'), c];
-                              if (next.length === dynamicMetadata.commodities.length) next = [];
-                            }
-                          }
-                          handleFilterChange('commodity', next);
-                        }}
-                      >
-                        {c}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-            )}
-          </div>
-
-          {/* DRILL DOWN UI */}
           <div className="print-hide" style={{ marginTop: 12 }}>
             <AllocationDrillDown 
               filteredData={filteredData} 
-              filters={filters} 
-              setFilters={setFilters} 
+              filters={filters}
+              setFilters={setFilters}
               isDispatch={true} 
+              headerStrip={
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 20px', borderRadius: 16, background: 'transparent', border: '1px solid var(--border)' }}>
+                  
+                  {/* Left Side: Last Generated Pill */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', background: '#fff', padding: '8px 16px', borderRadius: 24, border: '1px solid var(--border)', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--success)' }}></div>
+                    Last generated: {lastRun ? new Date(lastRun).toLocaleString() : 'No data'}
+                  </div>
+
+                  {/* Right Side: Action Buttons */}
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+
+                    <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
+                      <button 
+                        className="btn" 
+                        onClick={() => { setPrintMenuOpen(!printMenuOpen); setExportMenuOpen(false); }} 
+                        style={{ fontSize: 13, background: '#fff', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 16px', fontWeight: 600, color: 'var(--text-primary)', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}
+                      >
+                        Print Report ▼
+                      </button>
+                      {printMenuOpen && (
+                        <div style={{ position: 'absolute', top: '100%', right: 0, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 9999, minWidth: 180, marginTop: 4, overflow: 'hidden' }}>
+                          <div onClick={() => handlePrint(false, 'store')} style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', fontSize: 14, fontWeight: 500 }} className="hover-row">Filtered (Store)</div>
+                          <div onClick={() => handlePrint(false, 'brand')} style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', fontSize: 14, fontWeight: 500 }} className="hover-row">Filtered (Brand)</div>
+                          <div onClick={() => handlePrint(true, 'store')} style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', fontSize: 14, fontWeight: 500 }} className="hover-row">Full (Store)</div>
+                          <div onClick={() => handlePrint(true, 'brand')} style={{ padding: '12px 16px', cursor: 'pointer', fontSize: 14, fontWeight: 500 }} className="hover-row">Full (Brand)</div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
+                      <button 
+                        className="btn" 
+                        onClick={() => { setExportMenuOpen(!exportMenuOpen); setPrintMenuOpen(false); }} 
+                        style={{ fontSize: 13, background: '#fff', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 16px', fontWeight: 600, color: 'var(--text-primary)', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}
+                      >
+                        Download Report ▼
+                      </button>
+                      {exportMenuOpen && (
+                        <div style={{ position: 'absolute', top: '100%', right: 0, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 9999, minWidth: 180, marginTop: 4, overflow: 'hidden' }}>
+                          <div onClick={() => handleDownloadExcel(false, 'store')} style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }} className="hover-row">Filtered (Store)</div>
+                          <div onClick={() => handleDownloadExcel(false, 'brand')} style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }} className="hover-row">Filtered (Brand)</div>
+                          <div onClick={() => handleDownloadExcel(true, 'store')} style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)', fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }} className="hover-row">Full (Store)</div>
+                          <div onClick={() => handleDownloadExcel(true, 'brand')} style={{ padding: '12px 16px', cursor: 'pointer', fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }} className="hover-row">Full (Brand)</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              }
             />
           </div>
         </div>
