@@ -234,7 +234,6 @@ async def startup_event():
 async def upload_planogram(file: UploadFile = File(...)):
     try:
         contents = await file.read()
-        upload_to_gcs("Planogram.csv", contents)
         df = pd.read_csv(io.BytesIO(contents), encoding="utf-8", on_bad_lines="skip")
         
         # Double header check
@@ -367,7 +366,8 @@ async def execute_allocation():
     return {
         "status": "success",
         "processing_time": round(elapsed, 2),
-        "summary": summary.model_dump()
+        "summary": summary.model_dump(),
+        "last_run_at": store.last_run_at
     }
 
 

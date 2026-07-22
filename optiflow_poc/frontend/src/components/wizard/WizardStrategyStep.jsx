@@ -146,8 +146,8 @@ export default function WizardStrategyStep({ onComplete }) {
         payload.category_stores[cat] = columns[cat].map(s => s.store_name);
       });
       await updateStrategy(payload);
-      await runAllocation();
-      refreshData();
+      const runResult = await runAllocation();
+      refreshData(runResult);
       onComplete();
     } catch (err) {
       setError(err.message);

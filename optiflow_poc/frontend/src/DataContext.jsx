@@ -26,7 +26,19 @@ export const DataProvider = ({ children }) => {
   const resetFilters = () => setFilters(initialFilters);
   const resetDispatchFilters = () => setDispatchFilters(initialFilters);
 
-  const fetchData = async () => {
+  const fetchData = async (instantData = null) => {
+    if (instantData && instantData.summary) {
+      setAllocationSummary(instantData.summary);
+      if (instantData.last_run_at) {
+        const rawDateStr = instantData.last_run_at;
+        const isoDateStr = rawDateStr.includes(' ') && !rawDateStr.includes('T') 
+          ? rawDateStr.replace(' ', 'T') 
+          : rawDateStr;
+        const date = new Date(isoDateStr);
+        setLastRun(!isNaN(date.getTime()) ? date.toLocaleString() : rawDateStr);
+      }
+    }
+
     setIsLoadingData(true);
     try {
       const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -35,28 +47,30 @@ export const DataProvider = ({ children }) => {
       const q = new URLSearchParams({ page_size: 50000 }).toString();
 
       // 1. Fetch summary and dashboard (Fast queries, ~200ms)
-      const summaryPromise = fetch(`${baseUrl}/api/allocation/summary`)
-        .then(res => res.ok ? res.json() : null)
-        .then(summaryJson => {
-          if (summaryJson) {
-            setAllocationSummary(summaryJson);
-            if (summaryJson.last_run_at) {
-              const rawDateStr = summaryJson.last_run_at;
-              const isoDateStr = rawDateStr.includes(' ') && !rawDateStr.includes('T') 
-                ? rawDateStr.replace(' ', 'T') 
-                : rawDateStr;
-              const date = new Date(isoDateStr);
-              setLastRun(!isNaN(date.getTime()) ? date.toLocaleString() : rawDateStr);
-            }
-          } else {
-            setAllocationSummary(null);
-            setLastRun(null);
-          }
-        })
-        .catch(() => {
-          setAllocationSummary(null);
-          setLastRun(null);
-        });
+      const summaryPromise = instantData && instantData.summary
+        ? Promise.resolve()
+        : fetch(`${baseUrl}/api/allocation/summary`)
+            .then(res => res.ok ? res.json() : null)
+            .then(summaryJson => {
+              if (summaryJson) {
+                setAllocationSummary(summaryJson);
+                if (summaryJson.last_run_at) {
+                  const rawDateStr = summaryJson.last_run_at;
+                  const isoDateStr = rawDateStr.includes(' ') && !rawDateStr.includes('T') 
+                    ? rawDateStr.replace(' ', 'T') 
+                    : rawDateStr;
+                  const date = new Date(isoDateStr);
+                  setLastRun(!isNaN(date.getTime()) ? date.toLocaleString() : rawDateStr);
+                }
+              } else {
+                setAllocationSummary(null);
+                setLastRun(null);
+              }
+            })
+            .catch(() => {
+              setAllocationSummary(null);
+              setLastRun(null);
+            });
 
       const dashPromise = fetch(`${baseUrl}/api/dashboard/all-stores`)
         .then(res => res.ok ? res.json() : null)
