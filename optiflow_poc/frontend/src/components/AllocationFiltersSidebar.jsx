@@ -63,13 +63,17 @@ export default function AllocationFiltersSidebar({ isDispatch }) {
               <button 
                 key={c}
                 style={{
-                  flex: 1, padding: '8px 0', borderRadius: 6, fontSize: 13, fontWeight: 500, cursor: 'pointer', transition: 'background 0.2s',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  background: isSelected ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.1)',
-                  color: isSelected ? '#ffffff' : 'rgba(255, 255, 255, 0.85)',
+                  flex: 1, padding: '8px 0', borderRadius: 6, fontSize: 13, fontWeight: isSelected ? 700 : 500, cursor: 'pointer', transition: 'all 0.2s',
+                  border: isSelected ? '1px solid var(--accent)' : '1px solid rgba(255, 255, 255, 0.12)',
+                  background: isSelected ? 'var(--accent)' : 'rgba(255, 255, 255, 0.06)',
+                  color: isSelected ? 'var(--navy-dark)' : 'rgba(255, 255, 255, 0.5)',
                 }}
-                onMouseOver={e => e.currentTarget.style.background = isSelected ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.15)'}
-                onMouseOut={e => e.currentTarget.style.background = isSelected ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.1)'}
+                onMouseOver={e => {
+                  if (!isSelected) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
+                }}
+                onMouseOut={e => {
+                  if (!isSelected) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
+                }}
                 onClick={() => {
                   let next = [];
                   const commoditiesList = dynamicMetadata.commodities.length > 0 ? dynamicMetadata.commodities : ['Frame', 'Sunglass'];
