@@ -96,7 +96,7 @@ export default function RegionPage() {
           </h1>
         </div>
         <div style={{ display: 'flex', gap: 12 }}>
-          <button className="btn btn-secondary" onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL}/api/allocation/download/region/${encodeURIComponent(detail.region_name)}`, '_blank')}>
+          <button className="btn btn-secondary" onClick={() => window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/allocation/download/region/${encodeURIComponent(detail.region_name)}`}>
             ⬇ Download Region CSV
           </button>
         </div>

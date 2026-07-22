@@ -77,7 +77,7 @@ export default function DispatchPage() {
 
     if (full) {
       const q = new URLSearchParams({ group_by: groupBy, dispatch_only: 'true' }).toString();
-      window.open(`${getBaseUrl()}/api/allocation/results/export?${q}`, '_blank');
+      window.location.href = `${getBaseUrl()}/api/allocation/results/export?${q}`;
     } else {
       const q = new URLSearchParams({ 
         zone: filters.zone.join(','),
@@ -89,7 +89,7 @@ export default function DispatchPage() {
         group_by: groupBy,
         dispatch_only: 'true'
       }).toString();
-      window.open(`${getBaseUrl()}/api/allocation/results/export?${q}`, '_blank');
+      window.location.href = `${getBaseUrl()}/api/allocation/results/export?${q}`;
     }
   };
 

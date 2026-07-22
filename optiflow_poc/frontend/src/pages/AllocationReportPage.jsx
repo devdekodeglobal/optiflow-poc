@@ -54,7 +54,7 @@ export default function AllocationReportPage() {
     };
 
     if (full) {
-      window.open(`${getBaseUrl()}/api/allocation/results/export?group_by=zone`, '_blank');
+      window.location.href = `${getBaseUrl()}/api/allocation/results/export?group_by=zone`;
     } else {
       const q = new URLSearchParams({ 
         zone: filters.zone.join(','),
@@ -65,7 +65,7 @@ export default function AllocationReportPage() {
         commodity: filters.commodity.join(','),
         group_by: 'zone'
       }).toString();
-      window.open(`${getBaseUrl()}/api/allocation/results/export?${q}`, '_blank');
+      window.location.href = `${getBaseUrl()}/api/allocation/results/export?${q}`;
     }
   };
 
