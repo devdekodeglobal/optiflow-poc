@@ -62,7 +62,7 @@ function PriorityLadder({ categories, activeCategories, onToggle, onRun, running
           onClick={onRun}
           disabled={running}
         >
-          {running ? 'Running...' : 'Run Allocation Engine →'}
+          {running ? 'Running...' : 'Run Allocation →'}
         </button>
       </div>
     </div>
