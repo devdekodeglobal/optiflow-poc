@@ -1,16 +1,24 @@
 import { useState } from 'react';
 
 export default function LoginPage({ onLogin }) {
-  const [adminMode, setAdminMode] = useState(false);
+  const [loginMode, setLoginMode] = useState(null);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleAdminLogin = (e) => {
+  const handleLogin = (e) => {
     e.preventDefault();
-    if (password === '1234') {
-      onLogin({ name: 'System Admin', role: 'admin' });
-    } else {
-      setError('Incorrect password');
+    if (loginMode === 'admin') {
+      if (password === 'dekode1234') {
+        onLogin({ name: 'System Admin', role: 'admin' });
+      } else {
+        setError('Incorrect admin password');
+      }
+    } else if (loginMode === 'user') {
+      if (password === 'dekode5678') {
+        onLogin({ name: 'Standard User', role: 'user' });
+      } else {
+        setError('Incorrect user password');
+      }
     }
   };
 
@@ -48,11 +56,11 @@ export default function LoginPage({ onLogin }) {
           <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: 13, fontWeight: 600, letterSpacing: '0.5px' }}>OptiFlow v0.1</p>
         </div>
 
-        {adminMode ? (
-          <form onSubmit={handleAdminLogin} style={{ display: 'flex', flexDirection: 'column', gap: 16 }} className="animate-in">
+        {loginMode ? (
+          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 16 }} className="animate-in">
             <input
               type="password"
-              placeholder="Enter admin password..."
+              placeholder={`Enter ${loginMode} password...`}
               value={password}
               onChange={(e) => { setPassword(e.target.value); setError(''); }}
               style={{
@@ -77,7 +85,7 @@ export default function LoginPage({ onLogin }) {
               <button
                 type="button"
                 className="btn btn-ghost"
-                onClick={() => { setAdminMode(false); setError(''); setPassword(''); }}
+                onClick={() => { setLoginMode(null); setError(''); setPassword(''); }}
                 style={{ padding: '14px', flex: 1, fontWeight: 700, borderRadius: 12 }}
               >
                 Cancel
@@ -95,7 +103,7 @@ export default function LoginPage({ onLogin }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }} className="animate-in">
             <button
               className="btn btn-primary"
-              onClick={() => setAdminMode(true)}
+              onClick={() => setLoginMode('admin')}
               style={{ padding: '14px', fontSize: 16, fontWeight: 700, borderRadius: 12, boxShadow: '0 4px 12px rgba(241,196,15,0.3)', background: 'linear-gradient(135deg, var(--gold), #f39c12)', border: 'none', color: 'var(--bg-app)', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}
             >
               <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
@@ -104,7 +112,7 @@ export default function LoginPage({ onLogin }) {
             
             <button
               className="btn btn-ghost"
-              onClick={() => onLogin({ name: 'Standard User', role: 'user' })}
+              onClick={() => setLoginMode('user')}
               style={{ 
                 padding: '14px', 
                 fontSize: 16, 
