@@ -47,8 +47,14 @@ export default function AllocationReportPage() {
 
   const handleDownloadCsv = (full) => {
     setExportMenuOpen(false);
+    const getBaseUrl = () => {
+      return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://127.0.0.1:8000'
+        : 'https://optiflow-backend-977593391877.asia-south1.run.app';
+    };
+
     if (full) {
-      window.open(`${import.meta.env.VITE_API_BASE_URL}/api/allocation/results/export?group_by=zone`, '_blank');
+      window.open(`${getBaseUrl()}/api/allocation/results/export?group_by=zone`, '_blank');
     } else {
       const q = new URLSearchParams({ 
         zone: filters.zone.join(','),
@@ -59,8 +65,7 @@ export default function AllocationReportPage() {
         commodity: filters.commodity.join(','),
         group_by: 'zone'
       }).toString();
-      const baseUrl = 'http://127.0.0.1:8000';
-      window.open(`${baseUrl}/api/allocation/results/export?${q}`, '_blank');
+      window.open(`${getBaseUrl()}/api/allocation/results/export?${q}`, '_blank');
     }
   };
 

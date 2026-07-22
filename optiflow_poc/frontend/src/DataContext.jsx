@@ -29,7 +29,9 @@ export const DataProvider = ({ children }) => {
   const fetchData = async () => {
     setIsLoadingData(true);
     try {
-      const baseUrl = 'http://127.0.0.1:8000';
+      const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://127.0.0.1:8000'
+        : 'https://optiflow-backend-977593391877.asia-south1.run.app';
       const q = new URLSearchParams({ page_size: 50000 }).toString();
 
       // Fetch all 3 in parallel
