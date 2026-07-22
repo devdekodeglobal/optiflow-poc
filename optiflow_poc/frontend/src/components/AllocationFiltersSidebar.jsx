@@ -64,9 +64,9 @@ export default function AllocationFiltersSidebar({ isDispatch }) {
                 key={c}
                 style={{
                   flex: 1, padding: '8px 0', borderRadius: 6, fontSize: 13, fontWeight: isSelected ? 700 : 500, cursor: 'pointer', transition: 'all 0.2s',
-                  border: isSelected ? '1px solid var(--accent)' : '1px solid rgba(255, 255, 255, 0.12)',
-                  background: isSelected ? 'var(--accent)' : 'rgba(255, 255, 255, 0.06)',
-                  color: isSelected ? 'var(--navy-dark)' : 'rgba(255, 255, 255, 0.5)',
+                  border: isSelected ? '1px solid #ffffff' : '1px solid rgba(255, 255, 255, 0.15)',
+                  background: isSelected ? '#ffffff' : 'rgba(255, 255, 255, 0.05)',
+                  color: isSelected ? 'var(--navy-dark)' : 'rgba(255, 255, 255, 0.55)',
                 }}
                 onMouseOver={e => {
                   if (!isSelected) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
