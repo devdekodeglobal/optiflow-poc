@@ -34,40 +34,47 @@ export const DataProvider = ({ children }) => {
         : 'https://optiflow-backend-977593391877.asia-south1.run.app';
       const q = new URLSearchParams({ page_size: 50000 }).toString();
 
-      // Fetch all 3 in parallel
-      const [allocRes, summaryRes, dashRes] = await Promise.all([
-        fetch(`${baseUrl}/api/allocation/results?${q}`).catch(() => null),
-        fetch(`${baseUrl}/api/allocation/summary`).catch(() => null),
-        fetch(`${baseUrl}/api/dashboard/all-stores`).catch(() => null),
-      ]);
+      // 1. Fetch summary and dashboard (Fast queries, ~200ms)
+      const summaryPromise = fetch(`${baseUrl}/api/allocation/summary`)
+        .then(res => res.ok ? res.json() : null)
+        .then(summaryJson => {
+          if (summaryJson) {
+            setAllocationSummary(summaryJson);
+            if (summaryJson.last_run_at) {
+              const rawDateStr = summaryJson.last_run_at;
+              const isoDateStr = rawDateStr.includes(' ') && !rawDateStr.includes('T') 
+                ? rawDateStr.replace(' ', 'T') 
+                : rawDateStr;
+              const date = new Date(isoDateStr);
+              setLastRun(!isNaN(date.getTime()) ? date.toLocaleString() : rawDateStr);
+            }
+          } else {
+            setAllocationSummary(null);
+            setLastRun(null);
+          }
+        })
+        .catch(() => {
+          setAllocationSummary(null);
+          setLastRun(null);
+        });
 
-      if (allocRes?.ok) {
-        const json = await allocRes.json();
+      const dashPromise = fetch(`${baseUrl}/api/dashboard/all-stores`)
+        .then(res => res.ok ? res.json() : null)
+        .then(dashJson => {
+          if (dashJson) setDashboardData(dashJson);
+        })
+        .catch(() => {});
+
+      // Wait for fast summary queries to resolve so header timestamp updates instantly
+      await Promise.all([summaryPromise, dashPromise]);
+
+      // 2. Fetch results (Slow query, 5-10s depending on network since payload is ~10MB)
+      const resultsRes = await fetch(`${baseUrl}/api/allocation/results?${q}`).catch(() => null);
+      if (resultsRes?.ok) {
+        const json = await resultsRes.json();
         setAllocationData(json.allocations || []);
       } else {
         setAllocationData([]);
-      }
-
-      if (summaryRes?.ok) {
-        const summaryJson = await summaryRes.json();
-        setAllocationSummary(summaryJson);
-        if (summaryJson.last_run_at) {
-          const rawDateStr = summaryJson.last_run_at;
-          // Convert space-separated timestamp to ISO format for browser compatibility (e.g. Safari)
-          const isoDateStr = rawDateStr.includes(' ') && !rawDateStr.includes('T') 
-            ? rawDateStr.replace(' ', 'T') 
-            : rawDateStr;
-          const date = new Date(isoDateStr);
-          setLastRun(!isNaN(date.getTime()) ? date.toLocaleString() : rawDateStr);
-        }
-      } else {
-        setAllocationSummary(null);
-        setLastRun(null);
-      }
-
-      if (dashRes?.ok) {
-        const dashJson = await dashRes.json();
-        setDashboardData(dashJson);
       }
 
     } catch (e) {
