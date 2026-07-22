@@ -59,6 +59,7 @@ function App() {
 
   const handleLogout = () => {
     setUser(null);
+    window.location.pathname = '/';
   };
 
   return (
