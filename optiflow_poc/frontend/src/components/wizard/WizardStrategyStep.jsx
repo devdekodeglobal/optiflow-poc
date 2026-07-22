@@ -155,6 +155,44 @@ export default function WizardStrategyStep({ onComplete }) {
     }
   };
 
+  if (running) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 40px', minHeight: 320, textAlign: 'center' }}>
+        <h3 style={{ marginBottom: 8, fontSize: 20, fontWeight: 700, color: 'var(--text-primary)' }}>Calculating Optimal Allocation...</h3>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 14, marginBottom: 24, maxWidth: 450, lineHeight: 1.5 }}>
+          Running multi-tier matching logic, inventory constraints, store historical stock, and style fallback rules. This will take a few seconds.
+        </p>
+        
+        {/* Progress Bar Container */}
+        <div style={{ width: '100%', maxWidth: 400, height: 8, background: '#e9ecef', borderRadius: 4, overflow: 'hidden', position: 'relative', marginBottom: 12 }}>
+          <div style={{
+            height: '100%',
+            background: 'linear-gradient(90deg, var(--primary) 0%, var(--gold) 100%)',
+            borderRadius: 4,
+            animation: 'loaderProgress 8s cubic-bezier(0.4, 0, 0.2, 1) forwards'
+          }} />
+        </div>
+        
+        <style dangerouslySetInnerHTML={{__html: `
+          @keyframes loaderProgress {
+            0% { width: 0%; }
+            5% { width: 15%; }
+            15% { width: 35%; }
+            30% { width: 55%; }
+            55% { width: 75%; }
+            75% { width: 90%; }
+            90% { width: 96%; }
+            100% { width: 99%; }
+          }
+        `}} />
+        
+        <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase' }}>
+          Processing Tiers & Store Rules
+        </span>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="animate-in" style={{ padding: '10px 0' }}>
