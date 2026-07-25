@@ -75,29 +75,68 @@ class DataStore:
 
 store = DataStore()
 
+LOCAL_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "local_data")
+os.makedirs(LOCAL_DATA_DIR, exist_ok=True)
 GCS_BUCKET_NAME = "optiflow-poc-data-kopal500607"
 
 def download_from_gcs(filename):
+    gcs_success = False
+    gcs_data = None
     try:
         client = storage.Client()
         bucket = client.bucket(GCS_BUCKET_NAME)
         blob = bucket.blob(filename)
         if blob.exists():
-            return blob.download_as_bytes()
+            gcs_data = blob.download_as_bytes()
+            gcs_success = True
+            # Cache locally
+            local_path = os.path.join(LOCAL_DATA_DIR, filename)
+            with open(local_path, "wb") as f:
+                f.write(gcs_data)
     except Exception as e:
-        logging.error(f"Error downloading {filename} from GCS: {e}")
+        logging.warning(f"Failed GCS download for {filename}: {e}. Falling back to local cache.")
+    
+    if gcs_success:
+        return gcs_data
+
+    # Fallback to local cache
+    local_path = os.path.join(LOCAL_DATA_DIR, filename)
+    if os.path.exists(local_path):
+        try:
+            with open(local_path, "rb") as f:
+                return f.read()
+        except Exception as e:
+            logging.error(f"Error reading local file {local_path}: {e}")
     return None
 
 def upload_to_gcs(filename, contents):
+    # Always save locally first
+    local_path = os.path.join(LOCAL_DATA_DIR, filename)
+    try:
+        with open(local_path, "wb") as f:
+            f.write(contents)
+    except Exception as e:
+        logging.error(f"Failed to write local file {local_path}: {e}")
+
+    # Try upload to GCS
     try:
         client = storage.Client()
         bucket = client.bucket(GCS_BUCKET_NAME)
         blob = bucket.blob(filename)
         blob.upload_from_string(contents)
     except Exception as e:
-        logging.error(f"Error uploading {filename} to GCS: {e}")
+        logging.warning(f"Error uploading {filename} to GCS (local save succeeded): {e}")
 
 def delete_from_gcs(filename):
+    # Delete locally first
+    local_path = os.path.join(LOCAL_DATA_DIR, filename)
+    if os.path.exists(local_path):
+        try:
+            os.remove(local_path)
+        except Exception as e:
+            logging.error(f"Failed to delete local file {local_path}: {e}")
+
+    # Try deleting from GCS
     try:
         client = storage.Client()
         bucket = client.bucket(GCS_BUCKET_NAME)
@@ -105,7 +144,7 @@ def delete_from_gcs(filename):
         if blob.exists():
             blob.delete()
     except Exception as e:
-        logging.error(f"Error deleting {filename} from GCS: {e}")
+        logging.warning(f"Error deleting {filename} from GCS (local delete succeeded): {e}")
 
 
 import concurrent.futures
