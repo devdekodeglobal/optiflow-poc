@@ -498,7 +498,6 @@ export default function PlanogramDrillDown({
                       {nextLevelName === 'store_name' && (
                         <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
                           <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: 'var(--bg-inset)', color: 'var(--text-secondary)' }}>{child.store_type}</span>
-                          <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: 'var(--bg-inset)', color: 'var(--text-secondary)' }}>Grade {child.store_category}</span>
                         </div>
                       )}
                     </div>
