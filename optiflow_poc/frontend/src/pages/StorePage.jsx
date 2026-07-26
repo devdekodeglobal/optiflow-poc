@@ -97,7 +97,6 @@ export default function StorePage() {
           </button>
         </div>
       </div>
-
       <div className="summary-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
         <div className="summary-card navy animate-in">
           <div className="label">Fulfillment</div>
@@ -123,6 +122,11 @@ export default function StorePage() {
           <div className="label">Match Accuracy</div>
           <div className="value">{detail.match_accuracy_pct}%</div>
           <div className="sub">Exact matches</div>
+        </div>
+        <div className="summary-card navy animate-in">
+          <div className="label">Uniqueness</div>
+          <div className="value">{detail.uniqueness_pct}%</div>
+          <div className="sub">Unique SKUs to total items</div>
         </div>
       </div>
 

@@ -21,8 +21,13 @@ export async function getUploadStatus() {
   return res.json();
 }
 
-export async function runAllocation() {
-  const res = await fetch(`${API_BASE}/api/run-allocation`, { method: 'POST' });
+export async function runAllocation(lookbackDays = null) {
+  const payload = lookbackDays ? { sales_lookback_days: lookbackDays } : {};
+  const res = await fetch(`${API_BASE}/api/run-allocation`, { 
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
   if (!res.ok) {
     const err = await res.json();
     throw new Error(err.detail || 'Allocation failed');
@@ -144,14 +149,40 @@ export async function getStrategy() {
 export async function updateStrategy(payload) {
   const res = await fetch(`${API_BASE}/api/settings/strategy`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
   });
   if (!res.ok) {
     const err = await res.json();
-    throw new Error(err.detail || 'Failed to update strategy settings');
+    throw new Error(err.detail || 'Failed to save strategy');
+  }
+  return res.json();
+}
+
+export async function getPlanogramData(params = {}) {
+  const searchParams = new URLSearchParams();
+  if (params.store_name) searchParams.set('store_name', params.store_name);
+  if (params.brand_name) searchParams.set('brand_name', params.brand_name);
+  if (params.region) searchParams.set('region', params.region);
+  if (params.zone) searchParams.set('zone', params.zone);
+  if (params.store_category) searchParams.set('store_category', params.store_category);
+  if (params.commodity) searchParams.set('commodity', params.commodity);
+  if (params.page) searchParams.set('page', params.page);
+  if (params.page_size) searchParams.set('page_size', params.page_size);
+
+  const res = await fetch(`${API_BASE}/api/planogram?${searchParams}`);
+  return res.json();
+}
+
+export async function updatePlanogramData(updates) {
+  const res = await fetch(`${API_BASE}/api/planogram/update`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates)
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || 'Failed to update planogram');
   }
   return res.json();
 }

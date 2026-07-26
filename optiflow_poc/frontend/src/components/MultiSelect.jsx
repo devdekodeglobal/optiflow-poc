@@ -49,6 +49,8 @@ export default function MultiSelect({ options, value = [], onChange, placeholder
         onMouseOut={e => e.currentTarget.style.background='rgba(255, 255, 255, 0.1)'}
       >
         <input 
+          id={`multiselect-${placeholder ? placeholder.replace(/\s+/g, '-').toLowerCase() : 'search'}`}
+          name={`multiselect-${placeholder ? placeholder.replace(/\s+/g, '-').toLowerCase() : 'search'}`}
           type="text"
           className="filter-input-search"
           value={isOpen ? searchTerm : (selectedValues.length ? selectedValues.join(', ') : '')}
@@ -84,7 +86,14 @@ export default function MultiSelect({ options, value = [], onChange, placeholder
                 onMouseOut={e => e.currentTarget.style.background='transparent'}
                 onClick={() => toggleOption(opt)}
               >
-                <input type="checkbox" checked={selectedValues.includes(opt)} readOnly style={{ cursor: 'pointer' }} />
+                <input 
+                  id={`checkbox_${i}_${String(opt).replace(/[^a-zA-Z0-9]/g, '_')}`}
+                  name={`checkbox_${i}_${String(opt).replace(/[^a-zA-Z0-9]/g, '_')}`}
+                  type="checkbox" 
+                  checked={selectedValues.includes(opt)} 
+                  readOnly 
+                  style={{ cursor: 'pointer' }} 
+                />
                 <span>{opt}</span>
               </div>
             ))}

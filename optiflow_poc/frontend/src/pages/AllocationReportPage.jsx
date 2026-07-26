@@ -131,8 +131,19 @@ export default function AllocationReportPage() {
       <div style={{ padding: 40, textAlign: 'center', marginTop: 100 }}>
         <div className="card animate-in" style={{ display: 'inline-block', padding: 40 }}>
           <h3 style={{ marginBottom: 10 }}>No Allocation Data</h3>
-          <p style={{ color: 'var(--text-secondary)' }}>Upload planograms and live stock to generate recommendations.</p>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: 20 }}>Upload planograms and live stock to generate recommendations.</p>
+          <button 
+            className="btn btn-primary" 
+            onClick={() => setIsModalOpen(true)}
+            style={{ padding: '10px 20px', fontSize: 14, fontWeight: 600, display: 'inline-flex', gap: 6, alignItems: 'center' }}
+          >
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            New Allocation
+          </button>
         </div>
+        <AllocationModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
       </div>
     );
   }
@@ -174,6 +185,7 @@ export default function AllocationReportPage() {
               filters={filters}
               setFilters={setFilters}
               isDispatch={false} 
+              isLoading={loading}
               headerStrip={
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 20px', borderRadius: 16, background: 'transparent', border: '1px solid var(--border)' }}>
                   

@@ -28,7 +28,8 @@ export default function AllocationDrillDown({
   filters, 
   setFilters,
   isDispatch = false,
-  headerStrip
+  headerStrip,
+  isLoading = false
 }) {
   const [viewMode, setViewMode] = useState('cards'); // 'cards' or 'table'
 
@@ -61,16 +62,26 @@ export default function AllocationDrillDown({
   const currentLevelName = HIERARCHY[currentLevelIndex];
   const nextLevelName = HIERARCHY[currentLevelIndex + 1];
 
-  // Summarize current filtered data for the top KPI bar
   const summary = useMemo(() => {
     const uniqueGapsMap = {};
     const uniqueSohMap = {};
     const uniqueExpectedMap = {};
+    let exact = 0;
+    let similar = 0;
+    let fallback = 0;
+    const allocated_skus = new Set();
     
     filteredData.forEach(i => {
       uniqueGapsMap[i.gap_id] = i.deficit;
       uniqueSohMap[i.gap_id] = i.current_soh;
       uniqueExpectedMap[i.gap_id] = (i.facing || 0) + (i.back_stock || 0);
+      
+      if (i.match_type === 'exact') exact += (i.allocated_qty || 0);
+      if (i.match_type === 'similar') similar += (i.allocated_qty || 0);
+      if (i.match_type === 'substitute') fallback += (i.allocated_qty || 0);
+      if ((i.allocated_qty || 0) > 0 && i.allocated_item_code) {
+        allocated_skus.add(i.allocated_item_code);
+      }
     });
 
     const deficit = Object.values(uniqueGapsMap).reduce((a, b) => a + b, 0);
@@ -79,8 +90,10 @@ export default function AllocationDrillDown({
     const allocated = filteredData.reduce((a, b) => a + (b.allocated_qty || 0), 0);
     const outOfStock = Math.max(0, deficit - allocated);
     const fulfillRate = expected > 0 ? (allocated / expected) * 100 : 0;
+    const uniq_pct = allocated > 0 ? Math.floor((allocated_skus.size / allocated) * 100) : 0;
+    const match_accuracy = (exact + similar + fallback) > 0 ? Math.round((exact / (exact + similar + fallback)) * 100) : 0;
 
-    return { expected, soh, deficit, allocated, outOfStock, fulfillRate };
+    return { expected, soh, deficit, allocated, outOfStock, fulfillRate, exact, similar, fallback, uniq_pct, match_accuracy };
   }, [filteredData]);
 
   // Group data by next level to render cards/table
@@ -117,14 +130,64 @@ export default function AllocationDrillDown({
       const outOfStock = Math.max(0, deficit - allocated);
       const ratio = expected > 0 ? (allocated / expected) * 100 : 0;
       
+      const exact = items.reduce((a, b) => a + (b.match_type === 'exact' ? (b.allocated_qty || 0) : 0), 0);
+      const similar = items.reduce((a, b) => a + (b.match_type === 'similar' ? (b.allocated_qty || 0) : 0), 0);
+      const fallback = items.reduce((a, b) => a + (b.match_type === 'substitute' ? (b.allocated_qty || 0) : 0), 0);
+      const allocated_skus = new Set();
+      items.forEach(i => {
+        if ((i.allocated_qty || 0) > 0 && i.allocated_item_code) {
+          allocated_skus.add(i.allocated_item_code);
+        }
+      });
+      const uniq_pct = allocated > 0 ? Math.floor((allocated_skus.size / allocated) * 100) : 0;
+      
       const uniqueSkus = isDispatch ? new Set(items.map(i => i.allocated_item_code)).size : 0;
       const stores = isDispatch ? new Set(items.map(i => i.store_name)).size : 0;
 
-      return { name: key, displayName: groupObj.displayName, expected, soh, allocated, outOfStock, ratio, count: items.length, uniqueSkus, stores };
+      return { name: key, displayName: groupObj.displayName, expected, soh, allocated, outOfStock, ratio, count: items.length, uniqueSkus, stores, exact, similar, fallback, uniq_pct };
     }).sort((a, b) => isDispatch ? b.allocated - a.allocated : b.expected - a.expected);
   }, [filteredData, nextLevelName, isDispatch]);
 
   const rowsWithIds = useMemo(() => filteredData.map((r, i) => ({ ...r, _uid: i })), [filteredData]);
+
+  if (isLoading) {
+    return (
+      <div className="animate-in" style={{ padding: '8px 0' }}>
+        {headerStrip}
+        <div style={{ marginTop: 24 }}>
+          {/* Skeleton KPI bar */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 16, marginBottom: 24 }}>
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="card" style={{ padding: '16px 20px', background: '#fff', border: '1px solid var(--border)' }}>
+                <div className="skeleton skeleton-text" style={{ width: '60%', height: 12, marginBottom: 12 }}></div>
+                <div className="skeleton skeleton-title" style={{ width: '80%', height: 28, margin: 0 }}></div>
+              </div>
+            ))}
+          </div>
+
+          {/* Skeleton Cards Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="card" style={{ padding: 20, background: '#fff', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div className="skeleton skeleton-title" style={{ width: '50%', height: 18, margin: 0 }}></div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                  <div className="skeleton" style={{ width: 90, height: 90, borderRadius: '50%', flexShrink: 0 }}></div>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {[...Array(4)].map((_, j) => (
+                      <div key={j} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <div className="skeleton skeleton-text" style={{ width: '40%', height: 12, margin: 0 }}></div>
+                        <div className="skeleton skeleton-text" style={{ width: '30%', height: 12, margin: 0 }}></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleDrillDown = (childName) => {
     const newFilters = { ...filters };
@@ -171,7 +234,7 @@ export default function AllocationDrillDown({
     }
     
     return (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 16, marginBottom: 24 }}>
         <div className="card animate-in" style={{ padding: '16px 20px', background: '#fff', border: '1px solid var(--border)' }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, marginBottom: 4 }}>EXPECTED QTY</div>
           <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)' }}>{summary.expected.toLocaleString()}</div>
@@ -192,6 +255,30 @@ export default function AllocationDrillDown({
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, marginBottom: 4 }}>FULFILLMENT %</div>
           <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)' }}>{summary.fulfillRate.toFixed(0)}%</div>
         </div>
+        {currentLevelIndex >= 4 && !isDispatch && (
+          <>
+            <div className="card animate-in" style={{ padding: '16px 20px', background: '#fff', border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, marginBottom: 4 }}>UNIQUENESS %</div>
+              <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)' }}>{summary.uniq_pct}%</div>
+            </div>
+            <div className="card animate-in" style={{ padding: '16px 20px', background: '#fff', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6, fontSize: 13 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Exact</span>
+                  <span style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{summary.exact.toLocaleString()}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Similar</span>
+                  <span style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{summary.similar.toLocaleString()}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Fallback</span>
+                  <span style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{summary.fallback.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     );
   };
@@ -204,51 +291,51 @@ export default function AllocationDrillDown({
       </span>
     );
 
-    if (filters.zone && filters.zone.length === 1) {
+    if (filters.zone && filters.zone.length > 0) {
       crumbs.push(<span key="sep1" style={{ margin: '0 8px', color: 'var(--text-secondary)' }}>/</span>);
       crumbs.push(
         <span key="zone" style={{ cursor: 'pointer', color: currentLevelIndex === 1 ? 'var(--text-primary)' : 'var(--brand-primary)', fontWeight: currentLevelIndex === 1 ? 700 : 500 }} onClick={() => handleBreadcrumbClick(1)}>
-          {filters.zone[0]}
+          {filters.zone.length === 1 ? filters.zone[0] : `Multiple Zones (${filters.zone.length})`}
         </span>
       );
     }
-    if (filters.region && filters.region.length === 1) {
+    if (filters.region && filters.region.length > 0) {
       crumbs.push(<span key="sep2" style={{ margin: '0 8px', color: 'var(--text-secondary)' }}>/</span>);
       crumbs.push(
         <span key="region" style={{ cursor: 'pointer', color: currentLevelIndex === 2 ? 'var(--text-primary)' : 'var(--brand-primary)', fontWeight: currentLevelIndex === 2 ? 700 : 500 }} onClick={() => handleBreadcrumbClick(2)}>
-          {filters.region[0]}
+          {filters.region.length === 1 ? filters.region[0] : `Multiple Regions (${filters.region.length})`}
         </span>
       );
     }
-    if (filters.store_category && filters.store_category.length === 1) {
+    if (filters.store_category && filters.store_category.length > 0) {
       crumbs.push(<span key="sep3" style={{ margin: '0 8px', color: 'var(--text-secondary)' }}>/</span>);
       crumbs.push(
         <span key="grade" style={{ cursor: 'pointer', color: currentLevelIndex === 3 ? 'var(--text-primary)' : 'var(--brand-primary)', fontWeight: currentLevelIndex === 3 ? 700 : 500 }} onClick={() => handleBreadcrumbClick(3)}>
-          Grade {filters.store_category[0]}
+          {filters.store_category.length === 1 ? `Grade ${filters.store_category[0]}` : `Multiple Grades (${filters.store_category.length})`}
         </span>
       );
     }
-    if (filters.store_name && filters.store_name.length === 1) {
+    if (filters.store_name && filters.store_name.length > 0) {
       crumbs.push(<span key="sep4" style={{ margin: '0 8px', color: 'var(--text-secondary)' }}>/</span>);
       crumbs.push(
         <span key="store" style={{ cursor: 'pointer', color: currentLevelIndex === 4 ? 'var(--text-primary)' : 'var(--brand-primary)', fontWeight: currentLevelIndex === 4 ? 700 : 500 }} onClick={() => handleBreadcrumbClick(4)}>
-          {filters.store_name[0]}
+          {filters.store_name.length === 1 ? filters.store_name[0] : `Multiple Stores (${filters.store_name.length})`}
         </span>
       );
     }
-    if (filters.brand_name && filters.brand_name.length === 1) {
+    if (filters.brand_name && filters.brand_name.length > 0) {
       crumbs.push(<span key="sep5" style={{ margin: '0 8px', color: 'var(--text-secondary)' }}>/</span>);
       crumbs.push(
         <span key="brand" style={{ cursor: 'pointer', color: currentLevelIndex === 5 ? 'var(--text-primary)' : 'var(--brand-primary)', fontWeight: currentLevelIndex === 5 ? 700 : 500 }} onClick={() => handleBreadcrumbClick(5)}>
-          {filters.brand_name[0]}
+          {filters.brand_name.length === 1 ? filters.brand_name[0] : `Multiple Brands (${filters.brand_name.length})`}
         </span>
       );
     }
-    if (filters.commodity && filters.commodity.length === 1) {
+    if (filters.commodity && filters.commodity.length > 0) {
       crumbs.push(<span key="sep6" style={{ margin: '0 8px', color: 'var(--text-secondary)' }}>/</span>);
       crumbs.push(
         <span key="commodity" style={{ cursor: 'pointer', color: currentLevelIndex === 6 ? 'var(--text-primary)' : 'var(--brand-primary)', fontWeight: currentLevelIndex === 6 ? 700 : 500 }} onClick={() => handleBreadcrumbClick(6)}>
-          {filters.commodity[0]}
+          {filters.commodity.length === 1 ? filters.commodity[0] : `Multiple Commodities (${filters.commodity.length})`}
         </span>
       );
     }
@@ -262,7 +349,7 @@ export default function AllocationDrillDown({
 
   const renderCards = () => {
     return (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
         {childrenData.map((child, idx) => {
           if (isDispatch) {
             return (
@@ -342,16 +429,16 @@ export default function AllocationDrillDown({
                 <svg width="16" height="16" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
               </div>
               
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <div style={{ width: 80, height: 80, position: 'relative' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                <div style={{ width: 90, height: 90, position: 'relative', flexShrink: 0 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={gaugeData}
                         cx="50%"
                         cy="50%"
-                        innerRadius={30}
-                        outerRadius={40}
+                        innerRadius={35}
+                        outerRadius={45}
                         paddingAngle={0}
                         dataKey="value"
                         stroke="none"
@@ -363,28 +450,41 @@ export default function AllocationDrillDown({
                       </Pie>
                     </PieChart>
                   </ResponsiveContainer>
-                  <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: ratioColor }}>
+                  <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800, color: ratioColor }}>
                     {child.ratio.toFixed(0)}%
                   </div>
                 </div>
 
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
                     <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Expected</span>
                     <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{child.expected.toLocaleString()}</span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
                     <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>In Hand</span>
                     <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{child.soh.toLocaleString()}</span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
                     <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Fulfilled</span>
-                    <span style={{ fontWeight: 700, color: COLORS.fulfilled }}>{child.allocated.toLocaleString()}</span>
+                    <span style={{ fontWeight: 800, color: COLORS.fulfilled }}>{child.allocated.toLocaleString()}</span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
                     <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Out of Stock</span>
-                    <span style={{ fontWeight: 700, color: COLORS.outOfStock }}>{child.outOfStock.toLocaleString()}</span>
+                    <span style={{ fontWeight: 800, color: COLORS.outOfStock }}>{child.outOfStock.toLocaleString()}</span>
                   </div>
+                  {!isDispatch && currentLevelIndex >= 3 && (
+                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: 8, marginTop: 4, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                        <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Uniqueness %</span>
+                        <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{child.uniq_pct}%</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-secondary)', background: 'var(--bg-surface)', padding: '6px 8px', borderRadius: 4 }}>
+                        <span title="Exact Matches">E: <span style={{fontWeight: 700, color: 'var(--text-primary)'}}>{child.exact}</span></span>
+                        <span title="Similar Matches">S: <span style={{fontWeight: 700, color: 'var(--text-primary)'}}>{child.similar}</span></span>
+                        <span title="Fallback Matches">F: <span style={{fontWeight: 700, color: 'var(--text-primary)'}}>{child.fallback}</span></span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -429,15 +529,25 @@ export default function AllocationDrillDown({
       );
       if (currentLevelIndex < 3) {
         columns.push(
-          { key: 'stores', name: 'STORES', resizable: true, renderCell: (p) => <span style={{fontWeight: 600}}>{p.row.stores.toLocaleString()}</span> }
+          { key: 'stores', name: 'STORES', resizable: true, renderCell: (p) => <span style={{fontWeight: 500, color: 'var(--text-secondary)'}}>{p.row.stores.toLocaleString()}</span> }
         );
       }
     } else {
       columns.push(
         { key: 'expected', name: 'EXPECTED', resizable: true, renderCell: (p) => p.row.expected.toLocaleString() },
         { key: 'soh', name: 'IN HAND', resizable: true, renderCell: (p) => p.row.soh.toLocaleString() },
-        { key: 'allocated', name: 'FULFILLED', resizable: true, renderCell: (p) => <span style={{color: COLORS.fulfilled, fontWeight: 600}}>{p.row.allocated.toLocaleString()}</span> },
-        { key: 'outOfStock', name: 'OUT OF STOCK', resizable: true, renderCell: (p) => <span style={{color: COLORS.outOfStock, fontWeight: 600}}>{p.row.outOfStock.toLocaleString()}</span> },
+        { key: 'allocated', name: 'FULFILLED', resizable: true, renderCell: (p) => <span style={{fontWeight: 700, color: COLORS.fulfilled}}>{p.row.allocated.toLocaleString()}</span> },
+        { key: 'outOfStock', name: 'OOS', resizable: true, renderCell: (p) => <span style={{fontWeight: 700, color: COLORS.outOfStock}}>{p.row.outOfStock.toLocaleString()}</span> }
+      );
+      if (currentLevelIndex >= 3) {
+        columns.push(
+          { key: 'exact', name: 'EXACT', resizable: true, renderCell: (p) => <span style={{color: 'var(--text-secondary)'}}>{p.row.exact.toLocaleString()}</span> },
+          { key: 'similar', name: 'SIMILAR', resizable: true, renderCell: (p) => <span style={{color: 'var(--text-secondary)'}}>{p.row.similar.toLocaleString()}</span> },
+          { key: 'fallback', name: 'FALLBACK', resizable: true, renderCell: (p) => <span style={{color: 'var(--text-secondary)'}}>{p.row.fallback.toLocaleString()}</span> },
+          { key: 'uniq_pct', name: 'UNIQUENESS %', resizable: true, renderCell: (p) => <span style={{fontWeight: 600}}>{p.row.uniq_pct}%</span> }
+        );
+      }
+      columns.push(
         { key: 'ratio', name: 'FULFILLMENT', resizable: true, renderCell: (p) => {
           let ratioColor = COLORS.ok;
           if (p.row.ratio < 30) ratioColor = COLORS.critical;
@@ -450,6 +560,7 @@ export default function AllocationDrillDown({
     return (
       <div className="animate-in" style={{ height: 'auto' }}>
         <DataGrid
+          key={currentLevelIndex}
           columns={columns}
           rows={childrenData}
           rowKeyGetter={(row) => row.name}
@@ -469,21 +580,37 @@ export default function AllocationDrillDown({
 
   const renderFinalDetails = () => {
     if (isDispatch) {
+      const dispatchItems = filteredData.filter(item => item.allocated_qty > 0);
+      const dispatchMap = {};
+      const groupedDispatchItems = [];
+      
+      dispatchItems.forEach(item => {
+        const key = `${item.allocated_item_code}_${item.allocated_barcode || ''}_${item.store_name}_${item.brand_name}`;
+        if (!dispatchMap[key]) {
+          dispatchMap[key] = { ...item };
+          groupedDispatchItems.push(dispatchMap[key]);
+        } else {
+          dispatchMap[key].allocated_qty += item.allocated_qty;
+        }
+      });
+
       return (
         <div className="animate-in" style={{ maxHeight: '600px', overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 12 }}>
           <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
             <thead style={{ position: 'sticky', top: 0, zIndex: 5, background: 'var(--bg-surface)', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
               <tr style={{ color: 'var(--text-secondary)' }}>
                 <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Allocated SKU</th>
+                <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Allocated Barcode</th>
                 <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Item Description</th>
                 <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Store / Brand</th>
                 <th style={{ textAlign: 'right', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Dispatch Qty</th>
               </tr>
             </thead>
             <tbody>
-              {filteredData.filter(item => item.allocated_qty > 0).map((item, idx) => (
+              {groupedDispatchItems.map((item, idx) => (
                 <tr key={idx} style={{ background: idx % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.02)', borderBottom: '1px solid var(--border)' }}>
                   <td style={{ padding: '10px 16px', fontFamily: 'monospace', fontWeight: 600, color: 'var(--primary)' }}>{item.allocated_item_code || "N/A"}</td>
+                  <td style={{ padding: '10px 16px', fontFamily: 'monospace', fontWeight: 500, color: 'var(--text-secondary)' }}>{item.allocated_barcode || "-"}</td>
                   <td style={{ padding: '10px 16px' }}>{item.allocated_item_name || "N/A"}</td>
                   <td style={{ padding: '10px 16px' }}>{`${item.store_name} / ${item.brand_name}`}</td>
                   <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 600 }}>{item.allocated_qty}</td>
@@ -502,6 +629,7 @@ export default function AllocationDrillDown({
             <tr style={{ color: 'var(--text-secondary)' }}>
               <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Target SKU</th>
               <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Allocated SKU</th>
+              <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Allocated Barcode</th>
               <th style={{ textAlign: 'right', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Amount Allocated</th>
               <th style={{ textAlign: 'center', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Match Type</th>
               <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Reasoning</th>
@@ -512,6 +640,7 @@ export default function AllocationDrillDown({
               <tr key={idx} style={{ background: idx % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.02)', borderBottom: '1px solid var(--border)' }}>
                 <td style={{ padding: '10px 16px', fontFamily: 'monospace' }}>{item.requested_item_code || "N/A"}</td>
                 <td style={{ padding: '10px 16px', fontFamily: 'monospace', fontWeight: 600, color: 'var(--primary)' }}>{item.allocated_item_code || "N/A"}</td>
+                <td style={{ padding: '10px 16px', fontFamily: 'monospace', fontWeight: 500, color: 'var(--text-secondary)' }}>{item.allocated_barcode || "-"}</td>
                 <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 700 }}>{item.allocated_qty}</td>
                 <td style={{ padding: '10px 16px', textAlign: 'center' }}>
                   {item.match_type && (

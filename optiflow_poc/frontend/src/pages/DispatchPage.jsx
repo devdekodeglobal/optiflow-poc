@@ -196,11 +196,7 @@ export default function DispatchPage() {
         <hr style={{ marginTop: 16, borderColor: '#ccc' }} />
       </div>
 
-      {loading ? (
-        <div style={{ padding: 40, textAlign: 'center' }}>
-          <div className="spinner" style={{ width: 32, height: 32, borderWidth: 3 }}></div>
-        </div>
-      ) : masterData.length === 0 ? (
+      {masterData.length === 0 && !loading ? (
         <div className="empty-state card print-hide">
           <h3>No Dispatch Data</h3>
           <p>Run the allocation engine from the Upload page first to generate picking lists.</p>
@@ -210,13 +206,13 @@ export default function DispatchPage() {
         </div>
       ) : (
         <div className="animate-in" style={{ animationDelay: '0.1s' }}>
-          
           <div className="print-hide" style={{ marginTop: 12 }}>
             <AllocationDrillDown 
               filteredData={filteredData} 
               filters={filters}
               setFilters={setFilters}
               isDispatch={true} 
+              isLoading={loading}
               headerStrip={
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 20px', borderRadius: 16, background: 'transparent', border: '1px solid var(--border)' }}>
                   

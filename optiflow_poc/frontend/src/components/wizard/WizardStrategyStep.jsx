@@ -3,12 +3,9 @@ import { getStrategy, updateStrategy, runAllocation } from '../../api';
 import { DataContext } from '../../DataContext';
 
 const TIER_COLORS = {
-  'A++': { bg: '#4f2dbd', text: '#fff', bar: '100%' },
-  'A+':  { bg: '#6b41d1', text: '#fff', bar: '85%' },
-  'A':   { bg: '#8859e0', text: '#fff', bar: '70%' },
-  'B+':  { bg: '#e8a020', text: '#fff', bar: '55%' },
-  'B':   { bg: '#e07020', text: '#fff', bar: '40%' },
-  'C':   { bg: '#9b3e3e', text: '#fff', bar: '25%' },
+  'A':   { bg: '#4f2dbd', text: '#fff', bar: '100%' },
+  'B':   { bg: '#8859e0', text: '#fff', bar: '65%' },
+  'C':   { bg: '#e8a020', text: '#fff', bar: '30%' },
 };
 
 function PriorityLadder({ categories, activeCategories, onToggle, onRun, running }) {
@@ -79,6 +76,7 @@ export default function WizardStrategyStep({ onComplete }) {
   const [running, setRunning] = useState(false);
   const [loadingStep, setLoadingStep] = useState(0);
   const [error, setError] = useState(null);
+  const [salesLookback, setSalesLookback] = useState(30);
 
   const loadingTexts = [
     "Checking warehouse inventory...",
@@ -167,7 +165,8 @@ export default function WizardStrategyStep({ onComplete }) {
       await updateStrategy(payload);
       
       const startTime = Date.now();
-      const runResult = await runAllocation();
+      const lookbackVal = salesLookback === 'all' ? null : parseInt(salesLookback, 10);
+      const runResult = await runAllocation(lookbackVal);
       
       // Ensure minimum 10s display for the animation
       const elapsed = Date.now() - startTime;
@@ -243,6 +242,27 @@ export default function WizardStrategyStep({ onComplete }) {
       {/* Priority Ladder */}
       <PriorityLadder categories={categories} activeCategories={activeCategories} onToggle={toggleCategory} onRun={handleRun} running={running} />
 
+      {/* Sales Lookback Filter */}
+      <div className="card" style={{ padding: '14px 18px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>Sales Lookback Period:</div>
+        <select 
+          id="salesLookback"
+          name="salesLookback"
+          value={salesLookback} 
+          onChange={(e) => setSalesLookback(e.target.value)}
+          style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--text-primary)', fontSize: 13, cursor: 'pointer' }}
+          disabled={running}
+        >
+          <option value="7">Last 7 Days</option>
+          <option value="14">Last 14 Days</option>
+          <option value="30">Last 30 Days</option>
+          <option value="90">Last 90 Days</option>
+          <option value="180">Last 180 Days</option>
+          <option value="all">All Time</option>
+        </select>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Historical sales data used to determine top-selling reference SKUs.</div>
+      </div>
+
       {/* Tab bar */}
       <div style={{ display: 'flex', gap: 0, marginBottom: 0, borderBottom: '2px solid var(--border)' }}>
         {categories.map(cat => {
@@ -290,6 +310,8 @@ export default function WizardStrategyStep({ onComplete }) {
             </div>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', color: 'var(--text-secondary)' }}>
               <input
+                id={`include_cat_${activeTab}`}
+                name={`include_cat_${activeTab}`}
                 type="checkbox"
                 checked={activeCategories.includes(activeTab)}
                 onChange={() => toggleCategory(activeTab)}
@@ -328,6 +350,8 @@ export default function WizardStrategyStep({ onComplete }) {
 
                   {/* Move tier dropdown */}
                   <select
+                    id={`move_tier_${storeIndex}`}
+                    name={`move_tier_${storeIndex}`}
                     value={activeTab}
                     onChange={e => { moveStoreToTier(activeTab, storeIndex, e.target.value); }}
                     style={{ fontSize: 11, padding: '3px 6px', borderRadius: 4, border: '1px solid var(--border)', background: 'var(--bg-card)', color: 'var(--text-secondary)', cursor: 'pointer' }}

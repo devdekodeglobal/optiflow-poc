@@ -4,11 +4,11 @@ OptiFlow Backend (FastAPI Application)
 Web service layer exposing CSV uploads, similar-item heuristics, and dispatch orders.
 """
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, Query
+from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Body, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 import os
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
 from google.cloud import storage
 import logging
@@ -61,6 +61,7 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 class DataStore:
     def __init__(self):
         self.planogram: Optional[pd.DataFrame] = None
+        self.planogram_dicts: List[Dict] = []
         self.sales_raw: Optional[pd.DataFrame] = None
         self.stock_raw: Optional[pd.DataFrame] = None
         self.warehouse_stock: Optional[pd.DataFrame] = None
@@ -68,12 +69,29 @@ class DataStore:
         self.strategy_active_categories: List[str] = ["A++", "A+", "A", "B+", "B", "C"]
         self.strategy_store_lists: Dict[str, List[str]] = {}
         self.allocations: List[AllocationItem] = []
+        self.allocations_dicts: List[Dict] = []
         self.summary: Optional[AllocationSummary] = None
         self.dashboard_all_stores_cache: Optional[Dict] = None
         self.last_run_time: Optional[float] = None
         self.last_run_at: Optional[str] = None
 
 store = DataStore()
+
+def set_store_planogram(df: Optional[pd.DataFrame]):
+    if df is None or (isinstance(df, pd.DataFrame) and df.empty):
+        store.planogram = None
+        store.planogram_dicts = []
+        return
+    df = df.copy()
+    from regions import get_store_region, get_store_zone
+    if 'region' not in df.columns:
+        df['region'] = df['store_name'].apply(get_store_region)
+    if 'zone' not in df.columns:
+        df['zone'] = df['region'].apply(get_store_zone)
+    df['_uid'] = df.index
+    store.planogram = df
+    clean_df = df.astype(object).where(pd.notnull(df), None)
+    store.planogram_dicts = clean_df.to_dict(orient="records")
 
 LOCAL_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "local_data")
 os.makedirs(LOCAL_DATA_DIR, exist_ok=True)
@@ -155,6 +173,7 @@ async def startup_event():
     files_to_download = [
         "last_run_metadata.json",
         "Planogram.csv",
+        "planogram_edited.json",
         "Stock data.csv",
         "Sales Data.csv",
         "strategy_settings.json",
@@ -182,12 +201,24 @@ async def startup_event():
             print(f"Failed to load metadata: {e}")
 
     # Process planogram
-    if downloaded_data.get("Planogram.csv"):
+    if downloaded_data.get("planogram_edited.json"):
+        try:
+            # Load edited JSON
+            data = json.loads(downloaded_data["planogram_edited.json"].decode("utf-8"))
+            set_store_planogram(pd.DataFrame(data))
+        except Exception as e:
+            print(f"Failed to load planogram_edited.json: {e}")
+    elif downloaded_data.get("Planogram.csv"):
         try:
             df = pd.read_csv(io.BytesIO(downloaded_data["Planogram.csv"]), encoding="utf-8", on_bad_lines="skip")
+            # Double header check for planogram formats
             if "Unnamed: 0" in df.columns or "Unnamed: 1" in df.columns:
+                # Try header=1 (row 2)
                 df = pd.read_csv(io.BytesIO(downloaded_data["Planogram.csv"]), encoding="utf-8", header=1, on_bad_lines="skip")
-            store.planogram = parse_planogram(df.copy())
+                if "Unnamed: 0" in df.columns or "Unnamed: 1" in df.columns or "Store-Brand-Product Type" not in df.columns and "Store & Code" not in df.columns:
+                    # Try header=2 (row 3) for the new format
+                    df = pd.read_csv(io.BytesIO(downloaded_data["Planogram.csv"]), encoding="utf-8", header=2, on_bad_lines="skip")
+            set_store_planogram(parse_planogram(df.copy()))
         except Exception as e:
             print(f"Failed to load Planogram: {e}")
             
@@ -225,7 +256,9 @@ async def startup_event():
         try:
             alloc_data = json.loads(downloaded_data["allocation_results.json"].decode("utf-8"))
             store.last_run_at = alloc_data.get("last_run_at")
-            store.allocations = [AllocationItem(**item) for item in alloc_data.get("results", [])]
+            alloc_results_raw = alloc_data.get("results", [])
+            store.allocations = [AllocationItem(**item) for item in alloc_results_raw]
+            store.allocations_dicts = alloc_results_raw
             if "summary" in alloc_data and alloc_data["summary"]:
                 from data_models import AllocationSummary
                 store.summary = AllocationSummary(**alloc_data["summary"])
@@ -263,6 +296,7 @@ async def startup_event():
                 active_categories=store.strategy_active_categories
             )
             store.allocations = allocations
+            store.allocations_dicts = [a.model_dump(mode='json') for a in allocations]
             store.summary = summary
             store.last_run_time = time.time() - start
             print("Initial allocation complete.")
@@ -278,8 +312,9 @@ async def upload_planogram(file: UploadFile = File(...)):
         # Double header check
         if "Unnamed: 0" in df.columns or "Unnamed: 1" in df.columns:
             df = pd.read_csv(io.BytesIO(contents), encoding="utf-8", header=1, on_bad_lines="skip")
-            
-        store.planogram = parse_planogram(df.copy())
+            if "Unnamed: 0" in df.columns or "Unnamed: 1" in df.columns or "Store-Brand-Product Type" not in df.columns and "Store & Code" not in df.columns:
+                df = pd.read_csv(io.BytesIO(contents), encoding="utf-8", header=2, on_bad_lines="skip")
+        set_store_planogram(parse_planogram(df.copy()))
         
         upload_to_gcs("Planogram.csv", contents)
         
@@ -352,8 +387,12 @@ async def upload_status():
     )
 
 
+class AllocationRunRequest(BaseModel):
+    sales_lookback_days: Optional[int] = None
+
 @app.post("/api/run-allocation")
-async def execute_allocation():
+def execute_allocation(req: Optional[AllocationRunRequest] = None):
+    lookback_days = req.sales_lookback_days if req else None
     if store.planogram is None:
         raise HTTPException(status_code=400, detail="Upload Planogram data first")
     if store.warehouse_stock is None:
@@ -362,7 +401,7 @@ async def execute_allocation():
     # Auto-initialize strategy lists if empty
     if not store.strategy_store_lists and store.planogram is not None:
         stores_df = store.planogram[["store_name", "store_category"]].drop_duplicates()
-        all_cats = ["A++", "A+", "A", "B+", "B", "C"]
+        all_cats = ["A", "B", "C"]
         for cat in all_cats:
             store.strategy_store_lists[cat] = []
         for _, row in stores_df.iterrows():
@@ -379,14 +418,24 @@ async def execute_allocation():
         store_stock_df=store.store_stock,
         sales_df=store.sales_raw,
         strategy_store_lists=store.strategy_store_lists,
-        active_categories=store.strategy_active_categories
+        active_categories=store.strategy_active_categories,
+        sales_lookback_days=lookback_days
     )
     
     elapsed = time.time() - start
     store.allocations = allocations
+    store.allocations_dicts = [a.model_dump(mode='json') for a in allocations]
     store.summary = summary
     store.last_run_time = elapsed
     store.last_run_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    
+    # Invalidate dashboard cache
+    store.dashboard_all_stores_cache = None
+    try:
+        delete_from_gcs("dashboard_cache.json")
+    except Exception as e:
+        logging.warning(f"Failed to delete dashboard cache from GCS: {e}")
+
     upload_to_gcs("last_run_metadata.json", json.dumps({"last_run_at": store.last_run_at}).encode("utf-8"))
     
     alloc_data = {
@@ -410,6 +459,125 @@ async def execute_allocation():
     }
 
 
+@app.get("/api/planogram")
+def get_planogram(
+    store_name: Optional[str] = Query(None),
+    brand_name: Optional[str] = Query(None),
+    region: Optional[str] = Query(None),
+    zone: Optional[str] = Query(None),
+    store_category: Optional[str] = Query(None),
+    commodity: Optional[str] = Query(None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50000, ge=1, le=100000)
+):
+    if store.planogram is None:
+        return {"data": [], "total": 0, "page": page, "page_size": page_size, "total_pages": 0}
+        
+    has_filter = any([store_name, brand_name, region, zone, store_category, commodity])
+    if not has_filter and hasattr(store, 'planogram_dicts') and store.planogram_dicts:
+        total = len(store.planogram_dicts)
+        start = (page - 1) * page_size
+        end = start + page_size
+        paginated_data = store.planogram_dicts[start:end]
+        return {
+            "data": paginated_data,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "total_pages": (total + page_size - 1) // page_size
+        }
+        
+    df = store.planogram
+    # Apply filters safely
+    if store_name and isinstance(store_name, str):
+        store_list = [s.strip().lower() for s in store_name.split(',')]
+        df = df[df['store_name'].fillna('').str.lower().apply(lambda x: any(s in x for s in store_list))]
+    if brand_name and isinstance(brand_name, str):
+        brand_list = [b.strip().lower() for b in brand_name.split(',')]
+        df = df[df['brand_name'].fillna('').str.lower().apply(lambda x: any(b in x for b in brand_list))]
+    if zone and isinstance(zone, str):
+        zone_list = [z.strip().lower() for z in zone.split(',')]
+        df = df[df['zone'].fillna('').str.lower().isin(zone_list)]
+    if region and isinstance(region, str):
+        region_list = [r.strip().lower() for r in region.split(',')]
+        df = df[df['region'].fillna('').str.lower().isin(region_list)]
+    if store_category and isinstance(store_category, str):
+        cat_list = [c.strip().lower() for c in store_category.split(',')]
+        df = df[df['store_category'].fillna('').str.lower().isin(cat_list)]
+    if commodity and isinstance(commodity, str):
+        comm_list = [c.strip().lower() for c in commodity.split(',')]
+        df = df[df['commodity'].fillna('').str.lower().isin(comm_list)]
+        
+    total = len(df)
+    start = (page - 1) * page_size
+    end = start + page_size
+    paginated = df.iloc[start:end]
+    paginated = paginated.astype(object).where(pd.notnull(paginated), None)
+    
+    return {
+        "data": paginated.to_dict(orient="records"),
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": (total + page_size - 1) // page_size
+    }
+
+
+class PlanogramUpdate(BaseModel):
+    _uid: int
+    updates: Dict[str, Any]
+
+@app.post("/api/planogram/update")
+async def update_planogram(updates: List[Dict[str, Any]] = Body(...)):
+    if store.planogram is None:
+        raise HTTPException(status_code=400, detail="No planogram data loaded")
+        
+    try:
+        new_rows = []
+        drop_indices = []
+        for update in updates:
+            uid = update.get("_uid")
+            is_deleted = update.get("_deleted")
+            
+            if is_deleted:
+                if uid is not None and uid in store.planogram.index:
+                    drop_indices.append(uid)
+            elif uid is not None and uid >= 0 and uid in store.planogram.index:
+                for key, val in update.items():
+                    if key != "_uid" and key in store.planogram.columns:
+                        # Convert numeric fields
+                        if key in ["facing", "back_stock", "soh"]:
+                            val = pd.to_numeric(val, errors="coerce")
+                            if pd.isna(val):
+                                val = 0
+                        store.planogram.at[uid, key] = val
+            else:
+                # Add new row
+                new_row = {}
+                for col in store.planogram.columns:
+                    val = update.get(col, "")
+                    if col in ["facing", "back_stock", "soh"]:
+                        val = pd.to_numeric(val, errors="coerce")
+                        if pd.isna(val): val = 0
+                    new_row[col] = val
+                new_rows.append(new_row)
+                
+        if drop_indices:
+            set_store_planogram(store.planogram.drop(index=drop_indices))
+            
+        if new_rows:
+            new_df = pd.DataFrame(new_rows)
+            start_idx = int(store.planogram.index.max() + 1) if len(store.planogram) > 0 else 0
+            new_df.index = range(start_idx, start_idx + len(new_df))
+            set_store_planogram(pd.concat([store.planogram, new_df]))
+            
+        # Save to local persistent file
+        out_json = store.planogram.to_json(orient="records")
+        upload_to_gcs("planogram_edited.json", out_json.encode("utf-8"))
+        
+        return {"status": "success", "message": f"Updated {len(updates)} rows"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 @app.get("/api/allocation/results")
 async def get_results(
     store_name: Optional[str] = Query(None),
@@ -454,8 +622,13 @@ async def get_results(
     end = start + page_size
     paginated = results[start:end]
     
+    if len(results) == len(store.allocations) and hasattr(store, 'allocations_dicts') and store.allocations_dicts and len(store.allocations_dicts) == total:
+        paginated_dicts = store.allocations_dicts[start:end]
+    else:
+        paginated_dicts = [a.model_dump(mode='json') for a in paginated]
+
     response = {
-        "allocations": [a.model_dump() for a in paginated],
+        "allocations": paginated_dicts,
         "total": total,
         "page": page,
         "page_size": page_size,
@@ -465,16 +638,34 @@ async def get_results(
     if group_by != 'none':
         def _summarize(items):
             unique_gaps = {a.gap_id: a.deficit for a in items}
+            unique_expected = {a.gap_id: (a.facing + a.back_stock) for a in items}
+            unique_soh = {a.gap_id: a.current_soh for a in items}
+            
             total_allocated = sum(a.allocated_qty for a in items)
             total_value = sum(a.allocated_qty * a.mrp for a in items)
             initial_deficit = sum(unique_gaps.values())
             remaining_deficit = max(0, initial_deficit - total_allocated)
+            expected_total = sum(unique_expected.values())
+            total_soh = sum(unique_soh.values())
+            
+            exact = sum(a.allocated_qty for a in items if a.match_type.value == "exact")
+            similar = sum(a.allocated_qty for a in items if a.match_type.value == "similar")
+            fallback = sum(a.allocated_qty for a in items if a.match_type.value == "substitute")
+            allocated_skus = set(a.allocated_item_code for a in items if a.allocated_qty > 0 and a.allocated_item_code)
+            uniq_pct = int((len(allocated_skus) / total_allocated) * 100) if total_allocated > 0 else 0
+            
             return {
                 "lines": len(unique_gaps),
+                "expected": int(expected_total),
                 "initial_deficit": initial_deficit,
                 "allocated_qty": total_allocated,
                 "remaining_deficit": remaining_deficit,
-                "total_value": total_value
+                "total_value": total_value,
+                "exact_qty": exact,
+                "similar_qty": similar,
+                "fallback_qty": fallback,
+                "uniqueness_pct": uniq_pct,
+                "total_soh": int(total_soh)
             }
             
         grouped = {}
@@ -550,7 +741,7 @@ async def get_results(
                 
         response["grouped"] = grouped
     
-    return response
+    return Response(content=json.dumps(response), media_type="application/json")
 @app.get("/api/allocation/results/export")
 async def export_results(
     store_name: Optional[str] = Query(None),
@@ -632,7 +823,7 @@ async def export_results(
             ])
         
     def write_header(text, rows, fill):
-        row = [""] * (5 if dispatch_only else 17)
+        row = [""] * (5 if dispatch_only else 21)
         row[0] = text
         if rows:
             total_allocated = sum(r.allocated_qty for r in rows)
@@ -642,19 +833,36 @@ async def export_results(
                 unique_gaps = {}
                 unique_expected = {}
                 total_value = 0
+                exact = 0
+                similar = 0
+                fallback = 0
+                allocated_skus = set()
                 for r in rows:
                     unique_gaps[r.gap_id] = r.deficit
                     unique_expected[r.gap_id] = r.facing + r.back_stock
                     total_value += r.allocated_qty * r.mrp
+                    if r.match_type.value == "exact": exact += r.allocated_qty
+                    elif r.match_type.value == "similar": similar += r.allocated_qty
+                    elif r.match_type.value == "substitute": fallback += r.allocated_qty
+                    
+                    if r.allocated_qty > 0 and r.allocated_item_code:
+                        allocated_skus.add(r.allocated_item_code)
+                        
                 initial_deficit = sum(unique_gaps.values())
                 expected_total = sum(unique_expected.values())
                 remaining_deficit = max(0, initial_deficit - total_allocated)
+                uniq_pct = int((len(allocated_skus) / total_allocated) * 100) if total_allocated > 0 else 0
+                
                 row[1] = f"Lines: {len(unique_gaps)}"
                 row[2] = f"Expected: {int(expected_total)}"
                 row[3] = f"Deficit: {int(initial_deficit)}"
                 row[4] = f"Fulfilled: {total_allocated}"
                 row[5] = f"Out of Stock: {int(remaining_deficit)}"
                 row[6] = f"Total Value: ₹{int(total_value):,}"
+                row[7] = f"Exact Matches: {exact}"
+                row[8] = f"Similar Matches: {similar}"
+                row[9] = f"Fallback Matches: {fallback}"
+                row[10] = f"Uniqueness: {uniq_pct}%"
         ws.append(row)
         apply_style(ws.max_row, fill, is_bold=True)
         
@@ -778,16 +986,16 @@ async def export_dispatch(
     output = io.StringIO()
     writer = csv.writer(output)
     
-    headers = ["Allocated Item Code", "Allocated Item Name", "Allocated Qty", "MRP"]
+    headers = ["Allocated Barcode", "Allocated Item Code", "Allocated Item Name", "Allocated Qty", "MRP"]
     
     def write_data_row(a):
         writer.writerow([
-            a.allocated_item_code or "", a.allocated_item_name or "",
+            a.allocated_barcode or "", a.allocated_item_code or "", a.allocated_item_name or "",
             a.allocated_qty, a.mrp
         ])
 
     def write_header(text, rows=None):
-        row = [""] * 4
+        row = [""] * 5
         row[0] = text
         if rows:
             unique_gaps = {}
@@ -887,8 +1095,17 @@ async def get_strategy():
     sales_dict = {}
     if store.sales_raw is not None and not store.sales_raw.empty:
         df = store.sales_raw.copy()
-        df["quantity"] = pd.to_numeric(df["Quantity"], errors="coerce").fillna(0)
-        sales_agg = df.groupby("Facility Name")["quantity"].sum().to_dict()
+        
+        # Handle variations in column names
+        qty_col = "Quantity" if "Quantity" in df.columns else "quantity" if "quantity" in df.columns else None
+        fac_col = "Facility Name" if "Facility Name" in df.columns else "Branch Name" if "Branch Name" in df.columns else None
+        
+        if qty_col and fac_col:
+            df["quantity_parsed"] = pd.to_numeric(df[qty_col], errors="coerce").fillna(0)
+            sales_agg = df.groupby(fac_col)["quantity_parsed"].sum().to_dict()
+        else:
+            sales_agg = {}
+            
         for st_name in stores_df["store_name"]:
             mapped_facility = STORE_NAME_MAP.get(st_name, st_name)
             total_6m = sales_agg.get(mapped_facility, 0)
@@ -907,7 +1124,7 @@ async def get_strategy():
             }
             
     # Initialize if empty
-    all_cats = ["A++", "A+", "A", "B+", "B", "C"]
+    all_cats = ["A", "B", "C"]
     if not store.strategy_store_lists:
         for cat in all_cats:
             store.strategy_store_lists[cat] = []
@@ -1055,6 +1272,8 @@ async def get_store_detail(store_name: str):
         "total_deficit_lines": total_lines + sum(1 for a in store_allocs if a.match_type == MatchType.UNRESOLVED),
         "total_items": sum(a.allocated_qty for a in store_allocs),
         "total_lines": len(store_allocs),
+        "match_accuracy_pct": round((exact_count / (exact_count + sum(1 for a in store_allocs if a.match_type == MatchType.SIMILAR) + sum(1 for a in store_allocs if a.match_type == MatchType.SUBSTITUTE)) * 100), 1) if (exact_count + sum(1 for a in store_allocs if a.match_type == MatchType.SIMILAR) + sum(1 for a in store_allocs if a.match_type == MatchType.SUBSTITUTE)) > 0 else 100,
+        "uniqueness_pct": round((len(set(a.allocated_item_code for a in store_allocs if a.allocated_qty > 0 and a.allocated_item_code)) / total_filled * 100), 1) if total_filled > 0 else 0,
         "brands": list(brands.values())
     }
 
@@ -1149,11 +1368,11 @@ async def download_csv_by_store():
     
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["Store", "Tier", "Brand", "Allocated SKU", "Model", "Color", "Qty", "MRP", "Match Type", "Reason", "Deficit", "SOH"])
+    writer.writerow(["Store", "Tier", "Brand", "Allocated SKU", "Allocated Barcode", "Model", "Color", "Qty", "MRP", "Match Type", "Reason", "Deficit", "SOH"])
     
     for a in allocs:
         writer.writerow([
-            a.store_name, a.store_category, a.brand_name, a.allocated_item_code,
+            a.store_name, a.store_category, a.brand_name, a.allocated_item_code, a.allocated_barcode or "",
             a.allocated_attributes.model if a.allocated_attributes else "",
             a.allocated_attributes.color if a.allocated_attributes else "",
             a.allocated_qty, a.mrp, a.match_type.value, a.match_reason, a.deficit, a.current_soh
@@ -1180,11 +1399,11 @@ async def download_csv_for_region(region_name: str):
     
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["Region", "Store", "Tier", "Brand", "Allocated SKU", "Model", "Color", "Qty", "MRP", "Match Type", "Reason", "Deficit", "SOH"])
+    writer.writerow(["Region", "Store", "Tier", "Brand", "Allocated SKU", "Allocated Barcode", "Model", "Color", "Qty", "MRP", "Match Type", "Reason", "Deficit", "SOH"])
     
     for a in allocs:
         writer.writerow([
-            region_name, a.store_name, a.store_category, a.brand_name, a.allocated_item_code,
+            region_name, a.store_name, a.store_category, a.brand_name, a.allocated_item_code, a.allocated_barcode or "",
             a.allocated_attributes.model if a.allocated_attributes else "",
             a.allocated_attributes.color if a.allocated_attributes else "",
             a.allocated_qty, a.mrp, a.match_type.value, a.match_reason, a.deficit, a.current_soh
@@ -1206,11 +1425,11 @@ async def download_csv_by_brand():
     
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["Brand", "Store", "Tier", "Allocated SKU", "Model", "Color", "Qty", "MRP", "Match Type", "Reason", "Deficit", "SOH"])
+    writer.writerow(["Brand", "Store", "Tier", "Allocated SKU", "Allocated Barcode", "Model", "Color", "Qty", "MRP", "Match Type", "Reason", "Deficit", "SOH"])
     
     for a in allocs:
         writer.writerow([
-            a.brand_name, a.store_name, a.store_category, a.allocated_item_code,
+            a.brand_name, a.store_name, a.store_category, a.allocated_item_code, a.allocated_barcode or "",
             a.allocated_attributes.model if a.allocated_attributes else "",
             a.allocated_attributes.color if a.allocated_attributes else "",
             a.allocated_qty, a.mrp, a.match_type.value, a.match_reason, a.deficit, a.current_soh

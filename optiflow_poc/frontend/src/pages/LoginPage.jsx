@@ -8,7 +8,7 @@ export default function LoginPage({ onLogin }) {
   const handleLogin = (e) => {
     e.preventDefault();
     if (loginMode === 'admin') {
-      if (password === 'dekode1234') {
+      if (password === '123') {
         onLogin({ name: 'System Admin', role: 'admin' });
       } else {
         setError('Incorrect admin password');
@@ -59,6 +59,8 @@ export default function LoginPage({ onLogin }) {
         {loginMode ? (
           <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 16 }} className="animate-in">
             <input
+              id="loginPassword"
+              name="password"
               type="password"
               placeholder={`Enter ${loginMode} password...`}
               value={password}

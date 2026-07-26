@@ -93,6 +93,24 @@ STORE_REGIONS = {
     'Varanasi Mahmoorganj': 'Varanasi',
     'Vijayawada Mogalrajpuram': 'Vijayawada',
     
+    # 8. Newly Added Stores (240726 Data)
+    'Karnal Model Town': 'Karnal',
+    'Dehradun Chakrata Road TEC': 'Dehradun',
+    'Jabalpur Napier Town': 'Jabalpur',
+    'Gwalior Lashkar Ratan Jyoti Netralaya': 'Gwalior',
+    'Gorakhpur Mughlaha': 'Gorakhpur',
+    'Prayagraj Tashkent Marg': 'Prayagraj',
+    'Jammu BC Road Rehari Chungi': 'Jammu',
+    'Bhopal Hoshangabad Road': 'Bhopal',
+    'Lucknow Hazratganj SAM Eye': 'Lucknow',
+    'Nashik Navkar Eye': 'Nashik',
+    'Gaya Chanakyapuri Colony': 'Gaya',
+    'Pune Satara Road Jhamwar Eye': 'Pune',
+    'Siliguri Sevoke Road': 'Siliguri',
+    'Bhiwani Circular Road': 'Bhiwani',
+    'Ranchi Kutchery Road': 'Ranchi',
+    'Jamshedpur Singhbhum': 'Jamshedpur',
+    
     # Defaults
     'Corporate Office': 'Warehouse'
 }
@@ -119,12 +137,24 @@ REGION_TO_ZONE_MAP = {
     'Moradabad': 'North India',
     'Rewari': 'North India',
     'Varanasi': 'North India',
+    'Karnal': 'North India',
+    'Dehradun': 'North India',
+    'Gorakhpur': 'North India',
+    'Prayagraj': 'North India',
+    'Jammu': 'North India',
+    'Lucknow': 'North India',
+    'Bhiwani': 'North India',
     
     'Mumbai_Metro': 'West India',
     'Ahmedabad': 'West India',
     'Surat': 'West India',
     'Vadodara': 'West India',
     'Indore': 'West India',
+    'Jabalpur': 'West India',
+    'Gwalior': 'West India',
+    'Bhopal': 'West India',
+    'Nashik': 'West India',
+    'Pune': 'West India',
     
     'Hyderabad_Metro': 'South India',
     'Vijayawada': 'South India',
@@ -133,6 +163,10 @@ REGION_TO_ZONE_MAP = {
     'Patna': 'East India',
     'Guwahati': 'East India',
     'Bhubaneswar': 'East India',
+    'Gaya': 'East India',
+    'Siliguri': 'East India',
+    'Ranchi': 'East India',
+    'Jamshedpur': 'East India',
     
     'Warehouse': 'Corporate'
 }

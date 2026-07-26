@@ -12,6 +12,7 @@ import AssortmentPage from './pages/AssortmentPage';
 import StorePage from './pages/StorePage';
 import BrandPage from './pages/BrandPage';
 import RegionPage from './pages/RegionPage';
+import PlanogramPage from './pages/PlanogramPage';
 import LoginPage from './pages/LoginPage';
 import { DataProvider } from './DataContext';
 
@@ -99,16 +100,29 @@ function App() {
 
 
             {user.role === 'admin' && (
-              <SidebarItemWithFilters 
-                to="/allocation-report" 
-                label="Allocation" 
-                sidebarCollapsed={sidebarCollapsed}
-                icon={
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ width: 20, height: 20 }}>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                  </svg>
-                }
-              />
+              <>
+                <SidebarItemWithFilters 
+                  to="/planogram" 
+                  label="Planogram" 
+                  icon={
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  } 
+                  sidebarCollapsed={sidebarCollapsed} 
+                />
+
+                <SidebarItemWithFilters 
+                  to="/allocation" 
+                  label="Allocation" 
+                  sidebarCollapsed={sidebarCollapsed}
+                  icon={
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ width: 20, height: 20 }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                    </svg>
+                  }
+                />
+              </>
             )}
 
             {/* 
@@ -216,7 +230,7 @@ function App() {
         <main className={`main-content ${sidebarCollapsed ? 'collapsed' : ''}`}>
           <Routes>
             <Route path="/" element={
-              user.role === 'admin' ? <Navigate to="/allocation-report" replace /> : <Navigate to="/dispatch" replace />
+              user.role === 'admin' ? <Navigate to="/allocation" replace /> : <Navigate to="/dispatch" replace />
             } />
             <Route path="/overall-dashboard" element={<Navigate to="/" replace />} />
             <Route path="/allocation-summary" element={<AllocationSummaryPage />} />
@@ -224,6 +238,8 @@ function App() {
             <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/executive" element={<ExecutivePage />} />
             <Route path="/assortment" element={<AssortmentPage />} />
+            <Route path="/planogram" element={<PlanogramPage />} />
+            <Route path="/allocation" element={<AllocationReportPage />} />
             <Route path="/dispatch" element={<DispatchPage />} />
             <Route path="/dispatch/:entityType/:entityName" element={<DispatchPage />} />
             <Route path="/store/:storeName" element={<StorePage />} />

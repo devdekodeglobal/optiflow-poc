@@ -276,6 +276,8 @@ export default function AllocationSummaryPage() {
           <div style={{ background: 'var(--bg-app)', padding: 16, borderRadius: 8, border: '1px solid var(--border)' }}>
             <h4 style={{ marginBottom: 12 }}>Store Deep Dive</h4>
             <select 
+              id="storeDeepDiveSelect"
+              name="storeDeepDiveSelect"
               className="filter-select" 
               style={{ width: '100%', marginBottom: 16 }}
               onChange={(e) => {
@@ -294,6 +296,8 @@ export default function AllocationSummaryPage() {
           <div style={{ background: 'var(--bg-app)', padding: 16, borderRadius: 8, border: '1px solid var(--border)' }}>
             <h4 style={{ marginBottom: 12 }}>Brand Deep Dive</h4>
             <select 
+              id="brandDeepDiveSelect"
+              name="brandDeepDiveSelect"
               className="filter-select" 
               style={{ width: '100%', marginBottom: 16 }}
               onChange={(e) => {

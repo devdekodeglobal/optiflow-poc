@@ -128,42 +128,117 @@ def _get_commodity_type(category: str, name: str) -> str:
 
 
 def parse_planogram(df: pd.DataFrame) -> pd.DataFrame:
-    expected_cols = [
-        "store_code", "store_brand_product", "brand_code_1", "commodity",
-        "store_name", "store_type", "store_category", "brand_code",
-        "brand_type", "supplier_name", "brand_name", "depth", "facing",
-        "sku_count", "soh", "sku_count_local", "soh_local",
-        "sku_count_total", "soh_total", "sales_apr_may", "monthly_sales",
-        "back_stock", "facing_delta", "bs_delta", "total_order",
-        "star_locations", "col26", "col27", "col28"
-    ]
-    if len(df.columns) >= len(expected_cols):
-        df.columns = expected_cols[:len(df.columns)]
+    # Normalize column names for flexible matching
+    df.columns = [str(c).strip().lower().replace(" ", "_").replace("-", "_") for c in df.columns]
     
+    # Map new column names to internal engine keys
+    col_mapping = {
+        "store_name": "store_name",
+        "brand_name": "brand_name",
+        "store_type": "store_type",
+        "store_category": "store_category",
+        "dispatch_plan": "store_category", # Extracts 'A' from 'A-Weekly'
+        "brand_code": "brand_code",
+        "product_type": "commodity",
+        "commodity": "commodity",  # Fallback for old
+        "soh": "soh"
+    }
+    
+    # Extract targets manually
+    if "store_display" in df.columns:
+        df["facing"] = pd.to_numeric(df["store_display"], errors='coerce').fillna(0)
+    elif "facing" in df.columns:
+        df["facing"] = pd.to_numeric(df["facing"], errors='coerce').fillna(0)
+    else:
+        df["facing"] = 0
+
+    total_target = pd.Series(0, index=df.index)
+    if "facing+depth" in df.columns:
+        total_target = pd.to_numeric(df["facing+depth"], errors='coerce').fillna(0)
+    elif "facing_depth" in df.columns:
+        total_target = pd.to_numeric(df["facing_depth"], errors='coerce').fillna(0)
+
+    df["back_stock"] = total_target - df["facing"]
+    df["back_stock"] = df["back_stock"].apply(lambda x: max(0, x))
+    
+    # Rename columns that exist in the dataframe, preventing duplicate targets
+    rename_dict = {}
+    used_targets = set()
+    for actual_col in df.columns:
+        target = None
+        if actual_col in col_mapping:
+            target = col_mapping[actual_col]
+            
+        if target and target not in used_targets:
+            rename_dict[actual_col] = target
+            used_targets.add(target)
+            
+    df = df.rename(columns=rename_dict)
+    
+    # Ensure necessary columns exist
+    for required in ["store_name", "brand_name", "commodity", "store_category", "store_type", "facing", "soh", "back_stock"]:
+        if required not in df.columns:
+            df[required] = "" if required not in ["facing", "soh", "back_stock"] else 0
+            
     df["store_name"] = df["store_name"].fillna("")
     df["brand_name"] = df["brand_name"].fillna("")
     df["commodity"] = df["commodity"].fillna("Frame")
-    df["commodity"] = df.apply(lambda row: _get_commodity_type(row["commodity"], row["store_brand_product"]), axis=1)
-    df["store_category"] = df["store_category"].fillna("B")
+    df["commodity"] = df.apply(lambda row: _get_commodity_type(row["commodity"], row.get("store_brand_product_type", "")), axis=1)
+    
+    # Clean store_category (e.g. A-Weekly -> A)
+    df["store_category"] = df["store_category"].replace("", "B").fillna("B")
+    df["store_category"] = df["store_category"].astype(str).apply(lambda x: x.split("-")[0].strip() if "-" in x else x.strip())
+    
     df["store_type"] = df["store_type"].fillna("")
     
     for col in ["facing", "back_stock", "soh"]:
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
             
     return df
 
 
 def parse_stock(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    expected_cols = [
-        "barcode", "batch", "item_type", "item_code", "item_name",
-        "facility", "batch_stock", "item_category", "store", "mrp"
-    ]
-    if len(df.columns) >= len(expected_cols):
-        df.columns = expected_cols[:len(df.columns)]
-        
+    # Normalize column names for flexible matching
+    df.columns = [str(c).strip().lower().replace(" ", "_") for c in df.columns]
+    
+    # Map new column names to internal engine keys
+    col_mapping = {
+        "barcode": "barcode",
+        "batch": "batch",
+        "item_type": "item_type",
+        "item_code": "item_code",
+        "item_name": "item_name",
+        "brand_name": "brand_name",
+        "product_type": "item_category", # maps to item_category for engine
+        "item_category": "item_category", # fallback old
+        "brand_category": "brand_category",
+        "facility": "facility",
+        "batch_stock": "batch_stock",
+        "store": "store",
+        "mrp": "mrp",
+        "unit_mrp": "mrp", # Fallback if unit mrp is used
+        "stock_age_in_days": "stock_age_in_days"
+    }
+    
+    rename_dict = {}
+    used_targets = set()
+    for actual_col in df.columns:
+        if actual_col in col_mapping:
+            target = col_mapping[actual_col]
+            if target not in used_targets:
+                rename_dict[actual_col] = target
+                used_targets.add(target)
+                
+    df = df.rename(columns=rename_dict)
+    
+    # Ensure required columns
+    for required in ["barcode", "item_code", "item_name", "facility", "batch_stock", "item_category", "mrp", "stock_age_in_days"]:
+        if required not in df.columns:
+            df[required] = "" if required not in ["batch_stock", "mrp", "stock_age_in_days"] else 0
+            
     df["batch_stock"] = pd.to_numeric(df["batch_stock"], errors="coerce").fillna(0)
     df["mrp"] = pd.to_numeric(df["mrp"], errors="coerce").fillna(0)
+    df["stock_age_in_days"] = pd.to_numeric(df["stock_age_in_days"], errors="coerce").fillna(0)
     df["item_category"] = df.apply(lambda row: _get_commodity_type(row.get("item_category", ""), row.get("item_name", "")), axis=1)
     
     wh_stock = df[df["facility"] == WAREHOUSE_FACILITY].copy()
@@ -178,7 +253,8 @@ def run_allocation(
     store_stock_df: pd.DataFrame,
     strategy_store_lists: Dict[str, List[str]],
     active_categories: List[str],
-    sales_df: pd.DataFrame = None
+    sales_df: pd.DataFrame = None,
+    sales_lookback_days: Optional[int] = None
 ) -> Tuple[List[AllocationItem], AllocationSummary]:
     
     from regions import get_store_region, get_store_zone
@@ -190,6 +266,21 @@ def run_allocation(
         item_category=("item_category", "first"),
         mrp=("mrp", "first")
     ).reset_index()
+    
+    # Build FIFO inventory queues per SKU
+    wh_inventory_queues = {}
+    for item_code, group in wh_stock_df.groupby("item_code"):
+        group_sorted = group.sort_values(by="stock_age_in_days", ascending=False)
+        queue = []
+        for _, row in group_sorted.iterrows():
+            qty = int(row["batch_stock"])
+            if qty > 0:
+                queue.append({
+                    "barcode": str(row["barcode"]),
+                    "qty": qty,
+                    "age": row["stock_age_in_days"]
+                })
+        wh_inventory_queues[str(item_code)] = queue
     
     # Pre-parse attributes and create catalog dictionaries
     wh_pool: List[dict] = []
@@ -237,30 +328,52 @@ def run_allocation(
     # Pre-aggregate top selling SKUs by facility + brand + commodity
     store_top_sales: Dict[Tuple[str, str, str], List[str]] = {}
     if sales_df is not None and not sales_df.empty:
-        # Expected sales columns: Facility Name, Item Code, Quantity
+        # Expected sales columns: Facility Name, Item Code, Quantity, Order Date
         if "Quantity" in sales_df.columns:
             sales_df_temp = sales_df.copy()
             sales_df_temp["qty"] = pd.to_numeric(sales_df_temp["Quantity"], errors="coerce").fillna(0)
             
-            # Group by Facility and Item Code
-            if "Facility Name" in sales_df_temp.columns and "Item Code" in sales_df_temp.columns:
-                sales_grouped = sales_df_temp.groupby(["Facility Name", "Item Code"])["qty"].sum().reset_index()
+            # Apply Sales Lookback Filter
+            if sales_lookback_days is not None and sales_lookback_days > 0 and "Order Date" in sales_df_temp.columns:
+                sales_df_temp["Order Date"] = pd.to_datetime(sales_df_temp["Order Date"], format="%Y-%m-%d", errors="coerce")
+                valid_dates = sales_df_temp["Order Date"].dropna()
+                if not valid_dates.empty:
+                    max_date = valid_dates.max()
+                    cutoff_date = max_date - pd.Timedelta(days=sales_lookback_days)
+                    sales_df_temp = sales_df_temp[sales_df_temp["Order Date"] >= cutoff_date]
+            
+            # Group by store (Branch Name) and Item Code
+            # Sales CSV uses "Branch Name" as store column and "Product Code" as item code
+            store_col = "Branch Name" if "Branch Name" in sales_df_temp.columns else "Facility Name"
+            item_col = "Product Code" if "Product Code" in sales_df_temp.columns else "Item Code"
+            qty_col = "Quantity"
+            
+            if store_col in sales_df_temp.columns and item_col in sales_df_temp.columns:
+                sales_grouped = sales_df_temp.groupby([store_col, item_col])["qty"].sum().reset_index()
+                sales_grouped = sales_grouped.rename(columns={store_col: "Facility Name", item_col: "Item Code"})
                 
                 # Sort to ensure highest quantities are first
                 sales_grouped = sales_grouped.sort_values(by=["Facility Name", "qty"], ascending=[True, False])
                 
-                for _, row in sales_grouped.iterrows():
-                    fac = str(row["Facility Name"])
-                    ic = str(row["Item Code"])
+                # Fast build of store_top_sales using vectorized catalog lookup
+                # Only consider items that exist in the warehouse catalog
+                catalog_items = set(wh_catalog_by_item.keys())
+                sales_grouped = sales_grouped[sales_grouped["Item Code"].isin(catalog_items)]
+                
+                if not sales_grouped.empty:
+                    sales_grouped["brand_key"] = sales_grouped["Item Code"].map(
+                        lambda ic: wh_catalog_by_item[ic]["brand"].lower() if ic in wh_catalog_by_item else None
+                    )
+                    sales_grouped["commodity_key"] = sales_grouped["Item Code"].map(
+                        lambda ic: wh_catalog_by_item[ic]["commodity"] if ic in wh_catalog_by_item else None
+                    )
+                    sales_grouped = sales_grouped.dropna(subset=["brand_key", "commodity_key"])
                     
-                    cat_item = wh_catalog_by_item.get(ic)
-                    if cat_item:
-                        brand_key = cat_item["brand"].lower()
-                        commodity_key = cat_item["commodity"]
-                        key = (fac, brand_key, commodity_key)
+                    for _, row in sales_grouped.iterrows():
+                        key = (str(row["Facility Name"]), row["brand_key"], row["commodity_key"])
                         if key not in store_top_sales:
                             store_top_sales[key] = []
-                        store_top_sales[key].append(ic)
+                        store_top_sales[key].append(str(row["Item Code"]))
 
     # Category Filtering & Strict Sorting
     # Build a master ordered list from the active categories and their store lists
@@ -305,8 +418,8 @@ def run_allocation(
         if deficit > 0:
             store_total_deficit[pl_store] = store_total_deficit.get(pl_store, 0) + int(np.ceil(deficit))
             
-    store_duplicate_budget = {s: int(d * 0.15) for s, d in store_total_deficit.items()}
-    store_allocated_skus = {s: set() for s in store_total_deficit.keys()}
+    store_brand_allocated_qty_total = {}
+    store_brand_allocated_skus = {}
     store_sku_counts = {s: {} for s in store_total_deficit.keys()}
 
     for idx, prow in prow_sorted.iterrows():
@@ -328,6 +441,35 @@ def run_allocation(
         deficit = (facing + back_stock) - live_soh
 
         if deficit <= 0:
+            store_region = get_store_region(pl_store)
+            store_zone = get_store_zone(store_region)
+            allocations.append(AllocationItem(
+                gap_id=idx,
+                store_name=pl_store,
+                store_category=prow["store_category"],
+                store_type=prow["store_type"],
+                region=store_region,
+                zone=store_zone,
+                brand_code=prow["brand_code"],
+                brand_name=brand_name,
+                commodity=commodity,
+                facing=facing,
+                back_stock=back_stock,
+                current_soh=live_soh,
+                deficit=0,
+                requested_item_code="N/A",
+                allocated_item_code="N/A",
+                allocated_item_name="Target met by SOH",
+                allocated_qty=0,
+                match_type=MatchType.EXACT,
+                mrp=0.0,
+                match_reason="Target met by existing SOH",
+                color_limit_warning=False,
+                initial_wh_stock=0,
+                remaining_wh_stock=0,
+                initial_gap=0,
+                remaining_gap=0
+            ))
             continue
 
         stores_with_deficits.add(pl_store)
@@ -395,17 +537,22 @@ def run_allocation(
                     if cand_color not in existing_colors and len(existing_colors) >= 3:
                         continue
                 
-                # HARD LIMIT: Max 3 units of the same exact SKU per store
-                MAX_UNITS_PER_SKU = 3
+                # HARD LIMIT: Max 2 units of the same exact SKU per store
+                MAX_UNITS_PER_SKU = 2
                 sku_alloc_count = store_sku_counts.get(pl_store, {}).get(cand_code, 0)
                 if sku_alloc_count >= MAX_UNITS_PER_SKU:
                     continue
                 
-                # 85% UNIQUENESS RULE: Reject candidate if it's a duplicate and we're out of budget
-                is_new_sku = cand_code not in store_allocated_skus.get(pl_store, set())
-                budget = store_duplicate_budget.get(pl_store, 0)
-                if not is_new_sku and budget <= 0:
-                    continue
+                # 85% UNIQUENESS RULE: Reject candidate if adding it drops uniqueness below 85% for this brand
+                store_brand = (pl_store, brand_name)
+                is_new_sku = cand_code not in store_brand_allocated_skus.get(store_brand, set())
+                
+                if not is_new_sku:
+                    current_unique = len(store_brand_allocated_skus.get(store_brand, set()))
+                    current_total = store_brand_allocated_qty_total.get(store_brand, 0)
+                    # If we add this duplicate, unique count stays the same, total increases by 1
+                    if current_unique / (current_total + 1) < 0.85:
+                        continue
                 
                 is_exact = any(si["item_code"] == cand_code for si in store_items)
                 sim_score = calculate_similarity(target_attrs, cand["attrs"])
@@ -468,34 +615,59 @@ def run_allocation(
                 break
 
             initial_wh = wh_remaining[best_cand["item_code"]]
-            max_can_alloc = 3 - store_sku_counts.get(pl_store, {}).get(best_cand["item_code"], 0)
+            max_can_alloc = 2 - store_sku_counts.get(pl_store, {}).get(best_cand["item_code"], 0)
             qty_to_alloc = min(initial_wh, deficit_qty - allocated_qty, max_can_alloc)
             
-            # Enforce duplicate budget capping
+            # Enforce 85% uniqueness capping dynamically when allocating > 1 unit
             cand_code = best_cand["item_code"]
-            is_new_sku = cand_code not in store_allocated_skus.get(pl_store, set())
-            budget = store_duplicate_budget.get(pl_store, 0)
+            store_brand = (pl_store, brand_name)
+            is_new_sku = cand_code not in store_brand_allocated_skus.get(store_brand, set())
             
-            dup_units_proposed = (qty_to_alloc - 1) if is_new_sku else qty_to_alloc
-            if dup_units_proposed > budget:
-                dup_units_allowed = budget
-                qty_to_alloc = (dup_units_allowed + 1) if is_new_sku else dup_units_allowed
-                
-            if qty_to_alloc > 0:
-                actual_dups = (qty_to_alloc - 1) if is_new_sku else qty_to_alloc
-                if pl_store in store_duplicate_budget:
-                    store_duplicate_budget[pl_store] -= actual_dups
-                if pl_store in store_allocated_skus:
-                    store_allocated_skus[pl_store].add(cand_code)
-                
-                if pl_store not in store_sku_counts:
-                    store_sku_counts[pl_store] = {}
-                store_sku_counts[pl_store][cand_code] = store_sku_counts[pl_store].get(cand_code, 0) + qty_to_alloc
+            current_unique = len(store_brand_allocated_skus.get(store_brand, set()))
+            current_total = store_brand_allocated_qty_total.get(store_brand, 0)
             
+            while qty_to_alloc > 0:
+                proj_unique = current_unique + (1 if is_new_sku else 0)
+                proj_total = current_total + qty_to_alloc
+                if proj_total == 0 or (proj_unique / proj_total) >= 0.85:
+                    break
+                qty_to_alloc -= 1
+                
             initial_gap = deficit_qty - allocated_qty
             
-            wh_remaining[best_cand["item_code"]] -= qty_to_alloc
-            allocated_qty += qty_to_alloc
+            units_needed = qty_to_alloc
+
+            queue = wh_inventory_queues.get(best_cand["item_code"], [])
+            
+            allocated_barcodes_with_qty = []
+            while units_needed > 0 and queue:
+                head = queue[0]
+                take = min(units_needed, head["qty"])
+                head["qty"] -= take
+                units_needed -= take
+                allocated_barcodes_with_qty.append((head["barcode"], take))
+                if head["qty"] == 0:
+                    queue.pop(0)
+            
+            actual_alloc_qty = qty_to_alloc - units_needed
+            
+            if actual_alloc_qty <= 0:
+                # Safety break to prevent infinite loops if logic prevents allocation
+                break
+                
+            # Update tracking sets now that we know actual_alloc_qty
+            if store_brand not in store_brand_allocated_skus:
+                store_brand_allocated_skus[store_brand] = set()
+            store_brand_allocated_skus[store_brand].add(cand_code)
+            
+            store_brand_allocated_qty_total[store_brand] = store_brand_allocated_qty_total.get(store_brand, 0) + actual_alloc_qty
+            
+            if pl_store not in store_sku_counts:
+                store_sku_counts[pl_store] = {}
+            store_sku_counts[pl_store][cand_code] = store_sku_counts[pl_store].get(cand_code, 0) + actual_alloc_qty
+            
+            wh_remaining[best_cand["item_code"]] -= actual_alloc_qty
+            allocated_qty += actual_alloc_qty
             
             remaining_wh = wh_remaining[best_cand["item_code"]]
             remaining_gap = deficit_qty - allocated_qty
@@ -522,35 +694,37 @@ def run_allocation(
             store_region = get_store_region(pl_store)
             store_zone = get_store_zone(store_region)
 
-            allocations.append(AllocationItem(
-                gap_id=idx,
-                store_name=pl_store,
-                store_category=prow["store_category"],
-                store_type=prow["store_type"],
-                region=store_region,
-                zone=store_zone,
-                brand_code=prow["brand_code"],
-                brand_name=brand_name,
-                commodity=commodity,
-                facing=facing,
-                back_stock=back_stock,
-                current_soh=live_soh,
-                deficit=deficit,
-                requested_item_code=actual_requested,
-                allocated_item_code=best_cand["item_code"],
-                allocated_item_name=best_cand["item_name"],
-                allocated_qty=qty_to_alloc,
-                match_type=match_type,
-                mrp=best_cand["mrp"],
-                requested_attributes=target_attrs,
-                allocated_attributes=best_cand["attrs"],
-                match_reason=reason,
-                color_limit_warning=warning,
-                initial_wh_stock=initial_wh,
-                remaining_wh_stock=remaining_wh,
-                initial_gap=initial_gap,
-                remaining_gap=remaining_gap
-            ))
+            for bc, b_qty in allocated_barcodes_with_qty:
+                allocations.append(AllocationItem(
+                    gap_id=idx,
+                    store_name=pl_store,
+                    store_category=prow["store_category"],
+                    store_type=prow["store_type"],
+                    region=store_region,
+                    zone=store_zone,
+                    brand_code=prow["brand_code"],
+                    brand_name=brand_name,
+                    commodity=commodity,
+                    facing=facing,
+                    back_stock=back_stock,
+                    current_soh=live_soh,
+                    deficit=deficit,
+                    requested_item_code=actual_requested,
+                    allocated_item_code=best_cand["item_code"],
+                    allocated_item_name=best_cand["item_name"],
+                    allocated_barcode=bc,
+                    allocated_qty=b_qty,
+                    match_type=match_type,
+                    mrp=best_cand["mrp"],
+                    requested_attributes=target_attrs,
+                    allocated_attributes=best_cand["attrs"],
+                    match_reason=reason,
+                    color_limit_warning=warning,
+                    initial_wh_stock=initial_wh,
+                    remaining_wh_stock=remaining_wh,
+                    initial_gap=initial_gap,
+                    remaining_gap=remaining_gap
+                ))
 
     exact_c = sum(1 for a in allocations if a.match_type == MatchType.EXACT)
     similar_c = sum(1 for a in allocations if a.match_type == MatchType.SIMILAR)

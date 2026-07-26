@@ -58,6 +58,7 @@ class AllocationItem(BaseModel):
     requested_item_code: Optional[str] = None
     allocated_item_code: Optional[str] = None
     allocated_item_name: Optional[str] = None
+    allocated_barcode: Optional[str] = None
     requested_attributes: Optional[ItemAttributes] = None
     allocated_attributes: Optional[ItemAttributes] = None
     match_reason: str = ""

@@ -7,3 +7,12 @@ venv
 dist
 build
 .DS_Store
+
+# Data & Cache files
+data/
+optiflow_poc/backend/local_data/
+optiflow_poc/backend/test.xlsx
+
+# Scratch/Utility scripts
+optiflow_poc/backend/modify_engine.py
+optiflow_poc/frontend/src/*.py
