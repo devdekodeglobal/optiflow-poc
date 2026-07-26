@@ -10,7 +10,7 @@ function useQuery() {
 
 export default function PlanogramPage() {
   const navigate = useNavigate();
-  const { filters, setFilters } = useContext(DataContext);
+  const { planogramFilters: filters, setPlanogramFilters: setFilters } = useContext(DataContext);
 
   const [rows, setRows] = useState([]);
   const [total, setTotal] = useState(0);

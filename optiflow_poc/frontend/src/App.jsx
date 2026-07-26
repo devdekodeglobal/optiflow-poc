@@ -50,7 +50,7 @@ const SidebarItemWithFilters = ({ to, label, icon, sidebarCollapsed }) => {
         )}
       </NavLink>
       {!sidebarCollapsed && isActive && isExpanded && (
-        <AllocationFiltersSidebar isDispatch={to === '/dispatch'} />
+        <AllocationFiltersSidebar isDispatch={to === '/dispatch'} isPlanogram={to === '/planogram'} />
       )}
     </>
   );

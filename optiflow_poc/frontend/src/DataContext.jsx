@@ -22,9 +22,12 @@ export const DataProvider = ({ children }) => {
   const [filters, setFilters] = useState(initialFilters);
   // Global Filter State for Dispatch Orders
   const [dispatchFilters, setDispatchFilters] = useState(initialFilters);
+  // Global Filter State for Planogram Editor
+  const [planogramFilters, setPlanogramFilters] = useState(initialFilters);
 
   const resetFilters = () => setFilters(initialFilters);
   const resetDispatchFilters = () => setDispatchFilters(initialFilters);
+  const resetPlanogramFilters = () => setPlanogramFilters(initialFilters);
 
   const fetchData = async (instantData = null) => {
     if (instantData && instantData.summary) {
@@ -115,7 +118,10 @@ export const DataProvider = ({ children }) => {
       resetFilters,
       dispatchFilters,
       setDispatchFilters,
-      resetDispatchFilters
+      resetDispatchFilters,
+      planogramFilters,
+      setPlanogramFilters,
+      resetPlanogramFilters
     }}>
       {children}
     </DataContext.Provider>

@@ -2,13 +2,27 @@ import React, { useContext, useMemo } from 'react';
 import { DataContext } from '../DataContext';
 import MultiSelect from './MultiSelect';
 
-export default function AllocationFiltersSidebar({ isDispatch }) {
+export default function AllocationFiltersSidebar({ isDispatch, isPlanogram }) {
   const context = useContext(DataContext);
   const masterData = context.allocationData;
   
-  const filters = isDispatch ? context.dispatchFilters : context.filters;
-  const setFilters = isDispatch ? context.setDispatchFilters : context.setFilters;
-  const resetFilters = isDispatch ? context.resetDispatchFilters : context.resetFilters;
+  const filters = isPlanogram
+    ? context.planogramFilters
+    : isDispatch
+    ? context.dispatchFilters
+    : context.filters;
+
+  const setFilters = isPlanogram
+    ? context.setPlanogramFilters
+    : isDispatch
+    ? context.setDispatchFilters
+    : context.setFilters;
+
+  const resetFilters = isPlanogram
+    ? context.resetPlanogramFilters
+    : isDispatch
+    ? context.resetDispatchFilters
+    : context.resetFilters;
 
   const dynamicMetadata = useMemo(() => {
     const getOptions = (field) => {

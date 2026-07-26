@@ -138,27 +138,39 @@ export default function PlanogramDrillDown({
   const nextLevelName = HIERARCHY[currentLevelIndex + 1];
   const nextLevelLabel = HIERARCHY_LABELS[nextLevelName];
 
+  // Merge filteredData with any pending editedRows (and filter out deleted rows)
+  const effectiveData = useMemo(() => {
+    return filteredData
+      .filter(row => !editedRows[row._uid]?._deleted)
+      .map(row => {
+        if (editedRows[row._uid]) {
+          return { ...row, ...editedRows[row._uid] };
+        }
+        return row;
+      });
+  }, [filteredData, editedRows]);
+
   // Summarize current filtered data for the top KPI bar
   const summary = useMemo(() => {
     let facing = 0;
     let backStock = 0;
     let skus = 0;
     
-    filteredData.forEach(i => {
+    effectiveData.forEach(i => {
       facing += parseInt(i.facing) || 0;
       backStock += parseInt(i.back_stock) || 0;
       skus += parseInt(i.sku_count) || 0;
     });
 
     return { facing, backStock, skus };
-  }, [filteredData]);
+  }, [effectiveData]);
 
   // Group data by next level to render cards
   const childrenData = useMemo(() => {
     if (!nextLevelName || currentLevelIndex === 5) return [];
 
     const grouped = {};
-    filteredData.forEach(item => {
+    effectiveData.forEach(item => {
       let key = item[nextLevelName] || `Unknown ${nextLevelName}`;
       if (!grouped[key]) {
         grouped[key] = { items: [], displayName: key };
@@ -194,7 +206,7 @@ export default function PlanogramDrillDown({
         supplier_name: items[0]?.supplier_name || ''
       };
     }).sort((a, b) => b.facing - a.facing);
-  }, [filteredData, nextLevelName, currentLevelIndex]);
+  }, [effectiveData, nextLevelName, currentLevelIndex]);
 
   const handleDrillDown = (childName) => {
     const newFilters = { ...filters };
@@ -720,8 +732,8 @@ export default function PlanogramDrillDown({
   };
 
   const renderLeafNodes = () => {
-    // Extract brand specifications from the first row of filteredData
-    const brandInfo = filteredData[0] || {};
+    // Extract brand specifications from the first row of effectiveData
+    const brandInfo = effectiveData[0] || {};
     const showBrandSpecs = brandInfo.brand_name && (brandInfo.brand_type || brandInfo.brand_category || brandInfo.supplier_name || brandInfo.brand_code);
 
     return (
@@ -775,7 +787,7 @@ export default function PlanogramDrillDown({
           </button>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {filteredData.map((item, idx) => {
+          {effectiveData.map((item, idx) => {
             return (
               <div key={item._uid || idx} className="card animate-in" style={{ padding: 24, background: '#fff', border: '1px solid var(--glass-border)', boxShadow: 'var(--glass-shadow)', borderRadius: 16 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, borderBottom: '1px solid var(--glass-border)', paddingBottom: 16 }}>
@@ -816,7 +828,7 @@ export default function PlanogramDrillDown({
                       id={`facing_${item._uid}`}
                       type="number" 
                       name={`facing_${item._uid}`}
-                      value={item.facing !== null ? item.facing : ''} 
+                      value={item.facing !== null && item.facing !== undefined ? item.facing : ''} 
                       onChange={(e) => handleEditChange(item._uid, 'facing', e.target.value)}
                       style={{ 
                         width: '100%', 
@@ -841,7 +853,7 @@ export default function PlanogramDrillDown({
                       id={`depth_${item._uid}`}
                       type="number" 
                       name={`depth_${item._uid}`}
-                      value={item.back_stock !== null ? item.back_stock : ''} 
+                      value={item.back_stock !== null && item.back_stock !== undefined ? item.back_stock : ''} 
                       onChange={(e) => handleEditChange(item._uid, 'back_stock', e.target.value)}
                       style={{ 
                         width: '100%', 
@@ -968,7 +980,7 @@ export default function PlanogramDrillDown({
           <DataGrid
             key={currentLevelIndex}
             columns={columns}
-            rows={filteredData}
+            rows={effectiveData}
             onRowsChange={handleRowsChange}
             className="rdg-light"
             style={{ height: '100%' }}
