@@ -14,6 +14,41 @@ const HIERARCHY_LABELS = {
   commodity: 'Commodity'
 };
 
+const BRAND_METADATA_DEFAULTS = {
+  'admyra': { code: 'AD', type: 'Private Label', category: 'Private Label', supplier: 'Private Label' },
+  'avanta': { code: 'AV', type: 'Private Label', category: 'Private Label', supplier: 'Private Label' },
+  'avanta kids': { code: 'AV-K', type: 'Private Label', category: 'Private Label', supplier: 'Private Label Kids' },
+  'ombra': { code: 'OB', type: 'Private Label', category: 'Private Label', supplier: 'Private Label' },
+  'one degree': { code: 'OD', type: 'Fast Fashion', category: 'Private Label', supplier: 'Optimed' },
+  'rayban': { code: 'RX', type: 'Lifestyle', category: 'Intl Brand', supplier: 'Luxottica' },
+  'vogue': { code: 'VO', type: 'Fast Fashion', category: 'Intl Brand', supplier: 'Luxottica' },
+  'stepper': { code: 'ST', type: 'Fast Fashion', category: 'Intl Brand', supplier: 'Shailaja' },
+  'tommy hilfiger': { code: 'TH', type: 'Lifestyle', category: 'Intl Brand', supplier: 'Sterling' },
+  'french connection': { code: 'FC', type: 'Fast Fashion', category: 'Intl Brand', supplier: 'Sterling' },
+  'oakley': { code: 'OO', type: 'Sport', category: 'Intl Brand', supplier: 'Luxottica' },
+  'prada': { code: 'PR', type: 'Luxury', category: 'Intl Brand', supplier: 'Luxottica' },
+  'gucci': { code: 'GC', type: 'Luxury', category: 'Intl Brand', supplier: 'Kering' },
+  'bentley': { code: 'BT', type: 'Luxury', category: 'Intl Brand', supplier: 'Eternity' },
+  'breitling': { code: 'BT', type: 'Luxury', category: 'Intl Brand', supplier: 'Sterling' },
+  'burberry': { code: 'BE-O', type: 'Luxury', category: 'Intl Brand', supplier: 'Luxottica' },
+  'calvin klein': { code: 'CK', type: 'Lifestyle', category: 'Intl Brand', supplier: 'Sterling' },
+  'carrera': { code: 'CA', type: 'Lifestyle', category: 'Intl Brand', supplier: 'Safilo' },
+  'david beckham': { code: 'DB', type: 'Lifestyle', category: 'Intl Brand', supplier: 'Safilo' },
+  'dolce&gabbana': { code: 'DG-S', type: 'Luxury', category: 'Intl Brand', supplier: 'Luxottica' },
+  'emporio armani': { code: 'EA', type: 'Premium Fashion', category: 'Intl Brand', supplier: 'Luxottica' },
+  'jimmy choo': { code: 'JC-S', type: 'Luxury', category: 'Intl Brand', supplier: 'Luxottica' },
+  'lindberg': { code: 'LB', type: 'Luxury', category: 'Intl Brand', supplier: 'Kering' },
+  'maybach': { code: 'MM', type: 'Luxury', category: 'Intl Brand', supplier: 'Eternity' },
+  'michael kors': { code: 'MK-S', type: 'Luxury', category: 'Intl Brand', supplier: 'Luxottica' },
+  'miraflex': { code: 'MF', type: 'Fast Fashion', category: 'Intl Brand', supplier: 'Luxottica' },
+  'montblanc': { code: 'MB', type: 'Luxury', category: 'Intl Brand', supplier: 'Kering' },
+  'pierre cardin': { code: 'PC', type: 'Fast Fashion', category: 'Intl Brand', supplier: 'Safilo' },
+  'see saw': { code: 'SS', type: 'Fast Fashion', category: 'Private Label Kids', supplier: 'Optimed' },
+  'silhouette': { code: 'SI', type: 'Luxury', category: 'Intl Brand', supplier: 'Optimed' },
+  'tom ford': { code: 'FT', type: 'Luxury', category: 'Intl Brand', supplier: 'Astra' },
+  'versace': { code: 'VE', type: 'Luxury', category: 'Intl Brand', supplier: 'Luxottica' }
+};
+
 function TextEditor({ row, column, onRowChange, onClose }) {
   return (
     <input
@@ -50,7 +85,17 @@ export default function PlanogramDrillDown({
   const [viewMode, setViewMode] = useState('cards'); // 'cards' or 'table'
   const [editingCard, setEditingCard] = useState(null); // { oldName: string, newName: string }
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [modalData, setModalData] = useState({ name: '', storeGrade: '', facing: 0, depth: 0 });
+  const [modalData, setModalData] = useState({
+    name: '',
+    storeGrade: 'A',
+    storeType: 'SIS',
+    facing: 0,
+    depth: 0,
+    brandCode: '',
+    brandType: 'Private Label',
+    brandCategory: 'Private Label',
+    supplierName: 'Private Label'
+  });
 
   // Determine current drill down level based on active filters
   const currentLevelIndex = useMemo(() => {
@@ -115,7 +160,17 @@ export default function PlanogramDrillDown({
         skus += parseInt(i.sku_count) || 0;
       });
 
-      return { name: key, displayName: groupObj.displayName, facing, backStock, skus, count: items.length, items };
+      return { 
+        name: key, 
+        displayName: groupObj.displayName, 
+        facing, 
+        backStock, 
+        skus, 
+        count: items.length, 
+        items,
+        store_type: items[0]?.store_type || 'Unknown',
+        store_category: items[0]?.store_category || 'Unknown'
+      };
     }).sort((a, b) => b.facing - a.facing);
   }, [filteredData, nextLevelName, currentLevelIndex]);
 
@@ -150,16 +205,32 @@ export default function PlanogramDrillDown({
 
   const handleRenameCardSave = (e, child) => {
     e.stopPropagation();
-    if (editingCard.newName === child.name || !editingCard.newName.trim()) {
+    
+    const isStore = nextLevelName === 'store_name';
+    const hasNameChange = editingCard.newName !== child.name && editingCard.newName.trim();
+    const hasGradeChange = isStore && editingCard.storeGrade !== child.store_category;
+    const hasTypeChange = isStore && editingCard.storeType !== child.store_type;
+    
+    if (!hasNameChange && !hasGradeChange && !hasTypeChange) {
       setEditingCard(null);
       return;
     }
     
-    if (window.confirm(`Are you sure you want to rename "${child.name}" to "${editingCard.newName.trim()}"? This will update all underlying planogram entries.`)) {
+    const confirmMsg = isStore
+      ? `Are you sure you want to update store details? This will update all underlying planogram entries.`
+      : `Are you sure you want to rename "${child.name}" to "${editingCard.newName.trim()}"? This will update all underlying planogram entries.`;
+      
+    if (window.confirm(confirmMsg)) {
       const newEditedRows = { ...editedRows };
       child.items.forEach(item => {
         const existingEdit = newEditedRows[item._uid] || { ...item };
-        existingEdit[nextLevelName] = editingCard.newName.trim();
+        if (hasNameChange) {
+          existingEdit[nextLevelName] = editingCard.newName.trim();
+        }
+        if (isStore) {
+          existingEdit.store_category = editingCard.storeGrade;
+          existingEdit.store_type = editingCard.storeType;
+        }
         newEditedRows[item._uid] = existingEdit;
       });
       setEditedRows(newEditedRows);
@@ -168,8 +239,39 @@ export default function PlanogramDrillDown({
   };
 
   const handleAddNewCard = () => {
-    setModalData({ name: '', storeGrade: '', facing: 0, depth: 0 });
+    setModalData({
+      name: '',
+      storeGrade: 'A',
+      storeType: 'SIS',
+      facing: 0,
+      depth: 0,
+      brandCode: '',
+      brandType: 'Private Label',
+      brandCategory: 'Private Label',
+      supplierName: 'Private Label'
+    });
     setIsAddModalOpen(true);
+  };
+
+  const handleBrandNameChange = (e) => {
+    const val = e.target.value;
+    const key = val.trim().toLowerCase();
+    if (BRAND_METADATA_DEFAULTS[key]) {
+      const match = BRAND_METADATA_DEFAULTS[key];
+      setModalData({
+        ...modalData,
+        name: val,
+        brandCode: match.code,
+        brandType: match.type,
+        brandCategory: match.category,
+        supplierName: match.supplier
+      });
+    } else {
+      setModalData({
+        ...modalData,
+        name: val
+      });
+    }
   };
 
   const handleModalSubmit = (e) => {
@@ -192,9 +294,18 @@ export default function PlanogramDrillDown({
     // Override the next level with the new name
     newRow[nextLevelName] = modalData.name.trim();
 
-    // If Store level, apply grade
-    if (nextLevelName === 'store_name' && modalData.storeGrade.trim()) {
+    // If Store level, apply grade and type
+    if (nextLevelName === 'store_name') {
       newRow.store_category = modalData.storeGrade.trim();
+      newRow.store_type = modalData.storeType.trim();
+    }
+
+    // If Brand level, apply metadata
+    if (nextLevelName === 'brand_name') {
+      newRow.brand_code = modalData.brandCode.trim() || 'Unknown';
+      newRow.brand_type = modalData.brandType.trim() || 'Unknown';
+      newRow.brand_category = modalData.brandCategory.trim() || 'Unknown';
+      newRow.supplier_name = modalData.supplierName.trim() || 'Unknown';
     }
 
     // If Commodity level, apply facing and depth
@@ -328,27 +439,75 @@ export default function PlanogramDrillDown({
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                   {isEditing ? (
-                    <input 
-                      id={`rename_card_${String(child.name).replace(/[^a-zA-Z0-9]/g, '_')}`}
-                      autoFocus
-                      type="text" 
-                      name={`rename_${child.name}`}
-                      className="input" 
-                      value={editingCard.newName}
-                      onClick={e => e.stopPropagation()}
-                      onChange={e => setEditingCard({ ...editingCard, newName: e.target.value })}
-                      onKeyDown={e => { if (e.key === 'Enter') handleRenameCardSave(e, child); if(e.key === 'Escape') setEditingCard(null); }}
-                      onBlur={e => handleRenameCardSave(e, child)}
-                      style={{ fontSize: 16, fontWeight: 700, padding: '4px 8px' }}
-                    />
+                    nextLevelName === 'store_name' ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }} onClick={e => e.stopPropagation()}>
+                        <input 
+                          id={`rename_card_name`}
+                          type="text" 
+                          className="input" 
+                          value={editingCard.newName}
+                          onChange={e => setEditingCard({ ...editingCard, newName: e.target.value })}
+                          style={{ fontSize: 14, fontWeight: 700, padding: '4px 8px', borderRadius: 6 }}
+                        />
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <select
+                            id="edit_store_grade"
+                            name="edit_store_grade"
+                            value={editingCard.storeGrade}
+                            onChange={e => setEditingCard({ ...editingCard, storeGrade: e.target.value })}
+                            style={{ flex: 1, padding: '4px 8px', fontSize: 12, borderRadius: 6, border: '1px solid var(--glass-border)', background: '#fff' }}
+                          >
+                            <option value="A">Grade A</option>
+                            <option value="B">Grade B</option>
+                            <option value="C">Grade C</option>
+                          </select>
+                          <select
+                            id="edit_store_type"
+                            name="edit_store_type"
+                            value={editingCard.storeType}
+                            onChange={e => setEditingCard({ ...editingCard, storeType: e.target.value })}
+                            style={{ flex: 1, padding: '4px 8px', fontSize: 12, borderRadius: 6, border: '1px solid var(--glass-border)', background: '#fff' }}
+                          >
+                            <option value="SIS">SIS</option>
+                            <option value="Retail">Retail</option>
+                          </select>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 4 }}>
+                          <button onClick={() => setEditingCard(null)} className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: 11 }}>Cancel</button>
+                          <button onClick={(e) => handleRenameCardSave(e, child)} className="btn btn-primary" style={{ padding: '2px 10px', fontSize: 11 }}>Save</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <input 
+                        id={`rename_card_${String(child.name).replace(/[^a-zA-Z0-9]/g, '_')}`}
+                        autoFocus
+                        type="text" 
+                        name={`rename_${child.name}`}
+                        className="input" 
+                        value={editingCard.newName}
+                        onClick={e => e.stopPropagation()}
+                        onChange={e => setEditingCard({ ...editingCard, newName: e.target.value })}
+                        onKeyDown={e => { if (e.key === 'Enter') handleRenameCardSave(e, child); if(e.key === 'Escape') setEditingCard(null); }}
+                        onBlur={e => handleRenameCardSave(e, child)}
+                        style={{ fontSize: 16, fontWeight: 700, padding: '4px 8px' }}
+                      />
+                    )
                   ) : (
-                    <h4 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>{child.displayName}</h4>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>{child.displayName}</h4>
+                      {nextLevelName === 'store_name' && (
+                        <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: 'var(--bg-inset)', color: 'var(--text-secondary)' }}>{child.store_type}</span>
+                          <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: 'var(--bg-inset)', color: 'var(--text-secondary)' }}>Grade {child.store_category}</span>
+                        </div>
+                      )}
+                    </div>
                   )}
                   
                   <div style={{ display: 'flex', gap: 8 }}>
                     {!isEditing && (nextLevelName === 'store_name' || nextLevelName === 'brand_name') && (
                       <>
-                        <button onClick={(e) => { e.stopPropagation(); setEditingCard({ oldName: child.name, newName: child.name }); }} className="btn-icon" title="Rename">
+                        <button onClick={(e) => { e.stopPropagation(); setEditingCard({ oldName: child.name, newName: child.name, storeGrade: child.store_category, storeType: child.store_type }); }} className="btn-icon" title="Edit">
                           ✎
                         </button>
                         <button onClick={(e) => handleDeleteCard(e, child)} className="btn-icon" style={{ color: 'var(--error)' }} title="Delete">
@@ -382,8 +541,39 @@ export default function PlanogramDrillDown({
   };
 
   const renderLeafNodes = () => {
+    // Extract brand specifications from the first row of filteredData
+    const brandInfo = filteredData[0] || {};
+    const showBrandSpecs = brandInfo.brand_name && (brandInfo.brand_type || brandInfo.brand_category || brandInfo.supplier_name || brandInfo.brand_code);
+
     return (
       <>
+        {showBrandSpecs && (
+          <div className="card animate-in" style={{ padding: '16px 20px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: 12, marginBottom: 20, display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>
+              Brand Specs: <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{brandInfo.brand_name}</span>
+            </div>
+            {brandInfo.brand_code && (
+              <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>
+                Code: <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{brandInfo.brand_code}</span>
+              </div>
+            )}
+            {brandInfo.brand_type && (
+              <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>
+                Type: <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{brandInfo.brand_type}</span>
+              </div>
+            )}
+            {brandInfo.brand_category && (
+              <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>
+                Category: <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{brandInfo.brand_category}</span>
+              </div>
+            )}
+            {brandInfo.supplier_name && (
+              <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>
+                Supplier: <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{brandInfo.supplier_name}</span>
+              </div>
+            )}
+          </div>
+        )}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <h3 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: 'var(--text-primary)' }}>Commodities</h3>
           <button 
@@ -667,34 +857,131 @@ export default function PlanogramDrillDown({
             <form onSubmit={handleModalSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <div>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 8, textTransform: 'uppercase' }}>{nextLevelLabel} Name</label>
-                <input 
-                  id="modalItemName"
-                  name="modalItemName"
-                  type="text"
-                  autoFocus
-                  required
-                  value={modalData.name}
-                  onChange={(e) => setModalData({...modalData, name: e.target.value})}
-                  style={{ width: '100%', fontSize: 16, padding: '12px 16px', borderRadius: 10, border: '2px solid var(--glass-border)', outline: 'none' }}
-                  onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
-                  onBlur={(e) => e.target.style.borderColor = 'var(--glass-border)'}
-                />
-              </div>
-
-              {nextLevelName === 'store_name' && (
-                <div>
-                  <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 8, textTransform: 'uppercase' }}>Store Grade</label>
+                {nextLevelName === 'brand_name' ? (
                   <input 
-                    id="modalStoreGrade"
-                    name="modalStoreGrade"
+                    id="modalItemName"
+                    name="modalItemName"
                     type="text"
-                    value={modalData.storeGrade}
-                    onChange={(e) => setModalData({...modalData, storeGrade: e.target.value})}
-                    placeholder="e.g. A, B, SIS"
+                    autoFocus
+                    required
+                    value={modalData.name}
+                    onChange={handleBrandNameChange}
                     style={{ width: '100%', fontSize: 16, padding: '12px 16px', borderRadius: 10, border: '2px solid var(--glass-border)', outline: 'none' }}
                     onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
                     onBlur={(e) => e.target.style.borderColor = 'var(--glass-border)'}
                   />
+                ) : (
+                  <input 
+                    id="modalItemName"
+                    name="modalItemName"
+                    type="text"
+                    autoFocus
+                    required
+                    value={modalData.name}
+                    onChange={(e) => setModalData({...modalData, name: e.target.value})}
+                    style={{ width: '100%', fontSize: 16, padding: '12px 16px', borderRadius: 10, border: '2px solid var(--glass-border)', outline: 'none' }}
+                    onFocus={(e) => e.target.style.borderColor = 'var(--primary)'}
+                    onBlur={(e) => e.target.style.borderColor = 'var(--glass-border)'}
+                  />
+                )}
+              </div>
+
+              {nextLevelName === 'store_name' && (
+                <div style={{ display: 'flex', gap: 16 }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 8, textTransform: 'uppercase' }}>Store Grade</label>
+                    <select 
+                      id="modalStoreGrade"
+                      name="modalStoreGrade"
+                      value={modalData.storeGrade}
+                      onChange={(e) => setModalData({...modalData, storeGrade: e.target.value})}
+                      style={{ width: '100%', fontSize: 16, padding: '12px 16px', borderRadius: 10, border: '2px solid var(--glass-border)', outline: 'none', background: '#fff' }}
+                    >
+                      <option value="A">Grade A</option>
+                      <option value="B">Grade B</option>
+                      <option value="C">Grade C</option>
+                    </select>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 8, textTransform: 'uppercase' }}>Store Type</label>
+                    <select 
+                      id="modalStoreType"
+                      name="modalStoreType"
+                      value={modalData.storeType}
+                      onChange={(e) => setModalData({...modalData, storeType: e.target.value})}
+                      style={{ width: '100%', fontSize: 16, padding: '12px 16px', borderRadius: 10, border: '2px solid var(--glass-border)', outline: 'none', background: '#fff' }}
+                    >
+                      <option value="SIS">SIS</option>
+                      <option value="Retail">Retail</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {nextLevelName === 'brand_name' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div style={{ display: 'flex', gap: 16 }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 8, textTransform: 'uppercase' }}>Brand Code</label>
+                      <input 
+                        id="modalBrandCode"
+                        name="modalBrandCode"
+                        type="text"
+                        required
+                        value={modalData.brandCode}
+                        onChange={(e) => setModalData({...modalData, brandCode: e.target.value})}
+                        placeholder="e.g. TH"
+                        style={{ width: '100%', fontSize: 16, padding: '12px 16px', borderRadius: 10, border: '2px solid var(--glass-border)', outline: 'none' }}
+                      />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 8, textTransform: 'uppercase' }}>Brand Type</label>
+                      <select 
+                        id="modalBrandType"
+                        name="modalBrandType"
+                        value={modalData.brandType}
+                        onChange={(e) => setModalData({...modalData, brandType: e.target.value})}
+                        style={{ width: '100%', fontSize: 16, padding: '12px 16px', borderRadius: 10, border: '2px solid var(--glass-border)', outline: 'none', background: '#fff' }}
+                      >
+                        <option value="Private Label">Private Label</option>
+                        <option value="Lifestyle">Lifestyle</option>
+                        <option value="Fast Fashion">Fast Fashion</option>
+                        <option value="Luxury">Luxury</option>
+                        <option value="Sport">Sport</option>
+                        <option value="Premium Fashion">Premium Fashion</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 16 }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 8, textTransform: 'uppercase' }}>Category</label>
+                      <select 
+                        id="modalBrandCategory"
+                        name="modalBrandCategory"
+                        value={modalData.brandCategory}
+                        onChange={(e) => setModalData({...modalData, brandCategory: e.target.value})}
+                        style={{ width: '100%', fontSize: 16, padding: '12px 16px', borderRadius: 10, border: '2px solid var(--glass-border)', outline: 'none', background: '#fff' }}
+                      >
+                        <option value="Private Label">Private Label</option>
+                        <option value="Intl Brand">Intl Brand</option>
+                        <option value="Local Label">Local Label</option>
+                        <option value="Private Label Kids">Private Label Kids</option>
+                      </select>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 8, textTransform: 'uppercase' }}>Supplier Name</label>
+                      <input 
+                        id="modalSupplierName"
+                        name="modalSupplierName"
+                        type="text"
+                        required
+                        value={modalData.supplierName}
+                        onChange={(e) => setModalData({...modalData, supplierName: e.target.value})}
+                        placeholder="e.g. Sterling"
+                        style={{ width: '100%', fontSize: 16, padding: '12px 16px', borderRadius: 10, border: '2px solid var(--glass-border)', outline: 'none' }}
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
 
