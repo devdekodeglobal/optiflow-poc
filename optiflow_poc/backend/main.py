@@ -317,6 +317,8 @@ async def upload_planogram(file: UploadFile = File(...)):
         set_store_planogram(parse_planogram(df.copy()))
         
         upload_to_gcs("Planogram.csv", contents)
+        # Delete any edited planogram json so the new CSV takes precedence on next restart
+        delete_from_gcs("planogram_edited.json")
         
         return {
             "status": "success",
