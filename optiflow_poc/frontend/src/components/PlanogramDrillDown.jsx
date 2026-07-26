@@ -97,6 +97,24 @@ export default function PlanogramDrillDown({
     supplierName: 'Private Label'
   });
 
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    onCancel: () => {}
+  });
+
+  const showConfirm = (title, message, onConfirm, onCancel = () => {}) => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm,
+      onCancel
+    });
+  };
+
   // Determine current drill down level based on active filters
   const currentLevelIndex = useMemo(() => {
     let deepestActiveLevel = -1;
@@ -194,13 +212,17 @@ export default function PlanogramDrillDown({
 
   const handleDeleteCard = (e, child) => {
     e.stopPropagation();
-    if (window.confirm(`Are you sure you want to delete all planogram entries for ${child.displayName}?`)) {
-      const newEditedRows = { ...editedRows };
-      child.items.forEach(item => {
-        newEditedRows[item._uid] = { ...item, _deleted: true };
-      });
-      setEditedRows(newEditedRows);
-    }
+    showConfirm(
+      "Delete All Entries",
+      `Are you sure you want to delete all planogram entries for ${child.displayName}? This will mark all underlying records as deleted.`,
+      () => {
+        const newEditedRows = { ...editedRows };
+        child.items.forEach(item => {
+          newEditedRows[item._uid] = { ...item, _deleted: true };
+        });
+        setEditedRows(newEditedRows);
+      }
+    );
   };
 
   const handleRenameCardSave = (e, child) => {
@@ -220,21 +242,25 @@ export default function PlanogramDrillDown({
       ? `Are you sure you want to update store details? This will update all underlying planogram entries.`
       : `Are you sure you want to rename "${child.name}" to "${editingCard.newName.trim()}"? This will update all underlying planogram entries.`;
       
-    if (window.confirm(confirmMsg)) {
-      const newEditedRows = { ...editedRows };
-      child.items.forEach(item => {
-        const existingEdit = newEditedRows[item._uid] || { ...item };
-        if (hasNameChange) {
-          existingEdit[nextLevelName] = editingCard.newName.trim();
-        }
-        if (isStore) {
-          existingEdit.store_category = editingCard.storeGrade;
-          existingEdit.store_type = editingCard.storeType;
-        }
-        newEditedRows[item._uid] = existingEdit;
-      });
-      setEditedRows(newEditedRows);
-    }
+    showConfirm(
+      isStore ? "Update Store Details" : "Rename Entry",
+      confirmMsg,
+      () => {
+        const newEditedRows = { ...editedRows };
+        child.items.forEach(item => {
+          const existingEdit = newEditedRows[item._uid] || { ...item };
+          if (hasNameChange) {
+            existingEdit[nextLevelName] = editingCard.newName.trim();
+          }
+          if (isStore) {
+            existingEdit.store_category = editingCard.storeGrade;
+            existingEdit.store_type = editingCard.storeType;
+          }
+          newEditedRows[item._uid] = existingEdit;
+        });
+        setEditedRows(newEditedRows);
+      }
+    );
     setEditingCard(null);
   };
 
@@ -319,13 +345,17 @@ export default function PlanogramDrillDown({
   };
 
   const handleDeleteLeaf = (uid) => {
-    if (window.confirm("Delete this entry?")) {
-      const originalRow = filteredData.find(r => r._uid === uid);
-      setEditedRows(prev => ({
-        ...prev,
-        [uid]: { ...originalRow, _deleted: true }
-      }));
-    }
+    showConfirm(
+      "Delete Entry",
+      "Are you sure you want to delete this commodity entry?",
+      () => {
+        const originalRow = filteredData.find(r => r._uid === uid);
+        setEditedRows(prev => ({
+          ...prev,
+          [uid]: { ...originalRow, _deleted: true }
+        }));
+      }
+    );
   };
 
   const handleEditChange = (uid, field, value) => {
@@ -1022,6 +1052,31 @@ export default function PlanogramDrillDown({
                 <button type="submit" style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 600, cursor: 'pointer' }}>Save {nextLevelLabel}</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {confirmModal.isOpen && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, backdropFilter: 'blur(4px)' }}>
+          <div className="card animate-in" style={{ width: 400, background: '#fff', borderRadius: 16, padding: 32, boxShadow: '0 10px 25px rgba(0,0,0,0.15)' }}>
+            <h3 style={{ margin: '0 0 12px 0', fontSize: 18, fontWeight: 800, color: 'var(--text-primary)' }}>{confirmModal.title || 'Are you sure?'}</h3>
+            <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 24px 0' }}>{confirmModal.message}</p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+              <button 
+                type="button"
+                onClick={() => { confirmModal.onCancel(); setConfirmModal({ ...confirmModal, isOpen: false }); }} 
+                style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', fontWeight: 600, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button"
+                onClick={() => { confirmModal.onConfirm(); setConfirmModal({ ...confirmModal, isOpen: false }); }} 
+                style={{ padding: '8px 20px', borderRadius: 8, border: 'none', background: 'var(--error, #e74c3c)', color: '#fff', fontWeight: 600, cursor: 'pointer' }}
+              >
+                Confirm
+              </button>
+            </div>
           </div>
         </div>
       )}
