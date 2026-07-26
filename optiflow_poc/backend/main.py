@@ -1173,7 +1173,22 @@ async def update_strategy(req: StrategyUpdate):
     store.strategy_active_categories = req.active_categories
     store.strategy_store_lists = req.category_stores
     store.dashboard_all_stores_cache = None
-    
+
+    # Sync store grade changes to planogram master data if loaded
+    if store.planogram is not None and req.category_stores:
+        try:
+            for cat, store_list in req.category_stores.items():
+                for s_name in store_list:
+                    mask = store.planogram['store_name'].fillna('').str.lower() == s_name.lower()
+                    store.planogram.loc[mask, 'store_category'] = cat
+            
+            out_json = store.planogram.to_json(orient="records")
+            upload_to_gcs("planogram_edited.json", out_json.encode("utf-8"))
+            if hasattr(store, 'planogram_dicts'):
+                store.planogram_dicts = store.planogram.to_dict(orient="records")
+        except Exception as e:
+            logging.warning(f"Failed to sync planogram store grades: {e}")
+
     strategy_data = {
         "active_categories": store.strategy_active_categories,
         "store_lists": store.strategy_store_lists

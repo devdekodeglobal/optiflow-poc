@@ -639,7 +639,7 @@ export default function PlanogramDrillDown({
                   )}
                   
                   <div style={{ display: 'flex', gap: 6 }}>
-                    {!isEditing && (nextLevelName === 'store_name' || nextLevelName === 'brand_name') && (
+                    {!isEditing && (['zone', 'region', 'store_category', 'store_name', 'brand_name'].includes(nextLevelName)) && (
                       <>
                         <button
                           type="button"
