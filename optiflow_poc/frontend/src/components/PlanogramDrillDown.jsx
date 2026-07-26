@@ -187,7 +187,11 @@ export default function PlanogramDrillDown({
         count: items.length, 
         items,
         store_type: items[0]?.store_type || 'Unknown',
-        store_category: items[0]?.store_category || 'Unknown'
+        store_category: items[0]?.store_category || 'Unknown',
+        brand_code: items[0]?.brand_code || '',
+        brand_type: items[0]?.brand_type || '',
+        brand_category: items[0]?.brand_category || '',
+        supplier_name: items[0]?.supplier_name || ''
       };
     }).sort((a, b) => b.facing - a.facing);
   }, [filteredData, nextLevelName, currentLevelIndex]);
@@ -229,21 +233,30 @@ export default function PlanogramDrillDown({
     e.stopPropagation();
     
     const isStore = nextLevelName === 'store_name';
+    const isBrand = nextLevelName === 'brand_name';
+
     const hasNameChange = editingCard.newName !== child.name && editingCard.newName.trim();
     const hasGradeChange = isStore && editingCard.storeGrade !== child.store_category;
     const hasTypeChange = isStore && editingCard.storeType !== child.store_type;
-    
-    if (!hasNameChange && !hasGradeChange && !hasTypeChange) {
+
+    const hasBrandCodeChange = isBrand && editingCard.brandCode !== child.brand_code;
+    const hasBrandTypeChange = isBrand && editingCard.brandType !== child.brand_type;
+    const hasBrandCatChange = isBrand && editingCard.brandCategory !== child.brand_category;
+    const hasSupplierChange = isBrand && editingCard.supplierName !== child.supplier_name;
+
+    if (!hasNameChange && !hasGradeChange && !hasTypeChange && !hasBrandCodeChange && !hasBrandTypeChange && !hasBrandCatChange && !hasSupplierChange) {
       setEditingCard(null);
       return;
     }
     
     const confirmMsg = isStore
       ? `Are you sure you want to update store details? This will update all underlying planogram entries.`
+      : isBrand
+      ? `Are you sure you want to update brand details for "${child.name}"? This will update all underlying planogram entries.`
       : `Are you sure you want to rename "${child.name}" to "${editingCard.newName.trim()}"? This will update all underlying planogram entries.`;
       
     showConfirm(
-      isStore ? "Update Store Details" : "Rename Entry",
+      isStore ? "Update Store Details" : isBrand ? "Update Brand Details" : "Rename Entry",
       confirmMsg,
       () => {
         const newEditedRows = { ...editedRows };
@@ -255,6 +268,12 @@ export default function PlanogramDrillDown({
           if (isStore) {
             existingEdit.store_category = editingCard.storeGrade;
             existingEdit.store_type = editingCard.storeType;
+          }
+          if (isBrand) {
+            existingEdit.brand_code = editingCard.brandCode;
+            existingEdit.brand_type = editingCard.brandType;
+            existingEdit.brand_category = editingCard.brandCategory;
+            existingEdit.supplier_name = editingCard.supplierName;
           }
           newEditedRows[item._uid] = existingEdit;
         });
@@ -507,6 +526,80 @@ export default function PlanogramDrillDown({
                           <button onClick={(e) => handleRenameCardSave(e, child)} className="btn btn-primary" style={{ padding: '2px 10px', fontSize: 11 }}>Save</button>
                         </div>
                       </div>
+                    ) : nextLevelName === 'brand_name' ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }} onClick={e => e.stopPropagation()}>
+                        <div>
+                          <label style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)' }}>BRAND NAME</label>
+                          <input 
+                            id="edit_brand_name"
+                            type="text" 
+                            className="input" 
+                            value={editingCard.newName}
+                            onChange={e => setEditingCard({ ...editingCard, newName: e.target.value })}
+                            style={{ width: '100%', fontSize: 13, fontWeight: 700, padding: '4px 8px', borderRadius: 6 }}
+                          />
+                        </div>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <div style={{ flex: 1 }}>
+                            <label style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)' }}>CODE</label>
+                            <input 
+                              id="edit_brand_code"
+                              type="text" 
+                              className="input" 
+                              value={editingCard.brandCode}
+                              onChange={e => setEditingCard({ ...editingCard, brandCode: e.target.value })}
+                              style={{ width: '100%', fontSize: 12, padding: '4px 8px', borderRadius: 6 }}
+                            />
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <label style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)' }}>TYPE</label>
+                            <select
+                              id="edit_brand_type"
+                              value={editingCard.brandType}
+                              onChange={e => setEditingCard({ ...editingCard, brandType: e.target.value })}
+                              style={{ width: '100%', padding: '4px 8px', fontSize: 12, borderRadius: 6, border: '1px solid var(--glass-border)', background: '#fff' }}
+                            >
+                              <option value="Private Label">Private Label</option>
+                              <option value="Lifestyle">Lifestyle</option>
+                              <option value="Fast Fashion">Fast Fashion</option>
+                              <option value="Luxury">Luxury</option>
+                              <option value="Sport">Sport</option>
+                              <option value="Premium Fashion">Premium Fashion</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <div style={{ flex: 1 }}>
+                            <label style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)' }}>CATEGORY</label>
+                            <select
+                              id="edit_brand_cat"
+                              value={editingCard.brandCategory}
+                              onChange={e => setEditingCard({ ...editingCard, brandCategory: e.target.value })}
+                              style={{ width: '100%', padding: '4px 8px', fontSize: 12, borderRadius: 6, border: '1px solid var(--glass-border)', background: '#fff' }}
+                            >
+                              <option value="Private Label">Private Label</option>
+                              <option value="Intl Brand">Intl Brand</option>
+                              <option value="Local Label">Local Label</option>
+                              <option value="Private Label Kids">Private Label Kids</option>
+                            </select>
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <label style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-tertiary)' }}>SUPPLIER</label>
+                            <input 
+                              id="edit_brand_supplier"
+                              type="text" 
+                              className="input" 
+                              value={editingCard.supplierName}
+                              onChange={e => setEditingCard({ ...editingCard, supplierName: e.target.value })}
+                              style={{ width: '100%', fontSize: 12, padding: '4px 8px', borderRadius: 6 }}
+                            />
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 4 }}>
+                          <button onClick={() => setEditingCard(null)} className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: 11 }}>Cancel</button>
+                          <button onClick={(e) => handleRenameCardSave(e, child)} className="btn btn-primary" style={{ padding: '2px 10px', fontSize: 11 }}>Save</button>
+                        </div>
+                      </div>
                     ) : (
                       <input 
                         id={`rename_card_${String(child.name).replace(/[^a-zA-Z0-9]/g, '_')}`}
@@ -525,22 +618,79 @@ export default function PlanogramDrillDown({
                   ) : (
                     <div>
                       <h4 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>{child.displayName}</h4>
-                      {nextLevelName === 'store_name' && (
-                        <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
-                          <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: 'var(--bg-inset)', color: 'var(--text-secondary)' }}>{child.store_type}</span>
+                      {nextLevelName === 'store_name' && child.store_type && (
+                        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-tertiary)', marginTop: 2 }}>
+                          {child.store_type}
                         </div>
                       )}
                     </div>
                   )}
                   
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  <div style={{ display: 'flex', gap: 6 }}>
                     {!isEditing && (nextLevelName === 'store_name' || nextLevelName === 'brand_name') && (
                       <>
-                        <button onClick={(e) => { e.stopPropagation(); setEditingCard({ oldName: child.name, newName: child.name, storeGrade: child.store_category, storeType: child.store_type }); }} className="btn-icon" title="Edit">
-                          ✎
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingCard({
+                              oldName: child.name,
+                              newName: child.name,
+                              storeGrade: child.store_category,
+                              storeType: child.store_type,
+                              brandCode: child.brand_code,
+                              brandType: child.brand_type,
+                              brandCategory: child.brand_category,
+                              supplierName: child.supplier_name
+                            });
+                          }}
+                          title="Edit"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: 28,
+                            height: 28,
+                            borderRadius: 6,
+                            border: '1px solid rgba(99, 102, 241, 0.2)',
+                            background: 'rgba(99, 102, 241, 0.06)',
+                            color: 'var(--primary, #4f46e5)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(99, 102, 241, 0.18)'; e.currentTarget.style.transform = 'scale(1.05)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(99, 102, 241, 0.06)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                          </svg>
                         </button>
-                        <button onClick={(e) => handleDeleteCard(e, child)} className="btn-icon" style={{ color: 'var(--error)' }} title="Delete">
-                          ×
+
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteCard(e, child)}
+                          title="Delete"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: 28,
+                            height: 28,
+                            borderRadius: 6,
+                            border: '1px solid rgba(239, 68, 68, 0.2)',
+                            background: 'rgba(239, 68, 68, 0.06)',
+                            color: '#ef4444',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.18)'; e.currentTarget.style.transform = 'scale(1.05)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.06)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                          </svg>
                         </button>
                       </>
                     )}
