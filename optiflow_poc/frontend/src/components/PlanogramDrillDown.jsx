@@ -914,26 +914,26 @@ export default function PlanogramDrillDown({
           </button>
         </div>
 
-        <div className="card animate-in" style={{ background: '#fff', border: '1px solid var(--glass-border)', borderRadius: 12, overflow: 'hidden', boxShadow: 'var(--glass-shadow)' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+        <div className="card animate-in" style={{ background: '#fff', border: '1px solid var(--glass-border)', borderRadius: 12, overflowX: 'auto', boxShadow: 'var(--glass-shadow)' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: 800 }}>
             <thead>
               <tr style={{ background: 'var(--bg-inset)', borderBottom: '1px solid var(--glass-border)' }}>
-                <th style={{ padding: '14px 20px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>{nextLevelLabel}</th>
+                <th style={{ padding: '12px 10px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>{nextLevelLabel}</th>
                 {nextLevelName === 'store_name' && (
-                  <th style={{ padding: '14px 20px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Type</th>
+                  <th style={{ padding: '12px 10px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Type</th>
                 )}
                 {nextLevelName === 'brand_name' && (
                   <>
-                    <th style={{ padding: '14px 20px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Code</th>
-                    <th style={{ padding: '14px 20px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Type</th>
-                    <th style={{ padding: '14px 20px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Category</th>
-                    <th style={{ padding: '14px 20px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Supplier</th>
+                    <th style={{ padding: '12px 10px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Code</th>
+                    <th style={{ padding: '12px 10px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Type</th>
+                    <th style={{ padding: '12px 10px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Category</th>
+                    <th style={{ padding: '12px 10px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Supplier</th>
                   </>
                 )}
-                <th style={{ padding: '14px 20px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', textAlign: 'right' }}>Target</th>
-                <th style={{ padding: '14px 20px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', textAlign: 'right' }}>Facing</th>
-                <th style={{ padding: '14px 20px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', textAlign: 'right' }}>Depth</th>
-                <th style={{ padding: '14px 20px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', textAlign: 'center', width: 100 }}>Actions</th>
+                <th style={{ padding: '12px 10px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', textAlign: 'right' }}>Target</th>
+                <th style={{ padding: '12px 10px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', textAlign: 'right' }}>Facing</th>
+                <th style={{ padding: '12px 10px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', textAlign: 'right' }}>Depth</th>
+                <th style={{ padding: '12px 10px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', textAlign: 'center', minWidth: 110, width: 110 }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -952,7 +952,7 @@ export default function PlanogramDrillDown({
                     onMouseEnter={e => { if (!isEditing) e.currentTarget.style.background = 'rgba(99, 102, 241, 0.04)'; }}
                     onMouseLeave={e => { if (!isEditing) e.currentTarget.style.background = 'transparent'; }}
                   >
-                    <td style={{ padding: '14px 20px', fontWeight: 700, color: 'var(--primary)' }}>
+                    <td style={{ padding: '12px 10px', fontWeight: 700, color: 'var(--primary)' }}>
                       {isEditing ? (
                         <input 
                           id={`table_rename_${idx}`}
@@ -962,7 +962,7 @@ export default function PlanogramDrillDown({
                           onClick={e => e.stopPropagation()}
                           onChange={e => setEditingCard({ ...editingCard, newName: e.target.value })}
                           onKeyDown={e => { if (e.key === 'Enter') handleRenameCardSave(e, child); if(e.key === 'Escape') setEditingCard(null); }}
-                          style={{ fontSize: 14, fontWeight: 700, padding: '4px 8px', borderRadius: 6 }}
+                          style={{ fontSize: 12, fontWeight: 700, padding: '3px 6px', borderRadius: 6, maxWidth: 120 }}
                         />
                       ) : (
                         child.displayName
@@ -970,13 +970,13 @@ export default function PlanogramDrillDown({
                     </td>
 
                     {nextLevelName === 'store_name' && (
-                      <td style={{ padding: '14px 20px', fontSize: 13, color: 'var(--text-secondary)' }}>
+                      <td style={{ padding: '12px 10px', fontSize: 13, color: 'var(--text-secondary)' }}>
                         {isEditing ? (
                           <div style={{ display: 'flex', gap: 6 }} onClick={e => e.stopPropagation()}>
                             <select
                               value={editingCard.storeGrade}
                               onChange={e => setEditingCard({ ...editingCard, storeGrade: e.target.value })}
-                              style={{ padding: '4px 6px', fontSize: 12, borderRadius: 6 }}
+                              style={{ padding: '3px 6px', fontSize: 12, borderRadius: 6, maxWidth: 90 }}
                             >
                               <option value="A">Grade A</option>
                               <option value="B">Grade B</option>
@@ -985,7 +985,7 @@ export default function PlanogramDrillDown({
                             <select
                               value={editingCard.storeType}
                               onChange={e => setEditingCard({ ...editingCard, storeType: e.target.value })}
-                              style={{ padding: '4px 6px', fontSize: 12, borderRadius: 6 }}
+                              style={{ padding: '3px 6px', fontSize: 12, borderRadius: 6, maxWidth: 90 }}
                             >
                               <option value="SIS">SIS</option>
                               <option value="Retail">Retail</option>
@@ -999,24 +999,24 @@ export default function PlanogramDrillDown({
 
                     {nextLevelName === 'brand_name' && (
                       <>
-                        <td style={{ padding: '14px 20px', fontSize: 13, color: 'var(--text-secondary)' }}>
+                        <td style={{ padding: '12px 10px', fontSize: 13, color: 'var(--text-secondary)' }}>
                           {isEditing ? (
                             <input 
                               type="text" 
                               value={editingCard.brandCode} 
                               onClick={e => e.stopPropagation()} 
                               onChange={e => setEditingCard({ ...editingCard, brandCode: e.target.value })} 
-                              style={{ width: 60, padding: '4px 6px', fontSize: 12 }} 
+                              style={{ width: 50, maxWidth: 60, padding: '3px 6px', fontSize: 12, borderRadius: 6 }} 
                             />
                           ) : (child.brand_code || 'N/A')}
                         </td>
-                        <td style={{ padding: '14px 20px', fontSize: 13, color: 'var(--text-secondary)' }}>
+                        <td style={{ padding: '12px 10px', fontSize: 13, color: 'var(--text-secondary)' }}>
                           {isEditing ? (
                             <select 
                               value={editingCard.brandType} 
                               onClick={e => e.stopPropagation()} 
                               onChange={e => setEditingCard({ ...editingCard, brandType: e.target.value })}
-                              style={{ padding: '4px 6px', fontSize: 12 }}
+                              style={{ padding: '3px 6px', fontSize: 12, borderRadius: 6, maxWidth: 110 }}
                             >
                               <option value="Private Label">Private Label</option>
                               <option value="Lifestyle">Lifestyle</option>
@@ -1027,13 +1027,13 @@ export default function PlanogramDrillDown({
                             </select>
                           ) : (child.brand_type || 'N/A')}
                         </td>
-                        <td style={{ padding: '14px 20px', fontSize: 13, color: 'var(--text-secondary)' }}>
+                        <td style={{ padding: '12px 10px', fontSize: 13, color: 'var(--text-secondary)' }}>
                           {isEditing ? (
                             <select 
                               value={editingCard.brandCategory} 
                               onClick={e => e.stopPropagation()} 
                               onChange={e => setEditingCard({ ...editingCard, brandCategory: e.target.value })}
-                              style={{ padding: '4px 6px', fontSize: 12 }}
+                              style={{ padding: '3px 6px', fontSize: 12, borderRadius: 6, maxWidth: 110 }}
                             >
                               <option value="Private Label">Private Label</option>
                               <option value="Intl Brand">Intl Brand</option>
@@ -1042,35 +1042,35 @@ export default function PlanogramDrillDown({
                             </select>
                           ) : (child.brand_category || 'N/A')}
                         </td>
-                        <td style={{ padding: '14px 20px', fontSize: 13, color: 'var(--text-secondary)' }}>
+                        <td style={{ padding: '12px 10px', fontSize: 13, color: 'var(--text-secondary)' }}>
                           {isEditing ? (
                             <input 
                               type="text" 
                               value={editingCard.supplierName} 
                               onClick={e => e.stopPropagation()} 
                               onChange={e => setEditingCard({ ...editingCard, supplierName: e.target.value })} 
-                              style={{ width: 100, padding: '4px 6px', fontSize: 12 }} 
+                              style={{ width: 90, maxWidth: 110, padding: '3px 6px', fontSize: 12, borderRadius: 6 }} 
                             />
                           ) : (child.supplier_name || 'N/A')}
                         </td>
                       </>
                     )}
 
-                    <td style={{ padding: '14px 20px', fontSize: 14, fontWeight: 700, color: 'var(--primary)', textAlign: 'right' }}>
+                    <td style={{ padding: '12px 10px', fontSize: 14, fontWeight: 700, color: 'var(--primary)', textAlign: 'right' }}>
                       {(child.facing + child.backStock).toLocaleString()}
                     </td>
-                    <td style={{ padding: '14px 20px', fontSize: 14, fontWeight: 700, color: 'var(--info)', textAlign: 'right' }}>
+                    <td style={{ padding: '12px 10px', fontSize: 14, fontWeight: 700, color: 'var(--info)', textAlign: 'right' }}>
                       {child.facing.toLocaleString()}
                     </td>
-                    <td style={{ padding: '14px 20px', fontSize: 14, fontWeight: 700, color: 'var(--warning)', textAlign: 'right' }}>
+                    <td style={{ padding: '12px 10px', fontSize: 14, fontWeight: 700, color: 'var(--warning)', textAlign: 'right' }}>
                       {child.backStock.toLocaleString()}
                     </td>
 
-                    <td style={{ padding: '14px 20px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+                    <td style={{ padding: '12px 10px', textAlign: 'center', minWidth: 110 }} onClick={e => e.stopPropagation()}>
                       {isEditing ? (
-                        <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
-                          <button onClick={(e) => handleRenameCardSave(e, child)} className="btn btn-primary" style={{ padding: '2px 8px', fontSize: 11 }}>Save</button>
-                          <button onClick={() => setEditingCard(null)} className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: 11 }}>Cancel</button>
+                        <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+                          <button onClick={(e) => handleRenameCardSave(e, child)} className="btn btn-primary" style={{ padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>Save</button>
+                          <button onClick={() => setEditingCard(null)} className="btn btn-secondary" style={{ padding: '3px 8px', fontSize: 11, fontWeight: 600 }}>Cancel</button>
                         </div>
                       ) : (
                         <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
