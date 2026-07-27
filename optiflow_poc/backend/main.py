@@ -109,6 +109,7 @@ def download_from_gcs(filename):
             gcs_success = True
             # Cache locally
             local_path = os.path.join(LOCAL_DATA_DIR, filename)
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
             with open(local_path, "wb") as f:
                 f.write(gcs_data)
     except Exception as e:
@@ -130,6 +131,7 @@ def download_from_gcs(filename):
 def upload_to_gcs(filename, contents):
     # Always save locally first
     local_path = os.path.join(LOCAL_DATA_DIR, filename)
+    os.makedirs(os.path.dirname(local_path), exist_ok=True)
     try:
         with open(local_path, "wb") as f:
             f.write(contents)
@@ -577,7 +579,79 @@ async def update_planogram(updates: List[Dict[str, Any]] = Body(...)):
         out_json = store.planogram.to_json(orient="records")
         upload_to_gcs("planogram_edited.json", out_json.encode("utf-8"))
         
+        # Save timestamped backup snapshot
+        save_planogram_version_backup(store.planogram, f"Saved {len(updates)} planogram changes")
+        
         return {"status": "success", "message": f"Updated {len(updates)} rows"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+def save_planogram_version_backup(df: pd.DataFrame, description: str = "Planogram updated"):
+    if df is None or df.empty:
+        return
+    try:
+        now = datetime.datetime.now(datetime.timezone.utc)
+        version_id = f"v_{now.strftime('%Y-%m-%d_%H-%M-%S')}"
+        backup_filename = f"backups/planogram_{version_id}.json"
+        
+        out_json = df.to_json(orient="records")
+        upload_to_gcs(backup_filename, out_json.encode("utf-8"))
+        
+        versions = []
+        try:
+            v_bytes = download_from_gcs("planogram_versions.json")
+            if v_bytes:
+                versions = json.loads(v_bytes.decode("utf-8"))
+        except Exception:
+            versions = []
+            
+        new_entry = {
+            "version_id": version_id,
+            "filename": backup_filename,
+            "timestamp": now.isoformat(),
+            "total_entries": len(df),
+            "description": description
+        }
+        
+        if not any(v.get("version_id") == version_id for v in versions):
+            versions.insert(0, new_entry)
+            versions = versions[:50]
+            upload_to_gcs("planogram_versions.json", json.dumps(versions, indent=2).encode("utf-8"))
+    except Exception as e:
+        logging.warning(f"Failed to save planogram version backup: {e}")
+
+@app.get("/api/planogram/versions")
+async def get_planogram_versions():
+    try:
+        v_bytes = download_from_gcs("planogram_versions.json")
+        if v_bytes:
+            versions = json.loads(v_bytes.decode("utf-8"))
+            return {"status": "success", "versions": versions}
+    except Exception as e:
+        logging.warning(f"Failed to fetch planogram versions: {e}")
+    return {"status": "success", "versions": []}
+
+@app.post("/api/planogram/restore/{version_id}")
+async def restore_planogram_version(version_id: str):
+    if store.planogram is None:
+        raise HTTPException(status_code=400, detail="Planogram data not initialized")
+        
+    try:
+        filename = f"backups/planogram_{version_id}.json"
+        v_bytes = download_from_gcs(filename)
+        if not v_bytes:
+            raise HTTPException(status_code=404, detail=f"Backup version {version_id} not found")
+            
+        data = json.loads(v_bytes.decode("utf-8"))
+        restored_df = pd.DataFrame(data)
+        set_store_planogram(restored_df)
+        
+        out_json = store.planogram.to_json(orient="records")
+        upload_to_gcs("planogram_edited.json", out_json.encode("utf-8"))
+        
+        save_planogram_version_backup(store.planogram, f"Restored snapshot from {version_id}")
+        
+        return {"status": "success", "message": f"Successfully restored version {version_id}"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 @app.get("/api/allocation/results")

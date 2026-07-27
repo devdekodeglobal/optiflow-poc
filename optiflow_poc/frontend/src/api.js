@@ -186,3 +186,23 @@ export async function updatePlanogramData(updates) {
   }
   return res.json();
 }
+
+export async function getPlanogramVersions() {
+  const res = await fetch(`${API_BASE}/api/planogram/versions`);
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || 'Failed to fetch planogram versions');
+  }
+  return res.json();
+}
+
+export async function restorePlanogramVersion(versionId) {
+  const res = await fetch(`${API_BASE}/api/planogram/restore/${versionId}`, {
+    method: 'POST'
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || 'Failed to restore planogram version');
+  }
+  return res.json();
+}
