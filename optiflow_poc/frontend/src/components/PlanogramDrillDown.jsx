@@ -881,84 +881,21 @@ export default function PlanogramDrillDown({
     );
   };
 
+
+
   const renderTableView = () => {
-    if (currentLevelIndex < 5) {
-      const columns = [
-        { 
-          key: 'name', 
-          name: nextLevelLabel ? nextLevelLabel.toUpperCase() : 'NAME', 
-          resizable: true,
-          renderCell: (p) => (
-            <span 
-              style={{ 
-                color: 'var(--primary)', 
-                cursor: 'pointer',
-                textDecoration: 'underline',
-                fontWeight: 600
-              }}
-              onClick={() => handleDrillDown(p.row.id)}
-            >
-              {p.row.name}
-            </span>
-          )
-        },
-        { key: 'totalTarget', name: 'TARGET', resizable: true },
-        { key: 'facing', name: 'FACING', resizable: true },
-        { key: 'backStock', name: 'DEPTH', resizable: true },
-      ];
-
-      const rows = childrenData.map(child => ({
-        id: child.name,
-        name: child.displayName || child.name,
-        totalTarget: (child.facing + child.backStock).toLocaleString(),
-        facing: child.facing.toLocaleString(),
-        backStock: child.backStock.toLocaleString(),
-      }));
-
-      return (
-        <div className="animate-in" style={{ height: 'auto' }}>
-          <DataGrid
-            key={currentLevelIndex}
-            columns={columns}
-            rows={rows}
-            rowKeyGetter={(row) => row.id}
-            className="rdg-light"
-            style={{ height: 'auto' }}
-            rowHeight={52}
-            headerRowHeight={48}
-            onRowClick={(row) => handleDrillDown(row.id)}
-          />
-        </div>
-      );
+    if (currentLevelIndex === 6) {
+      return renderLeafNodes();
     }
-
-    // Leaf node table view
-    const columns = [
-      { key: 'zone', name: 'Zone', width: 120, resizable: true, renderEditCell: TextEditor },
-      { key: 'region', name: 'Region', width: 150, resizable: true, renderEditCell: TextEditor },
-      { key: 'store_name', name: 'Store Name', width: 220, resizable: true, renderEditCell: TextEditor },
-      { key: 'store_category', name: 'Grade', width: 80, resizable: true, renderEditCell: TextEditor },
-      { key: 'brand_name', name: 'Brand Name', width: 150, resizable: true, renderEditCell: TextEditor },
-      { key: 'commodity', name: 'Commodity', width: 130, resizable: true, renderEditCell: TextEditor },
-      { key: 'facing', name: 'Facing (Display)', width: 120, resizable: true, renderEditCell: TextEditor },
-      { key: 'back_stock', name: 'Depth', width: 100, resizable: true, renderEditCell: TextEditor },
-    ];
-
-    const handleRowsChange = (newRows, { indexes }) => {
-      const changes = {};
-      for (const index of indexes) {
-        const row = newRows[index];
-        changes[row._uid] = row;
-      }
-      setEditedRows(prev => ({ ...prev, ...changes }));
-    };
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 16 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h3 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: 'var(--text-primary)' }}>Raw Data View</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <h3 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: 'var(--text-primary)' }}>
+            Select {nextLevelLabel}
+          </h3>
           <button 
-            onClick={() => onAddRow({ facing: 0, back_stock: 0 })} 
+            onClick={handleAddNewCard} 
             style={{
               background: 'var(--primary)',
               color: '#fff',
@@ -973,23 +910,245 @@ export default function PlanogramDrillDown({
             onMouseEnter={e => { e.currentTarget.style.background = 'var(--primary-dark)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
             onMouseLeave={e => { e.currentTarget.style.background = 'var(--primary)'; e.currentTarget.style.transform = 'translateY(0)'; }}
           >
-            + Add Empty Row
+            + Add New {nextLevelLabel}
           </button>
         </div>
-        <div style={{ flex: 1, backgroundColor: 'var(--bg-surface)', borderRadius: 8, border: '1px solid var(--border-color)', overflow: 'hidden' }}>
-          <DataGrid
-            key={currentLevelIndex}
-            columns={columns}
-            rows={effectiveData}
-            onRowsChange={handleRowsChange}
-            className="rdg-light"
-            style={{ height: '100%' }}
-          />
+
+        <div className="card animate-in" style={{ background: '#fff', border: '1px solid var(--glass-border)', borderRadius: 12, overflow: 'hidden', boxShadow: 'var(--glass-shadow)' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ background: 'var(--bg-inset)', borderBottom: '1px solid var(--glass-border)' }}>
+                <th style={{ padding: '14px 20px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>{nextLevelLabel}</th>
+                {nextLevelName === 'store_name' && (
+                  <th style={{ padding: '14px 20px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Type</th>
+                )}
+                {nextLevelName === 'brand_name' && (
+                  <>
+                    <th style={{ padding: '14px 20px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Code</th>
+                    <th style={{ padding: '14px 20px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Type</th>
+                    <th style={{ padding: '14px 20px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Category</th>
+                    <th style={{ padding: '14px 20px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Supplier</th>
+                  </>
+                )}
+                <th style={{ padding: '14px 20px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', textAlign: 'right' }}>Target</th>
+                <th style={{ padding: '14px 20px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', textAlign: 'right' }}>Facing</th>
+                <th style={{ padding: '14px 20px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', textAlign: 'right' }}>Depth</th>
+                <th style={{ padding: '14px 20px', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', textAlign: 'center', width: 100 }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {childrenData.map((child, idx) => {
+                const isEditing = editingCard?.oldName === child.name;
+
+                return (
+                  <tr 
+                    key={idx} 
+                    style={{ 
+                      borderBottom: idx === childrenData.length - 1 ? 'none' : '1px solid var(--glass-border)',
+                      cursor: isEditing ? 'default' : 'pointer',
+                      transition: 'background 0.15s'
+                    }}
+                    onClick={() => { if (!isEditing) handleDrillDown(child.name); }}
+                    onMouseEnter={e => { if (!isEditing) e.currentTarget.style.background = 'rgba(99, 102, 241, 0.04)'; }}
+                    onMouseLeave={e => { if (!isEditing) e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <td style={{ padding: '14px 20px', fontWeight: 700, color: 'var(--primary)' }}>
+                      {isEditing ? (
+                        <input 
+                          id={`table_rename_${idx}`}
+                          type="text" 
+                          className="input" 
+                          value={editingCard.newName}
+                          onClick={e => e.stopPropagation()}
+                          onChange={e => setEditingCard({ ...editingCard, newName: e.target.value })}
+                          onKeyDown={e => { if (e.key === 'Enter') handleRenameCardSave(e, child); if(e.key === 'Escape') setEditingCard(null); }}
+                          style={{ fontSize: 14, fontWeight: 700, padding: '4px 8px', borderRadius: 6 }}
+                        />
+                      ) : (
+                        child.displayName
+                      )}
+                    </td>
+
+                    {nextLevelName === 'store_name' && (
+                      <td style={{ padding: '14px 20px', fontSize: 13, color: 'var(--text-secondary)' }}>
+                        {isEditing ? (
+                          <div style={{ display: 'flex', gap: 6 }} onClick={e => e.stopPropagation()}>
+                            <select
+                              value={editingCard.storeGrade}
+                              onChange={e => setEditingCard({ ...editingCard, storeGrade: e.target.value })}
+                              style={{ padding: '4px 6px', fontSize: 12, borderRadius: 6 }}
+                            >
+                              <option value="A">Grade A</option>
+                              <option value="B">Grade B</option>
+                              <option value="C">Grade C</option>
+                            </select>
+                            <select
+                              value={editingCard.storeType}
+                              onChange={e => setEditingCard({ ...editingCard, storeType: e.target.value })}
+                              style={{ padding: '4px 6px', fontSize: 12, borderRadius: 6 }}
+                            >
+                              <option value="SIS">SIS</option>
+                              <option value="Retail">Retail</option>
+                            </select>
+                          </div>
+                        ) : (
+                          child.store_type || 'N/A'
+                        )}
+                      </td>
+                    )}
+
+                    {nextLevelName === 'brand_name' && (
+                      <>
+                        <td style={{ padding: '14px 20px', fontSize: 13, color: 'var(--text-secondary)' }}>
+                          {isEditing ? (
+                            <input 
+                              type="text" 
+                              value={editingCard.brandCode} 
+                              onClick={e => e.stopPropagation()} 
+                              onChange={e => setEditingCard({ ...editingCard, brandCode: e.target.value })} 
+                              style={{ width: 60, padding: '4px 6px', fontSize: 12 }} 
+                            />
+                          ) : (child.brand_code || 'N/A')}
+                        </td>
+                        <td style={{ padding: '14px 20px', fontSize: 13, color: 'var(--text-secondary)' }}>
+                          {isEditing ? (
+                            <select 
+                              value={editingCard.brandType} 
+                              onClick={e => e.stopPropagation()} 
+                              onChange={e => setEditingCard({ ...editingCard, brandType: e.target.value })}
+                              style={{ padding: '4px 6px', fontSize: 12 }}
+                            >
+                              <option value="Private Label">Private Label</option>
+                              <option value="Lifestyle">Lifestyle</option>
+                              <option value="Fast Fashion">Fast Fashion</option>
+                              <option value="Luxury">Luxury</option>
+                              <option value="Sport">Sport</option>
+                              <option value="Premium Fashion">Premium Fashion</option>
+                            </select>
+                          ) : (child.brand_type || 'N/A')}
+                        </td>
+                        <td style={{ padding: '14px 20px', fontSize: 13, color: 'var(--text-secondary)' }}>
+                          {isEditing ? (
+                            <select 
+                              value={editingCard.brandCategory} 
+                              onClick={e => e.stopPropagation()} 
+                              onChange={e => setEditingCard({ ...editingCard, brandCategory: e.target.value })}
+                              style={{ padding: '4px 6px', fontSize: 12 }}
+                            >
+                              <option value="Private Label">Private Label</option>
+                              <option value="Intl Brand">Intl Brand</option>
+                              <option value="Local Label">Local Label</option>
+                              <option value="Private Label Kids">Private Label Kids</option>
+                            </select>
+                          ) : (child.brand_category || 'N/A')}
+                        </td>
+                        <td style={{ padding: '14px 20px', fontSize: 13, color: 'var(--text-secondary)' }}>
+                          {isEditing ? (
+                            <input 
+                              type="text" 
+                              value={editingCard.supplierName} 
+                              onClick={e => e.stopPropagation()} 
+                              onChange={e => setEditingCard({ ...editingCard, supplierName: e.target.value })} 
+                              style={{ width: 100, padding: '4px 6px', fontSize: 12 }} 
+                            />
+                          ) : (child.supplier_name || 'N/A')}
+                        </td>
+                      </>
+                    )}
+
+                    <td style={{ padding: '14px 20px', fontSize: 14, fontWeight: 700, color: 'var(--primary)', textAlign: 'right' }}>
+                      {(child.facing + child.backStock).toLocaleString()}
+                    </td>
+                    <td style={{ padding: '14px 20px', fontSize: 14, fontWeight: 700, color: 'var(--info)', textAlign: 'right' }}>
+                      {child.facing.toLocaleString()}
+                    </td>
+                    <td style={{ padding: '14px 20px', fontSize: 14, fontWeight: 700, color: 'var(--warning)', textAlign: 'right' }}>
+                      {child.backStock.toLocaleString()}
+                    </td>
+
+                    <td style={{ padding: '14px 20px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+                      {isEditing ? (
+                        <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
+                          <button onClick={(e) => handleRenameCardSave(e, child)} className="btn btn-primary" style={{ padding: '2px 8px', fontSize: 11 }}>Save</button>
+                          <button onClick={() => setEditingCard(null)} className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: 11 }}>Cancel</button>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingCard({
+                                oldName: child.name,
+                                newName: child.name,
+                                storeGrade: child.store_category,
+                                storeType: child.store_type,
+                                brandCode: child.brand_code,
+                                brandType: child.brand_type,
+                                brandCategory: child.brand_category,
+                                supplierName: child.supplier_name
+                              });
+                            }}
+                            title="Edit"
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              width: 28,
+                              height: 28,
+                              borderRadius: 6,
+                              border: '1px solid rgba(99, 102, 241, 0.2)',
+                              background: 'rgba(99, 102, 241, 0.06)',
+                              color: 'var(--primary, #4f46e5)',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(99, 102, 241, 0.18)'; e.currentTarget.style.transform = 'scale(1.05)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(99, 102, 241, 0.06)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                          >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                            </svg>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => handleDeleteCard(e, child)}
+                            title="Delete"
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              width: 28,
+                              height: 28,
+                              borderRadius: 6,
+                              border: '1px solid rgba(239, 68, 68, 0.2)',
+                              background: 'rgba(239, 68, 68, 0.06)',
+                              color: '#ef4444',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.18)'; e.currentTarget.style.transform = 'scale(1.05)'; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.06)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                          >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
     );
   };
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24, height: '100%' }}>
       <div style={{ padding: '24px 32px 0' }}>
