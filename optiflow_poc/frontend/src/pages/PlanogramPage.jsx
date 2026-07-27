@@ -201,7 +201,7 @@ export default function PlanogramPage() {
                 </div>
                 <div>
                   <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: 'var(--text-primary)' }}>Planogram Backups & History</h3>
-                  <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>Automatic GCP snapshots saved on every edit</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>Automatic version snapshots saved on every edit</div>
                 </div>
               </div>
               <button onClick={() => setIsHistoryOpen(false)} style={{ background: 'transparent', border: 'none', fontSize: 24, cursor: 'pointer', color: 'var(--text-muted)' }}>&times;</button>
@@ -211,7 +211,7 @@ export default function PlanogramPage() {
               {loadingVersions ? (
                 <div style={{ padding: 40, textAlign: 'center' }}>
                   <div className="spinner" style={{ margin: '0 auto 12px' }}></div>
-                  <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Loading GCP version history...</div>
+                  <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Loading version history...</div>
                 </div>
               ) : versions.length === 0 ? (
                 <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-tertiary)' }}>
