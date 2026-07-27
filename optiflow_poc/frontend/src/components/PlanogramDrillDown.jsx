@@ -884,7 +884,7 @@ export default function PlanogramDrillDown({
 
 
   const renderTableView = () => {
-    if (currentLevelIndex === 6) {
+    if (nextLevelName === 'commodity' || currentLevelIndex >= 5) {
       return renderLeafNodes();
     }
 
