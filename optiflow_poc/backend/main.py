@@ -626,9 +626,22 @@ async def get_planogram_versions():
         v_bytes = download_from_gcs("planogram_versions.json")
         if v_bytes:
             versions = json.loads(v_bytes.decode("utf-8"))
-            return {"status": "success", "versions": versions}
+            if versions:
+                return {"status": "success", "versions": versions}
     except Exception as e:
         logging.warning(f"Failed to fetch planogram versions: {e}")
+
+    # Auto-create initial baseline version snapshot if empty
+    if store.planogram is not None and not store.planogram.empty:
+        save_planogram_version_backup(store.planogram, "Initial Baseline Planogram")
+        try:
+            v_bytes = download_from_gcs("planogram_versions.json")
+            if v_bytes:
+                versions = json.loads(v_bytes.decode("utf-8"))
+                return {"status": "success", "versions": versions}
+        except Exception:
+            pass
+
     return {"status": "success", "versions": []}
 
 @app.post("/api/planogram/restore/{version_id}")
