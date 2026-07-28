@@ -113,36 +113,36 @@
       Init --> CalcDeficit["Calculate Deficit per Store Brand/Commodity<br/>Deficit = Target (Facing + Depth) - Live Store SOH"]:::process
       CalcDeficit --> CheckDeficit{"Is Deficit > 0?"}:::decision
 
-      CheckDeficit --> DeficitNo["NO"]:::noNode --> Skip["Skip Store - Target Met"]:::output
       CheckDeficit --> DeficitYes["YES"]:::yesNode --> CheckGlobalConstraints{"Check Global Constraints:<br/>Max 3 Colors/Model? | Max 2 Units/SKU?<br/>Min 85% Brand Uniqueness?"}:::highlight
+      CheckDeficit --> DeficitNo["NO"]:::noNode --> Skip["Skip Store - Target Met"]:::output
 
       %% Constraint Check
-      CheckGlobalConstraints --> ConstraintsFails["Fails Constraints"]:::noNode --> SkipSKU["Skip SKU / Model Candidate"]:::output
-      CheckGlobalConstraints --> ConstraintsPasses["Passes Constraints"]:::yesNode --> Tier1["Tier 1: Recent Sales Match<br/>Search exact SKUs sold in Last X Days"]:::process
+      CheckGlobalConstraints --> ConstraintsPasses["YES"]:::yesNode --> Tier1["Tier 1: Recent Sales Match<br/>Search exact SKUs sold in Last X Days"]:::process
+      CheckGlobalConstraints --> ConstraintsFails["NO"]:::noNode --> SkipSKU["Skip SKU / Model Candidate"]:::output
 
       %% Tier 1 Loop
       Tier1 --> T1StockCheck{"Is exact SKU in stock at Corporate Office?"}:::decision
       T1StockCheck --> T1StockYes["YES"]:::yesNode --> AllocateT1["Allocate SKU & Update Deficit"]:::process
-      AllocateT1 --> CheckDeficitGate1{"Deficit filled?"}:::decision
+      T1StockCheck --> T1StockNo["NO"]:::noNode --> Tier2["Tier 2: Historical Sales Match<br/>Search exact SKUs sold in Last 6 Months"]:::process
 
+      AllocateT1 --> CheckDeficitGate1{"Deficit filled?"}:::decision
       CheckDeficitGate1 --> T1FilledYes["YES"]:::yesNode --> FIFOApply["Apply FIFO Rule:<br/>Pull oldest warehouse batch/barcode first"]:::process
       CheckDeficitGate1 --> T1FilledNo["NO"]:::noNode --> T1Exhausted{"Are Tier 1 SKUs exhausted?"}:::decision
 
       T1Exhausted --> T1ExhaustedNo["NO"]:::noNode --> Tier1
-      T1Exhausted --> T1ExhaustedYes["YES"]:::yesNode --> Tier2["Tier 2: Historical Sales Match<br/>Search exact SKUs sold in Last 6 Months"]:::process
-      T1StockCheck --> T1StockNo["NO"]:::noNode --> Tier2
+      T1Exhausted --> T1ExhaustedYes["YES"]:::yesNode --> Tier2
 
       %% Tier 2 Loop
       Tier2 --> T2StockCheck{"Is exact SKU in stock at Corporate Office?"}:::decision
       T2StockCheck --> T2StockYes["YES"]:::yesNode --> AllocateT2["Allocate SKU & Update Deficit"]:::process
-      AllocateT2 --> CheckDeficitGate2{"Deficit filled?"}:::decision
+      T2StockCheck --> T2StockNo["NO"]:::noNode --> Tier3["Tier 3: Substitute Cascade<br/>Match Brand/Commodity & MRP ±20%<br/>Relax: Color ➔ Material ➔ Shape"]:::process
 
+      AllocateT2 --> CheckDeficitGate2{"Deficit filled?"}:::decision
       CheckDeficitGate2 --> T2FilledYes["YES"]:::yesNode --> FIFOApply
       CheckDeficitGate2 --> T2FilledNo["NO"]:::noNode --> T2Exhausted{"Are Tier 2 SKUs exhausted?"}:::decision
 
       T2Exhausted --> T2ExhaustedNo["NO"]:::noNode --> Tier2
-      T2Exhausted --> T2ExhaustedYes["YES"]:::yesNode --> Tier3["Tier 3: Substitute Cascade<br/>Match Brand/Commodity & MRP ±20%<br/>Relax: Color ➔ Material ➔ Shape"]:::process
-      T2StockCheck --> T2StockNo["NO"]:::noNode --> Tier3
+      T2Exhausted --> T2ExhaustedYes["YES"]:::yesNode --> Tier3
 
       %% Tier 3 Loop
       Tier3 --> AttributeCascade["Relax Attributes in Order: 1. Color 2. Material 3. Shape"]:::highlight
@@ -172,7 +172,7 @@
         textColor: '#102a43'
       },
       flowchart: {
-        curve: 'linear',
+        curve: 'step',
         nodeSpacing: 45,
         rankSpacing: 50
       }
