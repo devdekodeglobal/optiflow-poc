@@ -35,7 +35,7 @@
 
     .header {
       text-align: center;
-      margin-bottom: 60px;
+      margin-bottom: 50px;
     }
 
     h1 {
@@ -55,7 +55,7 @@
 
     /* Flowchart Container */
     .flowchart {
-      max-width: 1000px;
+      max-width: 1200px;
       margin: 0 auto;
       display: flex;
       flex-direction: column;
@@ -66,7 +66,7 @@
     /* Connecting Lines */
     .connector {
       width: 2px;
-      height: 40px;
+      height: 30px;
       background: linear-gradient(to bottom, var(--primary), var(--accent));
       position: relative;
       opacity: 0.6;
@@ -82,149 +82,156 @@
       border-color: var(--accent) transparent transparent transparent;
     }
 
-    .connector-dashed {
-      width: 2px;
-      height: 40px;
-      background: transparent;
-      border-left: 2px dashed var(--warning);
-      position: relative;
-      opacity: 0.6;
-      margin-left: 1px;
-    }
-
-    .connector-dashed::after {
-      content: '';
-      position: absolute;
-      bottom: -6px;
-      left: -6px;
-      border-width: 6px 5px 0;
-      border-style: solid;
-      border-color: var(--warning) transparent transparent transparent;
-    }
-
     /* Node Styles */
     .node {
       background: var(--bg-card);
       backdrop-filter: blur(16px);
       border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 24px 32px;
+      border-radius: 16px;
+      padding: 20px 24px;
       width: 100%;
       max-width: 600px;
-      position: relative;
       text-align: center;
-      transition: all 0.3s ease;
       box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
 
-    .node:hover {
-      border-color: var(--primary);
-      box-shadow: 0 0 30px var(--primary-glow);
-      transform: translateY(-2px);
-    }
-
-    .node-icon {
-      width: 48px;
-      height: 48px;
-      background: rgba(99, 102, 241, 0.1);
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.5rem;
-      margin: 0 auto 16px auto;
-      border: 1px solid rgba(99, 102, 241, 0.2);
-    }
-
     .node-title {
-      font-size: 1.25rem;
+      font-size: 1.2rem;
       font-weight: 700;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
       color: #fff;
     }
 
     .node-desc {
       color: var(--text-muted);
-      font-size: 0.95rem;
-      line-height: 1.5;
+      font-size: 0.9rem;
+      line-height: 1.4;
     }
 
-    /* Specific Node Colors */
-    .node.input { border-color: rgba(16, 185, 129, 0.3); }
-    .node.input .node-icon { background: rgba(16, 185, 129, 0.1); color: var(--success); border-color: rgba(16, 185, 129, 0.3); }
-    
-    .node.logic { border-color: rgba(14, 165, 233, 0.3); }
-    .node.logic .node-icon { background: rgba(14, 165, 233, 0.1); color: var(--accent); border-color: rgba(14, 165, 233, 0.3); }
+    /* Match Engine Box */
+    .match-engine {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--primary);
+      border-radius: 24px;
+      padding: 30px;
+      margin: 10px 0;
+      box-shadow: 0 0 40px rgba(99, 102, 241, 0.1);
+    }
 
-    .node.decision { border-color: rgba(239, 68, 68, 0.3); max-width: 800px; }
-    .node.decision .node-icon { background: rgba(239, 68, 68, 0.1); color: var(--danger); border-color: rgba(239, 68, 68, 0.3); }
+    .engine-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
 
-    .node.tier1 { border-color: rgba(16, 185, 129, 0.5); }
-    .node.tier1 .node-icon { background: rgba(16, 185, 129, 0.1); color: var(--success); border-color: rgba(16, 185, 129, 0.3); }
+    .engine-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--accent);
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
 
-    .node.tier2 { border-color: rgba(14, 165, 233, 0.5); }
-    .node.tier2 .node-icon { background: rgba(14, 165, 233, 0.1); color: var(--accent); border-color: rgba(14, 165, 233, 0.3); }
-
-    .node.tier3 { border-color: rgba(245, 158, 11, 0.5); }
-    .node.tier3 .node-icon { background: rgba(245, 158, 11, 0.1); color: var(--warning); border-color: rgba(245, 158, 11, 0.3); }
-
-    .node.output { border-color: rgba(99, 102, 241, 0.3); }
-    
-    /* Small Tags */
-    .tag-container {
+    /* Global Rules Banner */
+    .global-rules {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 8px;
-      margin-top: 16px;
+      gap: 12px;
+      background: rgba(239, 68, 68, 0.05);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      padding: 16px;
+      border-radius: 12px;
     }
 
-    .tag {
-      background: rgba(255,255,255,0.05);
-      padding: 4px 10px;
+    .rule-tag {
+      background: rgba(0,0,0,0.3);
+      padding: 6px 12px;
       border-radius: 6px;
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       font-weight: 600;
-      color: var(--text-main);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .rule-tag.strict { border-color: var(--primary); color: #818cf8; }
+    .rule-tag.limit { border-color: var(--danger); color: #fca5a5; }
+
+    /* Side by Side Columns */
+    .tier-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 30px;
+    }
+
+    .tier-card {
+      background: rgba(30, 41, 59, 0.8);
       border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      position: relative;
+    }
+
+    .tier-card::before {
+      content: '➔';
+      position: absolute;
+      right: -18px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 24px;
+      color: rgba(255,255,255,0.2);
     }
     
-    .tag.highlight {
-      background: var(--primary-glow);
-      border-color: var(--primary);
+    .tier-card:last-child::before { display: none; }
+
+    .tier-number {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .t1 { color: var(--success); }
+    .t2 { color: var(--accent); }
+    .t3 { color: var(--warning); }
+
+    .tier-card h3 {
+      font-size: 1.1rem;
+      margin-bottom: 12px;
       color: #fff;
     }
-    
-    .tag.danger {
-      background: rgba(239, 68, 68, 0.1);
-      border-color: var(--danger);
-      color: #fca5a5;
-    }
 
-    .tag.warning {
-      background: rgba(245, 158, 11, 0.1);
-      border-color: var(--warning);
-      color: #fcd34d;
-    }
-    
-    .tag.success {
-      background: rgba(16, 185, 129, 0.1);
-      border-color: var(--success);
-      color: #6ee7b7;
-    }
-
-    .label-between {
-      font-size: 0.8rem;
+    .tier-card p {
+      font-size: 0.9rem;
       color: var(--text-muted);
-      background: var(--bg-main);
-      padding: 2px 8px;
-      border-radius: 4px;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 10;
-      white-space: nowrap;
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+
+    .step-list {
+      list-style: none;
+      text-align: left;
+    }
+
+    .step-list li {
+      font-size: 0.85rem;
+      color: #e2e8f0;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    
+    .step-list li::before {
+      content: '•';
+      color: var(--primary);
     }
 
   </style>
@@ -233,125 +240,87 @@
 
   <div class="header">
     <h1>OptiFlow Business Logic</h1>
-    <div class="subtitle">Multi-Tier Replenishment & Allocation Flow</div>
+    <div class="subtitle">Allocation & Replenishment Pipeline</div>
   </div>
 
   <div class="flowchart">
 
-    <!-- STEP 1: Inputs -->
-    <div class="node input">
-      <div class="node-icon">📊</div>
-      <div class="node-title">1. Data Ingestion & Setup</div>
+    <!-- SETUP -->
+    <div class="node">
+      <div class="node-title">1. Initialization & Deficit Calc</div>
       <div class="node-desc">
-        Load master datasets and establish strict Store Grade priority rankings.
-      </div>
-      <div class="tag-container">
-        <div class="tag">Planogram (Capacities)</div>
-        <div class="tag">Stock Data (Live SOH)</div>
-        <div class="tag">Sales History</div>
-        <div class="tag highlight">Priority: A++ > A+ > A > B+ > B > C</div>
+        Determine Net Deficit per Store based on Planogram Target minus Live SOH.
       </div>
     </div>
 
     <div class="connector"></div>
 
-    <!-- STEP 2: Deficit -->
-    <div class="node logic">
-      <div class="node-icon">⚖️</div>
-      <div class="node-title">2. Calculate Capacity & Deficits</div>
-      <div class="node-desc">
-        Determine exactly how many units each store needs for each Brand/Commodity.
+    <!-- MATCH ENGINE -->
+    <div class="match-engine">
+      
+      <div class="engine-header">
+        <div class="engine-title">The Matching Cascade</div>
+        
+        <!-- GLOBAL RULES -->
+        <div class="global-rules">
+          <div class="rule-tag strict">🛡️ Must Match Brand</div>
+          <div class="rule-tag strict">🛡️ Must Match Commodity</div>
+          <div class="rule-tag strict">💰 Must Be Within ±20% MRP</div>
+          <div class="rule-tag limit">❌ Max 3 Colors per Model</div>
+          <div class="rule-tag limit">❌ Max 2 Units per SKU</div>
+          <div class="rule-tag limit">❌ Maintain ≥ 85% Brand Uniqueness</div>
+        </div>
       </div>
-      <div class="tag-container">
-        <div class="tag">Target = Facing + Depth</div>
-        <div class="tag">Net Deficit = Target - Store SOH</div>
-        <div class="tag highlight">If Deficit ≤ 0 ➔ Skip (Target Met)</div>
+
+      <!-- TIER CASCADES -->
+      <div class="tier-container">
+        
+        <!-- TIER 1 -->
+        <div class="tier-card" style="border-top: 4px solid var(--success);">
+          <div class="tier-number t1">Tier 1</div>
+          <h3>Recent Winners</h3>
+          <p>Prioritize exactly what is selling right now.</p>
+          <ul class="step-list">
+            <li>Find exact SKUs sold in the <strong>Last X Days</strong> (User Selected in UI).</li>
+            <li>If Warehouse has stock, allocate exact SKU.</li>
+            <li>Stop if deficit is filled.</li>
+          </ul>
+        </div>
+
+        <!-- TIER 2 -->
+        <div class="tier-card" style="border-top: 4px solid var(--accent);">
+          <div class="tier-number t2">Tier 2</div>
+          <h3>Historical Winners</h3>
+          <p>If Tier 1 is out of stock, fall back to long-term proven sellers.</p>
+          <ul class="step-list">
+            <li>Find exact SKUs sold in the <strong>Last 6 Months</strong>.</li>
+            <li>If Warehouse has stock, allocate exact SKU.</li>
+            <li>Stop if deficit is filled.</li>
+          </ul>
+        </div>
+
+        <!-- TIER 3 -->
+        <div class="tier-card" style="border-top: 4px solid var(--warning);">
+          <div class="tier-number t3">Tier 3</div>
+          <h3>Attribute Substitute</h3>
+          <p>If exact SKUs are entirely out of stock, find the closest substitute.</p>
+          <ul class="step-list">
+            <li><strong>Relax Color</strong> (Find same frame, diff color)</li>
+            <li><strong>Relax Material</strong></li>
+            <li><strong>Relax Shape</strong></li>
+          </ul>
+        </div>
+
       </div>
     </div>
 
     <div class="connector"></div>
 
-    <!-- STEP 3: Hard Constraints -->
-    <div class="node decision">
-      <div class="node-icon">🚧</div>
-      <div class="node-title">3. Global Hard Constraints</div>
+    <!-- OUTPUT -->
+    <div class="node">
+      <div class="node-title">3. Final Dispatch Order</div>
       <div class="node-desc">
-        These rules apply across ALL tiers below. A candidate SKU is instantly REJECTED if it violates:
-      </div>
-      <div class="tag-container">
-        <div class="tag danger">❌ Max 3 Colors per Model</div>
-        <div class="tag danger">❌ Max 2 Units of Same SKU</div>
-        <div class="tag danger">❌ Must Keep ≥ 85% Brand SKU Uniqueness</div>
-      </div>
-    </div>
-
-    <div class="connector"></div>
-
-    <!-- TIER 1 -->
-    <div class="node tier1">
-      <div class="node-icon">🔥</div>
-      <div class="node-title">Tier 1: EXACT MATCH (7-Day Sales)</div>
-      <div class="node-desc">
-        Replenish immediate winners. Search the warehouse for the exact SKUs the store sold in the last 7 days.
-      </div>
-      <div class="tag-container">
-        <div class="tag success">Restock Hot Movers</div>
-        <div class="tag">Exact SKU Match</div>
-      </div>
-    </div>
-
-    <div class="connector-dashed">
-      <div class="label-between">If Deficit Still Exists</div>
-    </div>
-
-    <!-- TIER 2 -->
-    <div class="node tier2">
-      <div class="node-icon">📅</div>
-      <div class="node-title">Tier 2: EXACT MATCH (6-Month Sales)</div>
-      <div class="node-desc">
-        Replenish historical winners. If Tier 1 is out of stock, find the exact SKUs the store sold in the past 6 months.
-      </div>
-      <div class="tag-container">
-        <div class="tag success">Restock Proven Sellers</div>
-        <div class="tag">Exact SKU Match</div>
-      </div>
-    </div>
-
-    <div class="connector-dashed">
-      <div class="label-between">If Deficit STILL Exists</div>
-    </div>
-
-    <!-- TIER 3 -->
-    <div class="node tier3">
-      <div class="node-icon">🔄</div>
-      <div class="node-title">Tier 3: SUBSTITUTE MATCH (Attribute Fallback)</div>
-      <div class="node-desc">
-        If exact items are out of stock, relax attributes one by one to find a substitute. No more point systems—just pure rule cascading.
-      </div>
-      <div class="tag-container">
-        <div class="tag highlight">Must: Same Brand</div>
-        <div class="tag highlight">Must: ±20% MRP Range</div>
-      </div>
-      <div class="tag-container">
-        <div class="tag warning">1. Relax Color (Change color, keep everything else)</div>
-        <div class="tag warning">2. Relax Material</div>
-        <div class="tag warning">3. Relax Shape</div>
-      </div>
-    </div>
-
-    <div class="connector"></div>
-
-    <!-- STEP 4: FIFO & Output -->
-    <div class="node output">
-      <div class="node-icon">📦</div>
-      <div class="node-title">4. FIFO Dispatch Allocation</div>
-      <div class="node-desc">
-        Finalize allocation by depleting warehouse inventory using FIFO (oldest stock leaves first).
-      </div>
-      <div class="tag-container">
-        <div class="tag highlight">Sort by Stock Age (Days)</div>
-        <div class="tag">Assign Barcode</div>
-        <div class="tag">Generate Dispatch Order</div>
+        Lock allocations, apply FIFO (oldest warehouse stock leaves first), and generate Dispatch File.
       </div>
     </div>
 
