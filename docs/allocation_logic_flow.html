@@ -61,7 +61,15 @@
     .mermaid .node label {
       font-family: 'Inter', sans-serif !important;
       font-weight: 600 !important;
-      font-size: 13px !important;
+      font-size: 14px !important;
+      line-height: 1.5 !important;
+    }
+
+    /* Subgraph Title Styling */
+    .mermaid .subgraph-title {
+      font-weight: 800 !important;
+      font-size: 14px !important;
+      color: #0f3a68 !important;
     }
 
     /* YES / NO Pill text formatting */
@@ -70,7 +78,7 @@
     .mermaid .node.noNode label span,
     .mermaid .node.yesNode label span {
       font-weight: 800 !important;
-      font-size: 11px !important;
+      font-size: 12px !important;
       letter-spacing: 0.5px !important;
     }
   </style>
@@ -97,55 +105,48 @@
       classDef data fill:#ffffff,stroke:#bcccdc,stroke-width:2px,color:#102a43,rx:8px,ry:8px;
       classDef output fill:#0f3a68,stroke:#0f3a68,stroke-width:1px,color:white,rx:30px,ry:30px;
 
-      %% Start & Ranking
-      Start([Start Allocation Process]):::startNode --> Init["Load Planogram, Live SOH, Sales History"]:::process
-      Init --> RankStore["Rank Stores by Priority"]:::process
-
-      RankStore --> Rank1["1. Rank by Grade: A++ > A+ > A > B+ > B > C"]:::data
-      Rank1 --> Rank2["2. Rank by client-specified Inner Grade Priority list"]:::data
-
+      %% Start & Ranking (Combined for readability)
+      Start([Start Allocation Process]):::startNode --> Init["📊 Initialize & Rank Stores<br/>- Sort by Grade: A++ to C Grade<br/>- Sort by client Inner Grade Priority list"]:::process
+      
       %% Deficit
-      Rank2 --> CalcDeficit["Calculate Deficit per Brand-Commodity-Store: Deficit = Target - Live SOH (Target = Facing + Depth)"]:::process
+      Init --> CalcDeficit["⚖️ Calculate Deficit per Store Brand/Commodity<br/>Deficit = Target - Live Store SOH (Target = Facing + Depth)"]:::process
       CalcDeficit --> CheckDeficit{"Is Deficit > 0?"}:::decision
 
-      CheckDeficit --> DeficitNo["NO"]:::noNode --> Skip["Skip Brand-Commodity for Store"]:::output
-      CheckDeficit --> DeficitYes["YES"]:::yesNode --> CheckGlobalConstraints{"Check Global Constraints: 1. Max 3 Colors per Model? 2. Max 2 Units per SKU? 3. Min 85% Brand Uniqueness?"}:::decision
+      CheckDeficit --> DeficitNo["NO"]:::noNode --> Skip["Skip Store - Target Met"]:::output
+      CheckDeficit --> DeficitYes["YES"]:::yesNode --> CheckGlobalConstraints{"🚧 Check Global Constraints:<br/>1. Max 3 Colors per Model?<br/>2. Max 2 Units per SKU?<br/>3. Min 85% Brand Uniqueness?"}:::decision
 
       %% Constraint Check
       CheckGlobalConstraints --> ConstraintsFails["Fails Constraints"]:::noNode --> SkipSKU["Skip SKU / Model Candidate"]:::output
-      CheckGlobalConstraints --> ConstraintsPasses["Passes Constraints"]:::yesNode --> Tier1["Tier 1: Find Exact SKUs Sold in Last X Days (Set by user in UI)"]:::process
+      CheckGlobalConstraints --> ConstraintsPasses["Passes Constraints"]:::yesNode --> Tier1["🔥 Tier 1: Recent Sales Match<br/>- Search exact SKUs sold in Last X Days (User UI input)"]:::process
 
-      %% Tier 1
+      %% Tier 1 Loop
       Tier1 --> T1StockCheck{"Is exact SKU in stock at Corporate Office?"}:::decision
-      T1StockCheck --> T1StockYes["YES"]:::yesNode --> AllocateT1["Allocate Exact SKU"]:::process
-      AllocateT1 --> DecrDeficit1["Update Deficit"]:::process
-      DecrDeficit1 --> CheckDeficitGate1{"Deficit filled?"}:::decision
+      T1StockCheck --> T1StockYes["YES"]:::yesNode --> AllocateT1["Allocate SKU & Update Deficit"]:::process
+      AllocateT1 --> CheckDeficitGate1{"Deficit filled?"}:::decision
 
-      CheckDeficitGate1 --> T1FilledYes["YES"]:::yesNode --> FIFOApply["Apply FIFO Rule: Pull inventory from oldest batch/barcode age first"]:::process
+      CheckDeficitGate1 --> T1FilledYes["YES"]:::yesNode --> FIFOApply["📦 Apply FIFO Rule:<br/>Pull inventory from oldest batch/barcode age first"]:::process
       CheckDeficitGate1 --> T1FilledNo["NO"]:::noNode --> T1Exhausted{"Are Tier 1 SKUs exhausted?"}:::decision
 
       T1Exhausted --> T1ExhaustedNo["NO"]:::noNode --> Tier1
-      T1Exhausted --> T1ExhaustedYes["YES"]:::yesNode --> Tier2["Tier 2: Find Exact SKUs Sold in Last 6 Months"]:::process
+      T1Exhausted --> T1ExhaustedYes["YES"]:::yesNode --> Tier2["📅 Tier 2: Historical Sales Match<br/>- Search exact SKUs sold in Last 6 Months"]:::process
       T1StockCheck --> T1StockNo["NO"]:::noNode --> Tier2
 
-      %% Tier 2
+      %% Tier 2 Loop
       Tier2 --> T2StockCheck{"Is exact SKU in stock at Corporate Office?"}:::decision
-      T2StockCheck --> T2StockYes["YES"]:::yesNode --> AllocateT2["Allocate Exact SKU"]:::process
-      AllocateT2 --> DecrDeficit2["Update Deficit"]:::process
-      DecrDeficit2 --> CheckDeficitGate2{"Deficit filled?"}:::decision
+      T2StockCheck --> T2StockYes["YES"]:::yesNode --> AllocateT2["Allocate SKU & Update Deficit"]:::process
+      AllocateT2 --> CheckDeficitGate2{"Deficit filled?"}:::decision
 
       CheckDeficitGate2 --> T2FilledYes["YES"]:::yesNode --> FIFOApply
       CheckDeficitGate2 --> T2FilledNo["NO"]:::noNode --> T2Exhausted{"Are Tier 2 SKUs exhausted?"}:::decision
 
       T2Exhausted --> T2ExhaustedNo["NO"]:::noNode --> Tier2
-      T2Exhausted --> T2ExhaustedYes["YES"]:::yesNode --> Tier3["Tier 3: Find Substitute Candidate (MRP ±20%, Same Brand/Commodity)"]:::process
+      T2Exhausted --> T2ExhaustedYes["YES"]:::yesNode --> Tier3["🔄 Tier 3: Substitute Cascade<br/>- Match Same Brand/Commodity & MRP ±20%<br/>- Relax Attributes: Color ➔ Material ➔ Shape"]:::process
       T2StockCheck --> T2StockNo["NO"]:::noNode --> Tier3
 
-      %% Tier 3
+      %% Tier 3 Loop
       Tier3 --> AttributeCascade["Relax Attributes in Order: 1. Color 2. Material 3. Shape"]:::process
       AttributeCascade --> AllocateT3["Allocate Substitute SKU"]:::process
-      AllocateT3 --> DecrDeficit3["Update Deficit"]:::process
-      DecrDeficit3 --> CheckDeficitGate3{"Deficit filled?"}:::decision
+      AllocateT3 --> CheckDeficitGate3{"Deficit filled?"}:::decision
 
       CheckDeficitGate3 --> T3FilledYes["YES"]:::yesNode --> FIFOApply
       CheckDeficitGate3 --> T3FilledNo["NO"]:::noNode --> T3Exhausted{"Are Substitute candidates exhausted?"}:::decision
