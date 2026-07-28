@@ -78,7 +78,17 @@ OptiFlow is engineered using a decoupled **Microservices-ready SPA + REST API** 
 
 ```
 centerforsight/
-├── optiflow_poc/
+├── data/                            # Active Data Files (Planogram, Stock, Sales Data)
+│   ├── Planogram_.csv
+│   ├── Sale 6 Months.csv
+│   ├── Stock_240726.csv
+│   └── planogram.json
+│
+├── docs/                            # Documentation & HTML Tools
+│   ├── data_viewer.html
+│   └── notes1.html
+│
+├── optiflow_poc/                    # Primary Production Application Codebase
 │   ├── backend/
 │   │   ├── main.py                  # FastAPI Application & REST API Endpoints
 │   │   ├── allocation_engine.py     # Core Allocation Algorithms & Mathematical Engine
@@ -88,19 +98,25 @@ centerforsight/
 │   │   ├── requirements.txt         # Python Package Dependencies
 │   │   └── local_data/              # Local Storage Cache Directory
 │   │
-│   └── frontend/
-│       ├── src/
-│       │   ├── components/          # Reusable Components (PlanogramDrillDown, MultiSelect, Navbar)
-│       │   ├── pages/               # Application Pages (Planogram, Allocation, Dispatch, Analytics)
-│       │   ├── api.js               # Centralized HTTP API Client Service
-│       │   ├── DataContext.jsx      # Global React Context & Filter State Provider
-│       │   ├── index.css            # Core Glassmorphic Design System & CSS Variables
-│       │   └── main.jsx             # React Application Entrypoint
-│       ├── package.json             # Frontend Dependencies & Build Scripts
-│       └── vite.config.js           # Vite Bundler & Server Configuration
+│   ├── frontend/
+│   │   ├── src/
+│   │   │   ├── components/          # Reusable Components (PlanogramDrillDown, MultiSelect, Navbar)
+│   │   │   ├── pages/               # Application Pages (Planogram, Allocation, Dispatch, Analytics)
+│   │   │   ├── api.js               # Centralized HTTP API Client Service
+│   │   │   ├── DataContext.jsx      # Global React Context & Filter State Provider
+│   │   │   ├── index.css            # Core Glassmorphic Design System & CSS Variables
+│   │   │   └── main.jsx             # React Application Entrypoint
+│   │   ├── package.json             # Frontend Dependencies & Build Scripts
+│   │   └── vite.config.js           # Vite Bundler & Server Configuration
+│   │
+│   ├── scripts/                     # Utility & Store Audit Scripts
+│   │   ├── find_unmapped.py
+│   │   └── find_unmapped_api.py
+│   │
+│   └── README.md                    # Module Documentation
 │
 ├── vercel.json                      # Vercel SPA Rewrites Configuration
-└── README.md                        # Project Documentation
+└── README.md                        # Primary Project Documentation
 ```
 
 ---
