@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Automated Replenishment Workflow</title>
+  <title>OptiFlow Allocation Process Flow</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
@@ -61,45 +61,9 @@
       .workflow-container {
         padding: 20px 12px !important;
       }
-      .card-grid {
-        grid-template-columns: 1fr !important;
-        gap: 16px !important;
-        margin-bottom: 40px !important;
-      }
       .flowchart-section {
         padding: 20px 10px !important;
       }
-      .segmented-control {
-        margin-bottom: 20px !important;
-      }
-    }
-    
-    .segmented-control {
-      display: flex;
-      justify-content: center;
-      background: rgba(15, 37, 64, 0.08);
-      padding: 4px;
-      border-radius: 30px;
-      max-width: 500px;
-      margin: 0 auto 40px auto;
-      border: 1px solid rgba(0, 0, 0, 0.05);
-    }
-    .segmented-btn {
-      flex: 1;
-      border: none;
-      background: transparent;
-      padding: 12px 24px;
-      border-radius: 26px;
-      font-size: 14px;
-      font-weight: 700;
-      color: #475569;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    .segmented-btn.active {
-      background-color: #003b7a;
-      color: white;
-      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
     }
 
     .header-section h1 {
@@ -151,329 +115,197 @@
 
   <div class="workflow-container">
     
-    <!-- Unified Segmented Control Toggle -->
-    <div class="segmented-control">
-      <button id="btn-manual" class="segmented-btn active" onclick="toggleView('manual')">Current Process: Manual</button>
-      <button id="btn-automated" class="segmented-btn" onclick="toggleView('automated')">Proposed Process: OptiFlow</button>
-    </div>
-    
-    <!-- AUTOMATED VIEW (OptiFlow Replenishment Flow) -->
-    <div id="automated-view" style="display: none;">
+    <!-- Header -->
+    <div class="header-section">
+      <h1>OptiFlow</h1>
+      <p style="font-size: 18px; color: #475569; font-weight: 500;">Automated Intelligent Allocation Workflow.</p>
       
-      <div class="header-section">
-        <h1>OptiFlow</h1>
-        <p style="font-size: 18px; color: #475569; font-weight: 500;">Transitioning from manual spreadsheet analysis to an automated, intelligent allocation workflow.</p>
-        
-        <div style="text-align: left; background: #ecfdf5; border-left: 4px solid #10b981; padding: 24px; border-radius: 8px; margin-top: 24px;">
-          <h2 style="color: #047857; margin-top: 0; margin-bottom: 12px; font-size: 22px;">The Automated Solution</h2>
-          <p style="font-size: 16px; color: #334155; margin-bottom: 16px; line-height: 1.6;">
-            We are deploying a deterministic <strong>Logic Engine</strong> paired with a <strong>Human-in-the-Loop (HITL) Dashboard</strong>. This eliminates manual Excel math and automates 95% of standard replenishment.
-          </p>
-          <p style="font-size: 16px; color: #334155; margin-bottom: 16px; line-height: 1.6;">
-            The user simply uploads the raw store and warehouse CSV data. The system automatically calculates Planogram deficits and executes allocations.
-          </p>
-        </div>
-      </div>
-
-      <div class="flowchart-section">
-        <h2 style="margin-top: 0; margin-bottom: 8px;">Automated Decision Workflow</h2>
-        <p style="color: var(--text-secondary); margin-bottom: 24px;">End-to-end logic for how the system processes store schedules, calculates deficits, and routes exceptions.</p>
-
-        <div class="svg-container">
-          <svg width="100%" height="1700" viewBox="0 0 1000 1700" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                <path d="M 0 1 L 10 5 L 0 9 z" fill="#5a738e" />
-              </marker>
-              <marker id="arrow-orange" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                <path d="M 0 1 L 10 5 L 0 9 z" fill="#f5a623" />
-              </marker>
-            </defs>
-
-            <!-- Main Vertical Track Connectors -->
-            <path d="M450 85 V120" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <path d="M450 165 V200" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <path d="M450 245 V280" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <path d="M450 360 V420" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <path d="M450 475 V510" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            
-            <!-- Tier 1 Down Connectors -->
-            <path d="M450 555 V600" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <path d="M450 680 V835" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            
-            <!-- Tier 2 Down Connectors -->
-            <path d="M450 880 V925" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <path d="M450 1005 V1155" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            
-            <!-- Tier 3 & Output Connectors -->
-            <path d="M450 1200 V1260" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <path d="M450 1315 V1365" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <path d="M450 1445 V1500" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <path d="M450 1545 V1600" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-
-            <!-- 1. Start -->
-            <rect x="350" y="30" width="200" height="55" rx="27.5" fill="#0f3a68" />
-            <text x="450" y="55" class="svg-white-text" text-anchor="middle">Start</text>
-            <text x="450" y="71" class="svg-white-sub" text-anchor="middle">OptiFlow Allocation Process</text>
-
-            <!-- 2. Rank Stores -->
-            <rect x="300" y="120" width="300" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
-            <text x="450" y="138" class="svg-node-text" text-anchor="middle">Initialize &amp; Rank Stores</text>
-            <text x="450" y="152" class="svg-sub-text" text-anchor="middle">Grade Priority A, B, C &amp; Inner Lists</text>
-
-            <!-- 3. Calculate Deficit -->
-            <rect x="300" y="200" width="300" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
-            <text x="450" y="218" class="svg-node-text" text-anchor="middle">Calculate Store Deficits</text>
-            <text x="450" y="232" class="svg-sub-text" text-anchor="middle">Deficit = Target (Facing+Depth) - SOH</text>
-
-            <!-- 4. Diamond: Deficit Exist? -->
-            <polygon points="450,280 530,320 450,360 370,320" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
-            <text x="450" y="324" class="svg-node-text" text-anchor="middle">Is Deficit &gt; 0?</text>
-
-            <!-- Deficit YES Pill -->
-            <rect x="430" y="375" width="40" height="22" rx="11" fill="#10b981" />
-            <text x="450" y="390" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
-
-            <!-- Deficit NO Branch (Routes cleanly to the RIGHT margin and straight down) -->
-            <path d="M530 320 H820 V1625 H550" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
-            <rect x="800" y="309" width="40" height="22" rx="11" fill="#ef4444" />
-            <text x="820" y="324" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
-
-            <!-- 5. Validation Gate -->
-            <rect x="280" y="420" width="340" height="55" rx="8" fill="#f5a623" />
-            <text x="450" y="443" class="svg-white-text" text-anchor="middle">Verify Global Constraints</text>
-            <text x="450" y="460" class="svg-white-sub" text-anchor="middle">Max 3 Colors | Max 2 Units | Min 85% Uniqueness</text>
-
-            <!-- 6. Tier 1 -->
-            <rect x="300" y="510" width="300" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
-            <text x="450" y="528" class="svg-node-text" text-anchor="middle">Tier 1: Recent Sales Match</text>
-            <text x="450" y="542" class="svg-sub-text" text-anchor="middle">Search exact SKUs sold in Last X Days</text>
-
-            <!-- T1 Stock Check -->
-            <polygon points="450,600 530,640 450,680 370,640" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
-            <text x="450" y="644" class="svg-node-text" text-anchor="middle">In Stock?</text>
-
-            <!-- T1 Stock YES Pill (Routes right to Allocate T1 box) -->
-            <path d="M530 640 H620" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
-            <rect x="550" y="629" width="40" height="22" rx="11" fill="#10b981" />
-            <text x="570" y="644" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
-
-            <!-- T1 Stock NO (Advance to Tier 2: points straight vertical path) -->
-            <rect x="430" y="720" width="40" height="22" rx="11" fill="#ef4444" />
-            <text x="450" y="735" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
-
-            <!-- 7. Allocate T1 -->
-            <rect x="620" y="617.5" width="180" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
-            <text x="710" y="645" class="svg-node-text" text-anchor="middle">Allocate SKU &amp; Deficit</text>
-
-            <!-- T1 Deficit Filled Check -->
-            <path d="M710 662.5 V695" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <polygon points="710,695 780,735 710,775 640,735" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
-            <text x="710" y="739" class="svg-node-text" text-anchor="middle">Filled?</text>
-
-            <!-- T1 Deficit Filled YES ➔ Routes right and straight down to FIFO -->
-            <path d="M780 735 H850 V1405 H600" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
-            <rect x="800" y="724" width="40" height="22" rx="11" fill="#10b981" />
-            <text x="820" y="739" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
-
-            <!-- T1 Deficit Filled NO Loopback ➔ Routes left and UP back to Tier 1 -->
-            <path d="M640 735 H580 V532.5 H600" stroke="#f5a623" stroke-width="2.5" stroke-dasharray="6 6" fill="none" marker-end="url(#arrow-orange)"/>
-            <rect x="560" y="570" width="40" height="22" rx="11" fill="#ef4444" />
-            <text x="580" y="585" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
-
-            <!-- 8. Tier 2 -->
-            <rect x="300" y="835" width="300" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
-            <text x="450" y="853" class="svg-node-text" text-anchor="middle">Tier 2: Historical Sales Match</text>
-            <text x="450" y="867" class="svg-sub-text" text-anchor="middle">Search exact SKUs sold in Last 6 Months</text>
-
-            <!-- T2 Stock Check -->
-            <polygon points="450,925 530,965 450,1005 370,965" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
-            <text x="450" y="969" class="svg-node-text" text-anchor="middle">In Stock?</text>
-
-            <!-- T2 Stock YES Pill (Routes right to Allocate T2 box) -->
-            <path d="M530 965 H620" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
-            <rect x="550" y="954" width="40" height="22" rx="11" fill="#10b981" />
-            <text x="570" y="969" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
-
-            <!-- T2 Stock NO (Advance to Tier 3: points straight vertical path) -->
-            <rect x="430" y="1045" width="40" height="22" rx="11" fill="#ef4444" />
-            <text x="450" y="1060" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
-
-            <!-- 9. Allocate T2 -->
-            <rect x="620" y="942.5" width="180" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
-            <text x="710" y="970" class="svg-node-text" text-anchor="middle">Allocate SKU &amp; Deficit</text>
-
-            <!-- T2 Deficit Filled Check -->
-            <path d="M710 987.5 V1020" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <polygon points="710,1020 780,1060 710,1100 640,1060" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
-            <text x="710" y="1064" class="svg-node-text" text-anchor="middle">Filled?</text>
-
-            <!-- T2 Deficit Filled YES ➔ Routes right and straight down to FIFO -->
-            <path d="M780 1060 H850 V1405 H600" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
-            <rect x="800" y="1049" width="40" height="22" rx="11" fill="#10b981" />
-            <text x="820" y="1064" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
-
-            <!-- T2 Deficit Filled NO Loopback ➔ Routes left and UP back to Tier 2 -->
-            <path d="M640 1060 H580 V857.5 H600" stroke="#f5a623" stroke-width="2.5" stroke-dasharray="6 6" fill="none" marker-end="url(#arrow-orange)"/>
-            <rect x="560" y="895" width="40" height="22" rx="11" fill="#ef4444" />
-            <text x="580" y="910" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
-
-            <!-- 10. Tier 3 -->
-            <rect x="300" y="1155" width="300" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
-            <text x="450" y="1173" class="svg-node-text" text-anchor="middle">Tier 3: Substitute Cascade</text>
-            <text x="450" y="1187" class="svg-sub-text" text-anchor="middle">MRP ±20% | Relax: Color ➔ Material ➔ Shape</text>
-
-            <!-- 11. Highlight: Attribute Relaxation -->
-            <rect x="280" y="1260" width="340" height="55" rx="8" fill="#f5a623" />
-            <text x="450" y="1283" class="svg-white-text" text-anchor="middle">Relax Attributes Cascade</text>
-            <text x="450" y="1300" class="svg-white-sub" text-anchor="middle">Color (keep Frame) ➔ Material ➔ Shape</text>
-
-            <!-- T3 Loopback Connector -->
-            <path d="M300 1282 H200 V1177 H300" stroke="#f5a623" stroke-width="2.5" stroke-dasharray="6 6" fill="none" marker-end="url(#arrow-orange)"/>
-            <rect x="180" y="1220" width="40" height="22" rx="11" fill="#ef4444" />
-            <text x="200" y="1235" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
-
-            <!-- 12. Allocate T3 & FIFO -->
-            <rect x="300" y="1365" width="300" height="80" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
-            <text x="450" y="1395" class="svg-node-text" text-anchor="middle">Allocate Substitute &amp; FIFO Batch Rule</text>
-            <text x="450" y="1415" class="svg-sub-text" text-anchor="middle">Pull oldest warehouse stock age first</text>
-
-            <!-- 13. Dispatch Order -->
-            <rect x="300" y="1500" width="300" height="45" rx="8" fill="#ffffff" stroke="#10b981" stroke-width="2"/>
-            <text x="450" y="1527" class="svg-node-text" text-anchor="middle">Dispatch Order Generated</text>
-
-            <!-- 14. END -->
-            <rect x="350" y="1600" width="200" height="50" rx="25" fill="#0f3a68" />
-            <text x="450" y="1630" class="svg-white-text" text-anchor="middle">END</text>
-          </svg>
-        </div>
+      <div style="text-align: left; background: #ecfdf5; border-left: 4px solid #10b981; padding: 24px; border-radius: 8px; margin-top: 24px;">
+        <h2 style="color: #047857; margin-top: 0; margin-bottom: 12px; font-size: 22px;">The Automated Solution</h2>
+        <p style="font-size: 16px; color: #334155; margin-bottom: 16px; line-height: 1.6;">
+          OptiFlow deploys a deterministic <strong>Logic Engine</strong> paired with a <strong>Human-in-the-Loop (HITL) Dashboard</strong>. This eliminates manual Excel math and automates 95% of standard replenishment.
+        </p>
+        <p style="font-size: 16px; color: #334155; margin-bottom: 0px; line-height: 1.6;">
+          The user simply uploads the raw store and warehouse CSV data. The system automatically calculates Planogram deficits and executes allocations.
+        </p>
       </div>
     </div>
 
-    <!-- MANUAL VIEW (Legacy Process Flow) -->
-    <div id="manual-view">
-      <div class="header-section">
-        <h1>Legacy Process: Manual Distribution</h1>
-        
-        <div style="text-align: left; background: #fff8f1; border-left: 4px solid #f97316; padding: 24px; border-radius: 8px; margin-top: 24px;">
-          <h2 style="color: #ea580c; margin-top: 0; margin-bottom: 12px; font-size: 22px;">The Legacy Problem</h2>
-          <p style="font-size: 16px; color: #334155; margin-bottom: 16px; line-height: 1.6;">
-            Currently, inventory replenishment is driven entirely by manual Excel spreadsheets. Merchandisers must export raw data, run VLOOKUPs to compare store stock against Planograms, and manually guess substitute frames when warehouse stockouts occur.
-          </p>
-          <p style="font-size: 16px; color: #334155; margin-bottom: 24px; line-height: 1.6; font-weight: 500;">
-            This manual process introduces significant operational bottlenecks and subjective decision-making.
-          </p>
+    <!-- Automated Decision Workflow Diagram -->
+    <div class="flowchart-section">
+      <h2 style="margin-top: 0; margin-bottom: 8px;">Automated Decision Workflow</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 24px;">End-to-end logic for how the system processes store schedules, calculates deficits, and routes exceptions.</p>
+
+      <div class="svg-container">
+        <svg width="100%" height="1700" viewBox="0 0 1000 1700" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#5a738e" />
+            </marker>
+            <marker id="arrow-orange" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1 L 10 5 L 0 9 z" fill="#f5a623" />
+            </marker>
+          </defs>
+
+          <!-- Main Vertical Track Connectors -->
+          <path d="M450 85 V120" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+          <path d="M450 165 V200" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+          <path d="M450 245 V280" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+          <path d="M450 360 V420" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+          <path d="M450 475 V510" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
           
-          <h3 style="color: #0f172a; margin-bottom: 12px; font-size: 18px;">Network Manual Overhead</h3>
-          <ul style="font-size: 15px; color: #475569; line-height: 1.8; margin-bottom: 20px; list-style-type: none; padding-left: 0;">
-            <li>• <strong>Grade A Stores (Weekly):</strong> 22 stores = 88 runs/mo</li>
-            <li>• <strong>Grade B Stores (Fortnightly):</strong> 30 stores = 60 runs/mo</li>
-            <li>• <strong>Grade C Stores (Monthly):</strong> 43 stores = 43 runs/mo</li>
-          </ul>
-          <div style="background: #ffedd5; padding: 16px; border-radius: 6px; border: 1px solid #fdba74;">
-            <p style="margin: 0; font-size: 16px; color: #9a3412; font-weight: 600;">
-              191 total manual events per month &times; 5.5 hours per store run = <span style="font-size: 20px; color: #dc2626;">12,600+ Hours</span> Wasted Annually
-            </p>
-          </div>
-        </div>
-      </div>
-      <div class="flowchart-section">
-        <h2 style="margin-top: 0; margin-bottom: 8px;">Legacy Manual Process</h2>
-        <p style="color: var(--text-secondary); margin-bottom: 24px;">Current step-by-step workbook manipulation pipeline.</p>
-        
-        <div class="svg-container">
-          <svg width="100%" height="1100" viewBox="0 0 1100 1100" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <!-- 1. Start -->
-            <rect x="300" y="30" width="300" height="60" rx="30" fill="#0f3a68" />
-            <text x="450" y="65" class="svg-white-text" text-anchor="middle">Start</text>
-            <text x="450" y="80" class="svg-white-sub" text-anchor="middle">(Distribution Day) Allocation</text>
+          <!-- Tier 1 Down Connectors -->
+          <path d="M450 555 V600" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+          <path d="M450 680 V835" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+          
+          <!-- Tier 2 Down Connectors -->
+          <path d="M450 880 V925" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+          <path d="M450 1005 V1155" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+          
+          <!-- Tier 3 & Output Connectors -->
+          <path d="M450 1200 V1260" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+          <path d="M450 1315 V1365" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+          <path d="M450 1445 V1500" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+          <path d="M450 1545 V1600" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
 
-            <path d="M450 90 V140" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+          <!-- 1. Start -->
+          <rect x="350" y="30" width="200" height="55" rx="27.5" fill="#0f3a68" />
+          <text x="450" y="55" class="svg-white-text" text-anchor="middle">Start</text>
+          <text x="450" y="71" class="svg-white-sub" text-anchor="middle">OptiFlow Allocation Process</text>
 
-            <!-- 2. Get Planned Stock -->
-            <rect x="300" y="140" width="300" height="50" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
-            <text x="450" y="170" class="svg-node-text" text-anchor="middle">Get Planned Stock for Store</text>
+          <!-- 2. Rank Stores -->
+          <rect x="300" y="120" width="300" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
+          <text x="450" y="138" class="svg-node-text" text-anchor="middle">Initialize &amp; Rank Stores</text>
+          <text x="450" y="152" class="svg-sub-text" text-anchor="middle">Grade Priority A, B, C &amp; Inner Lists</text>
 
-            <path d="M450 190 V240" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+          <!-- 3. Calculate Deficit -->
+          <rect x="300" y="200" width="300" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
+          <text x="450" y="218" class="svg-node-text" text-anchor="middle">Calculate Store Deficits</text>
+          <text x="450" y="232" class="svg-sub-text" text-anchor="middle">Deficit = Target (Facing+Depth) - SOH</text>
 
-            <!-- 3. Get Sales -->
-            <rect x="300" y="240" width="300" height="50" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
-            <text x="450" y="270" class="svg-node-text" text-anchor="middle">Get Last 7 Day Sales</text>
+          <!-- 4. Diamond: Deficit Exist? -->
+          <polygon points="450,280 530,320 450,360 370,320" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
+          <text x="450" y="324" class="svg-node-text" text-anchor="middle">Is Deficit &gt; 0?</text>
 
-            <path d="M450 290 V340" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+          <!-- Deficit YES Pill -->
+          <rect x="430" y="375" width="40" height="22" rx="11" fill="#10b981" />
+          <text x="450" y="390" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
 
-            <!-- 4. Get Current Stock -->
-            <rect x="300" y="340" width="300" height="50" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
-            <text x="450" y="370" class="svg-node-text" text-anchor="middle">Get Current Stock for Store</text>
+          <!-- Deficit NO Branch (Routes cleanly to the RIGHT margin and straight down) -->
+          <path d="M530 320 H820 V1625 H550" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+          <rect x="800" y="309" width="40" height="22" rx="11" fill="#ef4444" />
+          <text x="820" y="324" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
 
-            <path d="M450 390 V440" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+          <!-- 5. Validation Gate -->
+          <rect x="280" y="420" width="340" height="55" rx="8" fill="#f5a623" />
+          <text x="450" y="443" class="svg-white-text" text-anchor="middle">Verify Global Constraints</text>
+          <text x="450" y="460" class="svg-white-sub" text-anchor="middle">Max 3 Colors | Max 2 Units | Min 85% Uniqueness</text>
 
-            <!-- 5. Get WH Stock -->
-            <rect x="300" y="440" width="300" height="50" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
-            <text x="450" y="470" class="svg-node-text" text-anchor="middle">Get Warehouse Stock</text>
+          <!-- 6. Tier 1 -->
+          <rect x="300" y="510" width="300" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
+          <text x="450" y="528" class="svg-node-text" text-anchor="middle">Tier 1: Recent Sales Match</text>
+          <text x="450" y="542" class="svg-sub-text" text-anchor="middle">Search exact SKUs sold in Last X Days</text>
 
-            <path d="M450 490 V540" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+          <!-- T1 Stock Check -->
+          <polygon points="450,600 530,640 450,680 370,640" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
+          <text x="450" y="644" class="svg-node-text" text-anchor="middle">In Stock?</text>
 
-            <!-- 6. Logistics Manager / Analyst manually... -->
-            <rect x="280" y="540" width="340" height="60" rx="8" fill="#f5a623" />
-            <text x="450" y="565" fill="#0f3a68" font-weight="700" font-size="14" text-anchor="middle">Logistics Manager / Analyst</text>
-            <text x="450" y="582" fill="#0f3a68" font-weight="500" font-size="12" text-anchor="middle">Manually cross-references all inputs</text>
+          <!-- T1 Stock YES Pill (Routes right to Allocate T1 box) -->
+          <path d="M530 640 H620" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+          <rect x="550" y="629" width="40" height="22" rx="11" fill="#10b981" />
+          <text x="570" y="644" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
 
-            <path d="M450 600 V650" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+          <!-- T1 Stock NO (Advance to Tier 2: points straight vertical path) -->
+          <rect x="430" y="720" width="40" height="22" rx="11" fill="#ef4444" />
+          <text x="450" y="735" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
 
-            <!-- 7. Dispatch to Store -->
-            <rect x="320" y="650" width="260" height="50" rx="8" fill="#0f3a68" stroke="#0f3a68" stroke-width="2"/>
-            <text x="450" y="680" class="svg-white-text" text-anchor="middle">Dispatch to Store</text>
+          <!-- 7. Allocate T1 -->
+          <rect x="620" y="617.5" width="180" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
+          <text x="710" y="645" class="svg-node-text" text-anchor="middle">Allocate SKU &amp; Deficit</text>
 
-            <path d="M450 700 V750" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+          <!-- T1 Deficit Filled Check -->
+          <path d="M710 662.5 V695" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+          <polygon points="710,695 780,735 710,775 640,735" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
+          <text x="710" y="739" class="svg-node-text" text-anchor="middle">Filled?</text>
 
-            <!-- 8. Stock Reconciled -->
-            <rect x="300" y="750" width="300" height="60" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
-            <text x="450" y="775" class="svg-node-text" text-anchor="middle">Stock Reconciled</text>
-            <text x="450" y="792" class="svg-sub-text" text-anchor="middle">(Store + Warehouse)</text>
+          <!-- T1 Deficit Filled YES ➔ Routes right and straight down to FIFO -->
+          <path d="M780 735 H850 V1405 H600" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+          <rect x="800" y="724" width="40" height="22" rx="11" fill="#10b981" />
+          <text x="820" y="739" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
 
-            <path d="M450 810 V860" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+          <!-- T1 Deficit Filled NO Loopback ➔ Routes left and UP back to Tier 1 -->
+          <path d="M640 735 H580 V532.5 H600" stroke="#f5a623" stroke-width="2.5" stroke-dasharray="6 6" fill="none" marker-end="url(#arrow-orange)"/>
+          <rect x="560" y="570" width="40" height="22" rx="11" fill="#ef4444" />
+          <text x="580" y="585" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
 
-            <!-- 9. Diamond: More Grade A Stores? -->
-            <polygon points="450,860 560,900 450,940 340,900" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
-            <text x="450" y="904" class="svg-node-text" text-anchor="middle">More Grade A Stores?</text>
+          <!-- 8. Tier 2 -->
+          <rect x="300" y="835" width="300" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
+          <text x="450" y="853" class="svg-node-text" text-anchor="middle">Tier 2: Historical Sales Match</text>
+          <text x="450" y="867" class="svg-sub-text" text-anchor="middle">Search exact SKUs sold in Last 6 Months</text>
 
-            <!-- YES Path (Next Store Loop) -->
-            <path d="M560 900 H980 V60 H600" stroke="#f5a623" stroke-width="2.5" stroke-dasharray="8 8" fill="none" marker-end="url(#arrow-orange)"/>
-            <rect x="580" y="889" width="40" height="22" rx="11" fill="#10b981" />
-            <text x="600" y="904" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
-            <text x="970" y="480" fill="#f5a623" font-size="12" font-weight="700" text-anchor="middle" transform="rotate(-90 970 480)">NEXT STORE</text>
+          <!-- T2 Stock Check -->
+          <polygon points="450,925 530,965 450,1005 370,965" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
+          <text x="450" y="969" class="svg-node-text" text-anchor="middle">In Stock?</text>
 
-            <!-- NO Path -->
-            <path d="M450 940 V990" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <rect x="430" y="949" width="40" height="22" rx="11" fill="#ef4444" />
-            <text x="450" y="964" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
+          <!-- T2 Stock YES Pill (Routes right to Allocate T2 box) -->
+          <path d="M530 965 H620" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+          <rect x="550" y="954" width="40" height="22" rx="11" fill="#10b981" />
+          <text x="570" y="969" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
 
-            <!-- 10. END -->
-            <rect x="350" y="990" width="200" height="50" rx="25" fill="#0f3a68" />
-            <text x="450" y="1020" class="svg-white-text" text-anchor="middle">END</text>
-          </svg>
-        </div>
+          <!-- T2 Stock NO (Advance to Tier 3: points straight vertical path) -->
+          <rect x="430" y="1045" width="40" height="22" rx="11" fill="#ef4444" />
+          <text x="450" y="1060" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
+
+          <!-- 9. Allocate T2 -->
+          <rect x="620" y="942.5" width="180" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
+          <text x="710" y="970" class="svg-node-text" text-anchor="middle">Allocate SKU &amp; Deficit</text>
+
+          <!-- T2 Deficit Filled Check -->
+          <path d="M710 987.5 V1020" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+          <polygon points="710,1020 780,1060 710,1100 640,1060" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
+          <text x="710" y="1064" class="svg-node-text" text-anchor="middle">Filled?</text>
+
+          <!-- T2 Deficit Filled YES ➔ Routes right and straight down to FIFO -->
+          <path d="M780 1060 H850 V1405 H600" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+          <rect x="800" y="1049" width="40" height="22" rx="11" fill="#10b981" />
+          <text x="820" y="1064" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
+
+          <!-- T2 Deficit Filled NO Loopback ➔ Routes left and UP back to Tier 2 -->
+          <path d="M640 1060 H580 V857.5 H600" stroke="#f5a623" stroke-width="2.5" stroke-dasharray="6 6" fill="none" marker-end="url(#arrow-orange)"/>
+          <rect x="560" y="895" width="40" height="22" rx="11" fill="#ef4444" />
+          <text x="580" y="910" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
+
+          <!-- 10. Tier 3 -->
+          <rect x="300" y="1155" width="300" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
+          <text x="450" y="1173" class="svg-node-text" text-anchor="middle">Tier 3: Substitute Cascade</text>
+          <text x="450" y="1187" class="svg-sub-text" text-anchor="middle">MRP ±20% | Relax: Color ➔ Material ➔ Shape</text>
+
+          <!-- 11. Highlight: Attribute Relaxation -->
+          <rect x="280" y="1260" width="340" height="55" rx="8" fill="#f5a623" />
+          <text x="450" y="1283" class="svg-white-text" text-anchor="middle">Relax Attributes Cascade</text>
+          <text x="450" y="1300" class="svg-white-sub" text-anchor="middle">Color (keep Frame) ➔ Material ➔ Shape</text>
+
+          <!-- T3 Loopback Connector -->
+          <path d="M300 1282 H200 V1177 H300" stroke="#f5a623" stroke-width="2.5" stroke-dasharray="6 6" fill="none" marker-end="url(#arrow-orange)"/>
+          <rect x="180" y="1220" width="40" height="22" rx="11" fill="#ef4444" />
+          <text x="200" y="1235" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
+
+          <!-- 12. Allocate T3 & FIFO -->
+          <rect x="300" y="1365" width="300" height="80" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
+          <text x="450" y="1395" class="svg-node-text" text-anchor="middle">Allocate Substitute &amp; FIFO Batch Rule</text>
+          <text x="450" y="1415" class="svg-sub-text" text-anchor="middle">Pull oldest warehouse stock age first</text>
+
+          <!-- 13. Dispatch Order -->
+          <rect x="300" y="1500" width="300" height="45" rx="8" fill="#ffffff" stroke="#10b981" stroke-width="2"/>
+          <text x="450" y="1527" class="svg-node-text" text-anchor="middle">Dispatch Order Generated</text>
+
+          <!-- 14. END -->
+          <rect x="350" y="1600" width="200" height="50" rx="25" fill="#0f3a68" />
+          <text x="450" y="1630" class="svg-white-text" text-anchor="middle">END</text>
+        </svg>
       </div>
     </div>
   </div>
-
-  <script>
-    function toggleView(view) {
-      if (view === 'manual') {
-        document.getElementById('automated-view').style.display = 'none';
-        document.getElementById('manual-view').style.display = 'block';
-        document.getElementById('btn-manual').classList.add('active');
-        document.getElementById('btn-automated').classList.remove('active');
-      } else {
-        document.getElementById('manual-view').style.display = 'none';
-        document.getElementById('automated-view').style.display = 'block';
-        document.getElementById('btn-automated').classList.add('active');
-        document.getElementById('btn-manual').classList.remove('active');
-      }
-      window.scrollTo(0, 0);
-    }
-  </script>
 
 </body>
 </html>
