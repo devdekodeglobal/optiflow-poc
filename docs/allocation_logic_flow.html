@@ -82,25 +82,24 @@
       border-color: var(--accent) transparent transparent transparent;
     }
 
-    .connector-split {
-      width: 100%;
-      max-width: 800px;
+    .connector-dashed {
+      width: 2px;
       height: 40px;
+      background: transparent;
+      border-left: 2px dashed var(--warning);
       position: relative;
-      margin: 20px 0;
-    }
-
-    .connector-split svg {
-      width: 100%;
-      height: 100%;
-      overflow: visible;
-    }
-
-    .connector-split path {
-      fill: none;
-      stroke: var(--primary);
-      stroke-width: 2;
       opacity: 0.6;
+      margin-left: 1px;
+    }
+
+    .connector-dashed::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: -6px;
+      border-width: 6px 5px 0;
+      border-style: solid;
+      border-color: var(--warning) transparent transparent transparent;
     }
 
     /* Node Styles */
@@ -157,27 +156,20 @@
     .node.logic { border-color: rgba(14, 165, 233, 0.3); }
     .node.logic .node-icon { background: rgba(14, 165, 233, 0.1); color: var(--accent); border-color: rgba(14, 165, 233, 0.3); }
 
-    .node.decision { border-color: rgba(245, 158, 11, 0.3); max-width: 800px; }
-    .node.decision .node-icon { background: rgba(245, 158, 11, 0.1); color: var(--warning); border-color: rgba(245, 158, 11, 0.3); }
+    .node.decision { border-color: rgba(239, 68, 68, 0.3); max-width: 800px; }
+    .node.decision .node-icon { background: rgba(239, 68, 68, 0.1); color: var(--danger); border-color: rgba(239, 68, 68, 0.3); }
+
+    .node.tier1 { border-color: rgba(16, 185, 129, 0.5); }
+    .node.tier1 .node-icon { background: rgba(16, 185, 129, 0.1); color: var(--success); border-color: rgba(16, 185, 129, 0.3); }
+
+    .node.tier2 { border-color: rgba(14, 165, 233, 0.5); }
+    .node.tier2 .node-icon { background: rgba(14, 165, 233, 0.1); color: var(--accent); border-color: rgba(14, 165, 233, 0.3); }
+
+    .node.tier3 { border-color: rgba(245, 158, 11, 0.5); }
+    .node.tier3 .node-icon { background: rgba(245, 158, 11, 0.1); color: var(--warning); border-color: rgba(245, 158, 11, 0.3); }
 
     .node.output { border-color: rgba(99, 102, 241, 0.3); }
     
-    /* Horizontal Layouts */
-    .row {
-      display: flex;
-      gap: 20px;
-      width: 100%;
-      max-width: 1000px;
-      justify-content: center;
-    }
-
-    .col {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
     /* Small Tags */
     .tag-container {
       display: flex;
@@ -202,6 +194,38 @@
       border-color: var(--primary);
       color: #fff;
     }
+    
+    .tag.danger {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: var(--danger);
+      color: #fca5a5;
+    }
+
+    .tag.warning {
+      background: rgba(245, 158, 11, 0.1);
+      border-color: var(--warning);
+      color: #fcd34d;
+    }
+    
+    .tag.success {
+      background: rgba(16, 185, 129, 0.1);
+      border-color: var(--success);
+      color: #6ee7b7;
+    }
+
+    .label-between {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      background: var(--bg-main);
+      padding: 2px 8px;
+      border-radius: 4px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+      white-space: nowrap;
+    }
 
   </style>
 </head>
@@ -209,7 +233,7 @@
 
   <div class="header">
     <h1>OptiFlow Business Logic</h1>
-    <div class="subtitle">High-Level Process Flow & Allocation Rules</div>
+    <div class="subtitle">Multi-Tier Replenishment & Allocation Flow</div>
   </div>
 
   <div class="flowchart">
@@ -247,89 +271,80 @@
 
     <div class="connector"></div>
 
-    <!-- STEP 3: Demand Reference -->
-    <div class="node logic">
-      <div class="node-icon">🎯</div>
-      <div class="node-title">3. Identify Target Demand (Reference SKU)</div>
+    <!-- STEP 3: Hard Constraints -->
+    <div class="node decision">
+      <div class="node-icon">🚧</div>
+      <div class="node-title">3. Global Hard Constraints</div>
       <div class="node-desc">
-        Find the "perfect" item to allocate based on local store demand.
+        These rules apply across ALL tiers below. A candidate SKU is instantly REJECTED if it violates:
       </div>
       <div class="tag-container">
-        <div class="tag highlight">1st Choice: Top Selling SKU (Lookback Window)</div>
-        <div class="tag">2nd Choice: Existing Store Inventory</div>
-        <div class="tag">3rd Choice: Brand Baseline</div>
+        <div class="tag danger">❌ Max 3 Colors per Model</div>
+        <div class="tag danger">❌ Max 2 Units of Same SKU</div>
+        <div class="tag danger">❌ Must Keep ≥ 85% Brand SKU Uniqueness</div>
       </div>
     </div>
 
     <div class="connector"></div>
 
-    <!-- STEP 4: Constraints -->
-    <div class="node decision">
-      <div class="node-icon">🚧</div>
-      <div class="node-title">4. Apply Hard Retail Constraints</div>
+    <!-- TIER 1 -->
+    <div class="node tier1">
+      <div class="node-icon">🔥</div>
+      <div class="node-title">Tier 1: EXACT MATCH (7-Day Sales)</div>
       <div class="node-desc">
-        Filter warehouse candidates. A candidate SKU is REJECTED if it violates these rules:
+        Replenish immediate winners. Search the warehouse for the exact SKUs the store sold in the last 7 days.
       </div>
       <div class="tag-container">
-        <div class="tag">❌ Max 3 Colors per Model</div>
-        <div class="tag">❌ Max 2 Units of Same SKU</div>
-        <div class="tag">❌ Must Keep ≥ 85% Brand SKU Uniqueness</div>
+        <div class="tag success">Restock Hot Movers</div>
+        <div class="tag">Exact SKU Match</div>
       </div>
     </div>
 
-    <div class="connector-split">
-      <svg preserveAspectRatio="none" viewBox="0 0 1000 40">
-        <!-- Center line -->
-        <path d="M500,0 L500,40" marker-end="url(#arrow)"/>
-        <!-- Branch Left -->
-        <path d="M500,10 L200,10 L200,40" marker-end="url(#arrow)"/>
-        <!-- Branch Right -->
-        <path d="M500,10 L800,10 L800,40" marker-end="url(#arrow)"/>
-        
-        <defs>
-          <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#0ea5e9" opacity="0.6" />
-          </marker>
-        </defs>
-      </svg>
+    <div class="connector-dashed">
+      <div class="label-between">If Deficit Still Exists</div>
     </div>
 
-    <!-- STEP 5: Matching Results -->
-    <div class="row">
-      <div class="col">
-        <div class="node" style="border-color: rgba(16, 185, 129, 0.4);">
-          <div class="node-title" style="color: var(--success);">🟢 EXACT Match</div>
-          <div class="node-desc">Candidate SKU exactly matches historical store inventory.</div>
-          <div class="tag-container"><div class="tag">+100 Points</div></div>
-        </div>
+    <!-- TIER 2 -->
+    <div class="node tier2">
+      <div class="node-icon">📅</div>
+      <div class="node-title">Tier 2: EXACT MATCH (6-Month Sales)</div>
+      <div class="node-desc">
+        Replenish historical winners. If Tier 1 is out of stock, find the exact SKUs the store sold in the past 6 months.
       </div>
-      <div class="col">
-        <div class="node" style="border-color: rgba(14, 165, 233, 0.4);">
-          <div class="node-title" style="color: var(--accent);">🔵 SIMILAR Match</div>
-          <div class="node-desc">High attribute similarity (Shape, Material, Color) and MRP is within ±20%.</div>
-        </div>
-      </div>
-      <div class="col">
-        <div class="node" style="border-color: rgba(245, 158, 11, 0.4);">
-          <div class="node-title" style="color: var(--warning);">🟡 SUBSTITUTE Match</div>
-          <div class="node-desc">Same brand & commodity, but MRP variance exceeds 20% limit.</div>
-          <div class="tag-container"><div class="tag">-50 Points Penalty</div></div>
-        </div>
+      <div class="tag-container">
+        <div class="tag success">Restock Proven Sellers</div>
+        <div class="tag">Exact SKU Match</div>
       </div>
     </div>
 
-    <div class="connector-split">
-      <svg preserveAspectRatio="none" viewBox="0 0 1000 40">
-        <path d="M200,0 L200,20 L500,20 L500,40" />
-        <path d="M500,0 L500,40" marker-end="url(#arrow)"/>
-        <path d="M800,0 L800,20 L500,20" />
-      </svg>
+    <div class="connector-dashed">
+      <div class="label-between">If Deficit STILL Exists</div>
     </div>
 
-    <!-- STEP 6: FIFO & Output -->
+    <!-- TIER 3 -->
+    <div class="node tier3">
+      <div class="node-icon">🔄</div>
+      <div class="node-title">Tier 3: SUBSTITUTE MATCH (Attribute Fallback)</div>
+      <div class="node-desc">
+        If exact items are out of stock, relax attributes one by one to find a substitute. No more point systems—just pure rule cascading.
+      </div>
+      <div class="tag-container">
+        <div class="tag highlight">Must: Same Brand</div>
+        <div class="tag highlight">Must: ±20% MRP Range</div>
+      </div>
+      <div class="tag-container">
+        <div class="tag warning">1. Relax Color (Change color, keep everything else)</div>
+        <div class="tag warning">2. Relax Material</div>
+        <div class="tag warning">3. Relax Shape</div>
+      </div>
+    </div>
+
+    <div class="connector"></div>
+
+    <!-- STEP 4: FIFO & Output -->
     <div class="node output">
       <div class="node-icon">📦</div>
-      <div class="node-title">5. FIFO Dispatch Allocation</div>
+      <div class="node-title">4. FIFO Dispatch Allocation</div>
       <div class="node-desc">
         Finalize allocation by depleting warehouse inventory using FIFO (oldest stock leaves first).
       </div>
