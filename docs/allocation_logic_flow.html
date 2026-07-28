@@ -18,7 +18,14 @@
         }
         h1 {
             color: #0f172a;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #64748b;
+            font-size: 1.1rem;
             margin-bottom: 30px;
+            text-align: center;
+            max-width: 800px;
         }
         .mermaid {
             background: white;
@@ -35,6 +42,9 @@
 <body>
 
     <h1>OptiFlow Business Process Flow</h1>
+    <div class="subtitle">
+        Visual flow mapping of ranking, deficit calculations, multi-tiered exact sales-based matching, and constraints verification.
+    </div>
     
     <div class="mermaid">
         flowchart TD
@@ -43,50 +53,73 @@
             classDef decision fill:#f59e0b,stroke:#d97706,stroke-width:2px,color:white
             classDef data fill:#10b981,stroke:#059669,stroke-width:2px,color:white
             classDef output fill:#6366f1,stroke:#4f46e5,stroke-width:2px,color:white
+            classDef note fill:#f8fafc,stroke:#cbd5e1,stroke-width:1px,color:#475569
             
-            %% Nodes
+            %% Start
             Start([Start Allocation Process]) --> Init[Load Planogram, Live SOH, Sales History]
-            Init:::process --> Rank[Rank Stores by Priority]
-            Rank:::process --> Deficit[Calculate Deficit: Target - Store SOH]
+            Init:::process --> RankStore[Rank Stores by Priority]
             
-            Deficit:::process --> CheckDeficit{Is Deficit > 0?}
+            %% Store Ranking Detail
+            RankStore:::process --> Rank1[1. Rank by Grade: A++ > A+ > A > B+ > B > C]:::data
+            Rank1 --> Rank2[2. Rank by client-specified Inner Grade Priority list]:::data
+            
+            %% Deficit Calc
+            Rank2 --> CalcDeficit[Calculate Deficit per Brand-Commodity-Store:<br/>Deficit = Target - Live SOH<br/>Target = Facing + Depth]
+            CalcDeficit:::process --> CheckDeficit{Is Deficit > 0?}
             CheckDeficit:::decision
             
-            CheckDeficit -- NO --> Skip[Skip Store - Target Met]:::output
-            CheckDeficit -- YES --> SetConstraints[Apply Global Constraints:<br/>- Max 3 Colors/Model<br/>- Max 2 Units/SKU<br/>- Min 85% Brand Uniqueness]
-            SetConstraints:::process
+            CheckDeficit -- NO --> Skip[Skip Brand-Commodity for Store]:::output
+            CheckDeficit -- YES --> CheckGlobalConstraints
             
-            SetConstraints --> Tier1[Find Exact SKUs Sold in Last X Days]:::process
-            Tier1 --> T1StockCheck{Is Exact SKU in<br/>Warehouse Stock?}:::decision
+            %% Global Constraint Validation Checkpoint
+            subgraph ConstraintGate [Validation Gate: Before allocating any SKU]
+                CheckGlobalConstraints{Check Global Constraints:<br/>1. Max 3 Colors per Model?<br/>2. Max 2 Units per SKU?<br/>3. Min 85% Brand Uniqueness?}:::decision
+            end
             
-            T1StockCheck -- YES --> AllocT1[Allocate Exact SKU]:::process
-            AllocT1 --> CheckDeficit2{Deficit Filled?}:::decision
-            CheckDeficit2 -- YES --> Dispatch
-            CheckDeficit2 -- NO --> Tier1
+            CheckGlobalConstraints -- Fails Constraints --> SkipSKU[Skip SKU / Model Candidate]:::output
+            CheckGlobalConstraints -- Passes Constraints --> TierSelect{Select Allocation Tier}:::decision
             
-            T1StockCheck -- NO --> Tier2[Find Exact SKUs Sold in Last 6 Months]:::process
-            Tier2 --> T2StockCheck{Is Exact SKU in<br/>Warehouse Stock?}:::decision
+            %% Tier 1
+            TierSelect -->|Tier 1| Tier1[Find SKUs sold in Last X Days]:::process
+            XDaysNote[Note: X Days is set by user in UI<br/>before starting allocation process]:::note
+            Tier1 -.-> XDaysNote
             
-            T2StockCheck -- YES --> AllocT2[Allocate Exact SKU]:::process
-            AllocT2 --> CheckDeficit3{Deficit Filled?}:::decision
-            CheckDeficit3 -- YES --> Dispatch
-            CheckDeficit3 -- NO --> Tier2
+            Tier1 --> T1StockCheck{Is exact SKU in stock<br/>at Corporate Office?}:::decision
+            T1StockCheck -- YES --> AllocateT1[Allocate Exact SKU]:::process
+            AllocateT1 --> DecrDeficit1[Update Deficit]:::process
+            DecrDeficit1 --> CheckDeficitGate1{Deficit filled?}:::decision
+            CheckDeficitGate1 -- NO --> CheckGlobalConstraints
+            CheckDeficitGate1 -- YES --> FIFOApply
+            T1StockCheck -- NO --> TierSelect
             
-            T2StockCheck -- NO --> Tier3[Fallback: Find Substitute SKU]:::process
-            Tier3 --> PriceCheck{Is Substitute MRP<br/>within ±20%?}:::decision
+            %% Tier 2
+            TierSelect -->|Tier 2| Tier2[Find SKUs sold in Last 6 Months]:::process
+            Tier2 --> T2StockCheck{Is exact SKU in stock<br/>at Corporate Office?}:::decision
+            T2StockCheck -- YES --> AllocateT2[Allocate Exact SKU]:::process
+            AllocateT2 --> DecrDeficit2[Update Deficit]:::process
+            DecrDeficit2 --> CheckDeficitGate2{Deficit filled?}:::decision
+            CheckDeficitGate2 -- NO --> CheckGlobalConstraints
+            CheckDeficitGate2 -- YES --> FIFOApply
+            T2StockCheck -- NO --> TierSelect
             
-            PriceCheck -- NO --> RejectSub[Reject Candidate]:::process
-            PriceCheck -- YES --> RelaxAttributes[Relax Attributes Sequentially:<br/>1. Change Color<br/>2. Change Material<br/>3. Change Shape]:::process
+            %% Tier 3
+            TierSelect -->|Tier 3| Tier3[Find Substitute Candidate]:::process
+            Tier3 --> SubVerify{Verify Substitute Rules:<br/>1. Same Brand & Commodity?<br/>2. Within ±20% MRP of Target SKU?}:::decision
             
-            RelaxAttributes --> AllocT3[Allocate Substitute SKU]:::process
-            AllocT3 --> CheckDeficit4{Deficit Filled?}:::decision
-            CheckDeficit4 -- YES --> Dispatch
-            CheckDeficit4 -- NO --> Tier3
+            SubVerify -- NO --> RejectSub[Skip Candidate]:::output
+            SubVerify -- YES --> AttributeCascade[Relax Attributes in Order:<br/>1. Color (keep Shape & Material)<br/>2. Material (keep Shape)<br/>3. Shape]:::process
             
-            RejectSub --> Exhausted[Warehouse Stock Exhausted for Brand/Commodity]:::output
+            AttributeCascade --> AllocateT3[Allocate Substitute SKU]:::process
+            AllocateT3 --> DecrDeficit3[Update Deficit]:::process
+            DecrDeficit3 --> CheckDeficitGate3{Deficit filled?}:::decision
+            CheckDeficitGate3 -- NO --> CheckGlobalConstraints
+            CheckDeficitGate3 -- YES --> FIFOApply
+            RejectSub --> CheckGlobalConstraints
             
-            Dispatch[Generate Dispatch Order & Apply FIFO]:::data
-            Dispatch --> End([End Process])
+            %% FIFO & Output
+            FIFOApply[Apply FIFO Rule:<br/>Pull inventory from oldest batch/barcode age first]:::process
+            FIFOApply --> GenerateDispatch[Generate Final Dispatch Order]:::output
+            GenerateDispatch --> End([End Process])
     </div>
 
     <script>
@@ -101,8 +134,8 @@
             },
             flowchart: {
                 curve: 'linear',
-                nodeSpacing: 50,
-                rankSpacing: 50
+                nodeSpacing: 45,
+                rankSpacing: 45
             }
         });
     </script>
