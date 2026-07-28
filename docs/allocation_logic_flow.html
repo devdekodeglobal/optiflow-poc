@@ -50,7 +50,7 @@
     /* Connectors & Arrows */
     .mermaid .edgePath .path {
       stroke: #475569 !important;
-      stroke-width: 3px !important;
+      stroke-width: 2.5px !important;
     }
     .mermaid .markerPath {
       fill: #475569 !important;
@@ -72,14 +72,37 @@
       color: #0f3a68 !important;
     }
 
-    /* YES / NO Pill text formatting */
-    .mermaid .node.yesNode label,
-    .mermaid .node.noNode label,
-    .mermaid .node.noNode label span,
-    .mermaid .node.yesNode label span {
+    /* Styling for YES/NO text badges dynamically applied by JS */
+    .yes-badge {
+      background-color: #10b981 !important;
+      color: white !important;
+      padding: 4px 10px !important;
+      border-radius: 20px !important;
       font-weight: 800 !important;
-      font-size: 12px !important;
+      font-size: 11px !important;
       letter-spacing: 0.5px !important;
+      border: none !important;
+      box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2) !important;
+      display: inline-block !important;
+    }
+
+    .no-badge {
+      background-color: #ef4444 !important;
+      color: white !important;
+      padding: 4px 10px !important;
+      border-radius: 20px !important;
+      font-weight: 800 !important;
+      font-size: 11px !important;
+      letter-spacing: 0.5px !important;
+      border: none !important;
+      box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2) !important;
+      display: inline-block !important;
+    }
+
+    /* Hide default Mermaid white label background boxes */
+    .mermaid .edgeLabel rect {
+      fill: none !important;
+      stroke: none !important;
     }
   </style>
 </head>
@@ -100,60 +123,55 @@
       classDef decision fill:#ffffff,stroke:#f5a623,stroke-width:2px,color:#102a43;
       classDef highlight fill:#f5a623,stroke:#f5a623,stroke-width:1px,color:#0f3a68,rx:8px,ry:8px;
       
-      classDef yesNode fill:#10b981,stroke:#10b981,stroke-width:1px,color:white,rx:12px,ry:12px;
-      classDef noNode fill:#ef4444,stroke:#ef4444,stroke-width:1px,color:white,rx:12px,ry:12px;
-      
       classDef data fill:#ffffff,stroke:#bcccdc,stroke-width:2px,color:#102a43,rx:8px,ry:8px;
       classDef output fill:#0f3a68,stroke:#0f3a68,stroke-width:1px,color:white,rx:30px,ry:30px;
 
-      %% Start & Ranking (Combined for readability)
+      %% Start & Ranking
       Start([Start Allocation Process]):::startNode --> Init["Initialize & Rank Stores<br/>(A, B, C Grade & Client Priority list)"]:::process
-      
-      %% Deficit
       Init --> CalcDeficit["Calculate Deficit per Store Brand/Commodity<br/>Deficit = Target (Facing + Depth) - Live Store SOH"]:::process
       CalcDeficit --> CheckDeficit{"Is Deficit > 0?"}:::decision
 
-      CheckDeficit --> DeficitYes["YES"]:::yesNode --> CheckGlobalConstraints{"Check Global Constraints:<br/>Max 3 Colors/Model? | Max 2 Units/SKU?<br/>Min 85% Brand Uniqueness?"}:::highlight
-      CheckDeficit --> DeficitNo["NO"]:::noNode --> Skip["Skip Store - Target Met"]:::output
+      CheckDeficit -- "YES" --> CheckGlobalConstraints{"Check Global Constraints:<br/>Max 3 Colors/Model? | Max 2 Units/SKU?<br/>Min 85% Brand Uniqueness?"}:::highlight
+      CheckDeficit -- "NO" --> Skip["Skip Store - Target Met"]:::output
 
       %% Constraint Check
-      CheckGlobalConstraints --> ConstraintsPasses["YES"]:::yesNode --> Tier1["Tier 1: Recent Sales Match<br/>Search exact SKUs sold in Last X Days"]:::process
-      CheckGlobalConstraints --> ConstraintsFails["NO"]:::noNode --> SkipSKU["Skip SKU / Model Candidate"]:::output
+      CheckGlobalConstraints -- "YES" --> Tier1["Tier 1: Recent Sales Match<br/>Search exact SKUs sold in Last X Days"]:::process
+      CheckGlobalConstraints -- "NO" --> SkipSKU["Skip SKU / Model Candidate"]:::output
 
       %% Tier 1 Loop
       Tier1 --> T1StockCheck{"Is exact SKU in stock at Corporate Office?"}:::decision
-      T1StockCheck --> T1StockYes["YES"]:::yesNode --> AllocateT1["Allocate SKU & Update Deficit"]:::process
-      T1StockCheck --> T1Exhausted{"Are Tier 1 SKUs exhausted?"}:::decision
+      T1StockCheck -- "YES" --> AllocateT1["Allocate SKU & Update Deficit"]:::process
+      T1StockCheck -- "NO" --> T1Exhausted{"Are Tier 1 SKUs exhausted?"}:::decision
 
       AllocateT1 --> CheckDeficitGate1{"Deficit filled?"}:::decision
-      CheckDeficitGate1 --> T1FilledYes["YES"]:::yesNode --> FIFOApply["Apply FIFO Rule:<br/>Pull oldest warehouse batch/barcode first"]:::process
-      CheckDeficitGate1 --> T1Exhausted
+      CheckDeficitGate1 -- "YES" --> FIFOApply["Apply FIFO Rule:<br/>Pull oldest warehouse batch/barcode first"]:::process
+      CheckDeficitGate1 -- "NO" --> T1Exhausted
 
-      T1Exhausted --> T1ExhaustedNo["NO"]:::noNode --> Tier1
-      T1Exhausted --> Tier2["Tier 2: Historical Sales Match<br/>Search exact SKUs sold in Last 6 Months"]:::process
+      T1Exhausted -- "NO" --> Tier1
+      T1Exhausted -- "YES" --> Tier2["Tier 2: Historical Sales Match<br/>Search exact SKUs sold in Last 6 Months"]:::process
 
       %% Tier 2 Loop
       Tier2 --> T2StockCheck{"Is exact SKU in stock at Corporate Office?"}:::decision
-      T2StockCheck --> T2StockYes["YES"]:::yesNode --> AllocateT2["Allocate SKU & Update Deficit"]:::process
-      T2StockCheck --> T2Exhausted{"Are Tier 2 SKUs exhausted?"}:::decision
+      T2StockCheck -- "YES" --> AllocateT2["Allocate SKU & Update Deficit"]:::process
+      T2StockCheck -- "NO" --> T2Exhausted{"Are Tier 2 SKUs exhausted?"}:::decision
 
       AllocateT2 --> CheckDeficitGate2{"Deficit filled?"}:::decision
-      CheckDeficitGate2 --> T2FilledYes["YES"]:::yesNode --> FIFOApply
-      CheckDeficitGate2 --> T2Exhausted
+      CheckDeficitGate2 -- "YES" --> FIFOApply
+      CheckDeficitGate2 -- "NO" --> T2Exhausted
 
-      T2Exhausted --> T2ExhaustedNo["NO"]:::noNode --> Tier2
-      T2Exhausted --> Tier3["Tier 3: Substitute Cascade<br/>Match Brand/Commodity & MRP ±20%<br/>Relax: Color ➔ Material ➔ Shape"]:::process
+      T2Exhausted -- "NO" --> Tier2
+      T2Exhausted -- "YES" --> Tier3["Tier 3: Substitute Cascade<br/>Match Brand/Commodity & MRP ±20%<br/>Relax: Color ➔ Material ➔ Shape"]:::process
 
       %% Tier 3 Loop
       Tier3 --> AttributeCascade["Relax Attributes in Order: 1. Color 2. Material 3. Shape"]:::highlight
       AttributeCascade --> AllocateT3["Allocate Substitute SKU"]:::process
       AllocateT3 --> CheckDeficitGate3{"Deficit filled?"}:::decision
 
-      CheckDeficitGate3 --> T3FilledYes["YES"]:::yesNode --> FIFOApply
-      CheckDeficitGate3 --> T3Exhausted{"Are Substitute candidates exhausted?"}:::decision
+      CheckDeficitGate3 -- "YES" --> FIFOApply
+      CheckDeficitGate3 -- "NO" --> T3Exhausted{"Are Substitute candidates exhausted?"}:::decision
 
-      T3Exhausted --> T3ExhaustedNo["NO"]:::noNode --> Tier3
-      T3Exhausted --> FIFOApply
+      T3Exhausted -- "NO" --> Tier3
+      T3Exhausted -- "YES" --> FIFOApply
 
       %% Output
       FIFOApply --> GenerateDispatch["Generate Final Dispatch Order"]:::output
@@ -177,6 +195,28 @@
         rankSpacing: 50
       }
     });
+
+    // Run dynamic edge label styling after SVG renders
+    const styleLabels = () => {
+      const spans = document.querySelectorAll('.edgeLabel span, .edgeLabel foreignObject div');
+      spans.forEach(span => {
+        const text = span.textContent.trim().toUpperCase();
+        if (text === 'YES') {
+          span.className = 'yes-badge';
+        } else if (text === 'NO') {
+          span.className = 'no-badge';
+        }
+      });
+    };
+
+    // Watch for Mermaid injection to style labels dynamically
+    const observer = new MutationObserver((mutations) => {
+      styleLabels();
+    });
+    observer.observe(document.querySelector('.mermaid-container'), { childList: true, subtree: true });
+    
+    // Fallback run
+    window.addEventListener('load', styleLabels);
   </script>
 </body>
 </html>
