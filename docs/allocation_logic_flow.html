@@ -81,27 +81,34 @@
             T1StockCheck -- "YES" --> AllocateT1["Allocate Exact SKU & Update Deficit"]:::process
             AllocateT1 --> CheckDeficit1{"Is Deficit filled?"}:::decision
             
-            %% Tier 2 (6 Months Exact)
-            CheckDeficit1 -- "NO" --> Tier2["Tier 2: Find Exact SKUs Sold in Last 6 Months"]:::process
+            CheckDeficit1 -- "NO" --> T1Exhausted{"More Tier 1 SKUs?"}:::decision
+            T1Exhausted -- "YES" --> Tier1
+            T1Exhausted -- "NO" --> Tier2["Tier 2: Find Exact SKUs Sold in Last 6 Months"]:::process
             T1StockCheck -- "NO" --> Tier2
             
+            %% Tier 2 (6 Months Exact)
             Tier2 --> T2StockCheck{"Is Exact SKU in stock at Corporate Office?"}:::decision
             T2StockCheck -- "YES" --> AllocateT2["Allocate Exact SKU & Update Deficit"]:::process
             AllocateT2 --> CheckDeficit2{"Is Deficit filled?"}:::decision
             
-            %% Tier 3 (Substitute Cascade)
-            CheckDeficit2 -- "NO" --> Tier3["Tier 3: Find Substitute Candidate (MRP within ±20%, Same Brand/Commodity)"]:::process
+            CheckDeficit2 -- "NO" --> T2Exhausted{"More Tier 2 SKUs?"}:::decision
+            T2Exhausted -- "YES" --> Tier2
+            T2Exhausted -- "NO" --> Tier3["Tier 3: Find Substitute Candidate (MRP within ±20%, Same Brand/Commodity)"]:::process
             T2StockCheck -- "NO" --> Tier3
             
+            %% Tier 3 (Substitute Cascade)
             Tier3 --> AttributeCascade["Relax Attributes in Order: 1. Color 2. Material 3. Shape"]:::process
             AttributeCascade --> AllocateT3["Allocate Substitute SKU & Update Deficit"]:::process
             AllocateT3 --> CheckDeficit3{"Is Deficit filled?"}:::decision
+            
+            CheckDeficit3 -- "NO" --> T3Exhausted{"More Substitute Candidates?"}:::decision
+            T3Exhausted -- "YES" --> Tier3
+            T3Exhausted -- "NO" --> FIFOApply
             
             %% FIFO & Finalize
             CheckDeficit1 -- "YES" --> FIFOApply
             CheckDeficit2 -- "YES" --> FIFOApply
             CheckDeficit3 -- "YES" --> FIFOApply
-            CheckDeficit3 -- "NO" --> FIFOApply
             
             FIFOApply["Apply FIFO Rule: Pull inventory from oldest batch/barcode age first"]:::process
             FIFOApply --> GenerateDispatch["Generate Final Dispatch Order"]:::output
