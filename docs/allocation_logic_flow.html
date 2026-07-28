@@ -47,7 +47,7 @@
     }
     
     .workflow-container {
-      max-width: 1100px;
+      max-width: 1200px;
       margin: 0 auto;
       padding: 60px 24px;
     }
@@ -66,9 +66,6 @@
       }
       .solution-flex {
         flex-direction: column !important;
-      }
-      .constraints-card {
-        width: 100% !important;
       }
     }
 
@@ -180,7 +177,7 @@
       </div>
 
       <div class="svg-container">
-        <svg width="100%" height="1350" viewBox="0 0 1000 1350" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg width="100%" height="1600" viewBox="0 0 1150 1600" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
               <path d="M 0 1 L 10 5 L 0 9 z" fill="#5a738e" />
@@ -193,238 +190,238 @@
           <!-- ================= COMMON HEADER & NO-DEFICIT PATHS ================= -->
           <g class="flow-element path-skip path-t1 path-t2 path-sub path-loop">
             <!-- Connectors -->
-            <path d="M500 85 V120" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <path d="M500 165 V195" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <path d="M500 240 V290" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+            <path d="M575 95 V150" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+            <path d="M575 195 V240" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+            <path d="M575 285 V310" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
 
             <!-- 1. Start -->
-            <rect x="400" y="30" width="200" height="55" rx="27.5" fill="#0f3a68" />
-            <text x="500" y="55" class="svg-white-text" text-anchor="middle">Start</text>
-            <text x="500" y="70" class="svg-white-sub" text-anchor="middle">OptiFlow Allocation Process</text>
+            <rect x="475" y="40" width="200" height="55" rx="27.5" fill="#0f3a68" />
+            <text x="575" y="65" class="svg-white-text" text-anchor="middle">Start</text>
+            <text x="575" y="80" class="svg-white-sub" text-anchor="middle">OptiFlow Allocation Process</text>
 
             <!-- 2. Rank Stores -->
-            <rect x="350" y="120" width="300" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
-            <text x="500" y="138" class="svg-node-text" text-anchor="middle">Initialize &amp; Rank Stores</text>
-            <text x="500" y="152" class="svg-sub-text" text-anchor="middle">Grade Priority A, B, C &amp; Inner Lists</text>
+            <rect x="425" y="150" width="300" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
+            <text x="575" y="168" class="svg-node-text" text-anchor="middle">Initialize &amp; Rank Stores</text>
+            <text x="575" y="182" class="svg-sub-text" text-anchor="middle">Grade Priority A, B, C &amp; Inner Lists</text>
 
             <!-- 3. Calculate Deficit -->
-            <rect x="350" y="195" width="300" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
-            <text x="500" y="213" class="svg-node-text" text-anchor="middle">Calculate Store Deficits</text>
-            <text x="500" y="227" class="svg-sub-text" text-anchor="middle">Deficit = Target (Facing+Depth) - SOH</text>
+            <rect x="425" y="240" width="300" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
+            <text x="575" y="258" class="svg-node-text" text-anchor="middle">Calculate Store Deficits</text>
+            <text x="575" y="227" class="svg-sub-text" text-anchor="middle">Deficit = Target (Facing+Depth) - SOH</text>
 
             <!-- 4. Diamond: Deficit Exist? -->
-            <polygon points="500,290 580,332.5 500,375 420,332.5" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
-            <text x="500" y="336" class="svg-node-text" text-anchor="middle">Is Deficit &gt; 0?</text>
+            <polygon points="575,310 655,360 575,410 495,360" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
+            <text x="575" y="364" class="svg-node-text" text-anchor="middle">Is Deficit &gt; 0?</text>
           </g>
 
-          <!-- YES branch from Deficit Check (active for Paths 2, 3, 4, 5) -->
+          <!-- YES branch from Deficit Check (active for Paths 2, 3, 4) -->
           <g class="flow-element path-t1 path-t2 path-sub path-loop">
-            <path d="M500 375 V450 H210 V500" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
-            <rect x="190" y="440" width="40" height="22" rx="11" fill="#10b981" />
-            <text x="210" y="455" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
+            <path d="M575 410 V510 H240 V570" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+            <rect x="220" y="500" width="40" height="22" rx="11" fill="#10b981" />
+            <text x="240" y="515" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
           </g>
 
           <!-- Deficit NO Branch (Only active in Path 1) -->
           <g class="flow-element path-skip">
-            <path d="M420 332.5 H30 V1305 H400" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
-            <rect x="10" y="321" width="40" height="22" rx="11" fill="#ef4444" />
-            <text x="30" y="336" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
+            <path d="M495 360 H40 V1510 H475" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+            <rect x="20" y="349" width="40" height="22" rx="11" fill="#ef4444" />
+            <text x="40" y="364" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
           </g>
 
 
-          <!-- ================= COLUMN 1: TIER 1 (Center x=210) ================= -->
+          <!-- ================= COLUMN 1: TIER 1 (Center x=240) ================= -->
           <!-- T1 Base Nodes (Used in Paths 2, 3, 4, 5) -->
           <g class="flow-element path-t1 path-t2 path-sub path-loop">
             <!-- 6. Tier 1 Box -->
-            <rect x="100" y="500" width="220" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
-            <text x="210" y="518" class="svg-node-text" text-anchor="middle">Tier 1: Recent Sales Match</text>
-            <text x="210" y="532" class="svg-sub-text" text-anchor="middle">Fetch exact SKUs sold in Last X Days</text>
+            <rect x="130" y="570" width="220" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
+            <text x="240" y="588" class="svg-node-text" text-anchor="middle">Tier 1: Recent Sales Match</text>
+            <text x="240" y="602" class="svg-sub-text" text-anchor="middle">Fetch exact SKUs sold in Last X Days</text>
 
             <!-- T1 Constraints Check -->
-            <path d="M210 545 V565" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <polygon points="210,565 280,605 210,645 140,605" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
-            <text x="210" y="610" class="svg-node-text" text-anchor="middle">Constraints Met?</text>
+            <path d="M240 615 V655" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+            <polygon points="240,655 310,705 240,755 170,705" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
+            <text x="240" y="709" class="svg-node-text" text-anchor="middle">Constraints Met?</text>
 
             <!-- T1 Constraints Check YES ➔ In Stock? -->
-            <path d="M210 645 V675" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <rect x="190" y="648" width="40" height="22" rx="11" fill="#10b981" />
-            <text x="210" y="663" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
+            <path d="M240 755 V795" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+            <rect x="220" y="764" width="40" height="22" rx="11" fill="#10b981" />
+            <text x="240" y="779" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
 
             <!-- T1 Stock Check -->
-            <polygon points="210,675 280,715 210,755 140,715" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
-            <text x="210" y="719" class="svg-node-text" text-anchor="middle">In Stock?</text>
+            <polygon points="240,795 310,845 240,895 170,845" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
+            <text x="240" y="849" class="svg-node-text" text-anchor="middle">In Stock?</text>
           </g>
 
           <!-- T1 Stock Check NO ➔ Tier 2 (active for Paths 3, 4) -->
           <g class="flow-element path-t2 path-sub">
-            <path d="M280 715 H340 V522.5 H390" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
-            <rect x="290" y="704" width="40" height="22" rx="11" fill="#ef4444" />
-            <text x="310" y="719" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
+            <path d="M310 845 H390 V592.5 H465" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+            <rect x="340" y="834" width="40" height="22" rx="11" fill="#ef4444" />
+            <text x="360" y="849" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
           </g>
 
           <!-- T1 Allocation Path (active for Paths 2, 5) -->
           <g class="flow-element path-t1 path-loop">
             <!-- T1 Stock Check YES -->
-            <path d="M210 755 V795" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <rect x="190" y="763" width="40" height="22" rx="11" fill="#10b981" />
-            <text x="210" y="778" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
+            <path d="M240 895 V955" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+            <rect x="220" y="915" width="40" height="22" rx="11" fill="#10b981" />
+            <text x="240" y="930" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
 
             <!-- 7. Allocate T1 Box -->
-            <rect x="120" y="795" width="180" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
-            <text x="210" y="823" class="svg-node-text" text-anchor="middle">Allocate SKU &amp; Deficit</text>
+            <rect x="150" y="955" width="180" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
+            <text x="240" y="983" class="svg-node-text" text-anchor="middle">Allocate SKU &amp; Deficit</text>
 
             <!-- T1 Deficit Filled Check -->
-            <path d="M210 840 V870" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <polygon points="210,870 280,910 210,950 140,910" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
-            <text x="210" y="914" class="svg-node-text" text-anchor="middle">Filled?</text>
+            <path d="M240 1000 V1035" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+            <polygon points="240,1035 310,1085 240,1135 170,1085" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
+            <text x="240" y="1089" class="svg-node-text" text-anchor="middle">Filled?</text>
 
             <!-- YES ➔ FIFO -->
-            <path d="M210 950 V1020 H350 V1050" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
-            <rect x="190" y="965" width="40" height="22" rx="11" fill="#10b981" />
-            <text x="210" y="980" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
+            <path d="M240 1135 V1210 H425 V1240" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+            <rect x="220" y="1155" width="40" height="22" rx="11" fill="#10b981" />
+            <text x="240" y="1170" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
           </g>
 
           <!-- T1 Loopbacks (active for Path 5) -->
           <g class="flow-element path-loop">
             <!-- Constraints Met? NO Loopback -->
-            <path d="M140 605 H70 V522.5 H100" stroke="#f5a623" stroke-width="2.5" stroke-dasharray="6 6" fill="none" marker-end="url(#arrow-orange)"/>
-            <rect x="50" y="550" width="40" height="22" rx="11" fill="#ef4444" />
-            <text x="70" y="565" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
-            <text x="60" y="530" fill="#f5a623" font-size="10" font-weight="700" text-anchor="middle" transform="rotate(-90 60 530)">NEXT SKU</text>
+            <path d="M170 705 H90 V592.5 H130" stroke="#f5a623" stroke-width="2.5" stroke-dasharray="6 6" fill="none" marker-end="url(#arrow-orange)"/>
+            <rect x="70" y="630" width="40" height="22" rx="11" fill="#ef4444" />
+            <text x="90" y="645" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
+            <text x="80" y="600" fill="#f5a623" font-size="10" font-weight="700" text-anchor="middle" transform="rotate(-90 80 600)">NEXT SKU</text>
 
             <!-- Filled? NO Loopback -->
-            <path d="M140 910 H70 V522.5 H100" stroke="#f5a623" stroke-width="2.5" stroke-dasharray="6 6" fill="none" marker-end="url(#arrow-orange)"/>
-            <rect x="50" y="780" width="40" height="22" rx="11" fill="#ef4444" />
-            <text x="70" y="795" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
+            <path d="M170 1085 H90 V592.5 H130" stroke="#f5a623" stroke-width="2.5" stroke-dasharray="6 6" fill="none" marker-end="url(#arrow-orange)"/>
+            <rect x="70" y="955" width="40" height="22" rx="11" fill="#ef4444" />
+            <text x="90" y="970" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
           </g>
 
 
-          <!-- ================= COLUMN 2: TIER 2 (Center x=500) ================= -->
+          <!-- ================= COLUMN 2: TIER 2 (Center x=575) ================= -->
           <!-- T2 Base Nodes (active for Paths 3, 4) -->
           <g class="flow-element path-t2 path-sub">
             <!-- 8. Tier 2 Box -->
-            <rect x="390" y="500" width="220" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
-            <text x="500" y="518" class="svg-node-text" text-anchor="middle">Tier 2: Historical Sales Match</text>
-            <text x="500" y="532" class="svg-sub-text" text-anchor="middle">Fetch exact SKUs sold in Last 6 Months</text>
+            <rect x="465" y="570" width="220" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
+            <text x="575" y="588" class="svg-node-text" text-anchor="middle">Tier 2: Historical Sales Match</text>
+            <text x="575" y="602" class="svg-sub-text" text-anchor="middle">Fetch exact SKUs sold in Last 6 Months</text>
 
             <!-- T2 Constraints Check -->
-            <path d="M500 545 V565" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <polygon points="500,565 570,605 500,645 430,605" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
-            <text x="500" y="610" class="svg-node-text" text-anchor="middle">Constraints Met?</text>
+            <path d="M575 615 V655" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+            <polygon points="575,655 645,705 575,755 505,705" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
+            <text x="575" y="709" class="svg-node-text" text-anchor="middle">Constraints Met?</text>
 
             <!-- T2 Constraints Check YES -->
-            <path d="M500 645 V675" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <rect x="480" y="648" width="40" height="22" rx="11" fill="#10b981" />
-            <text x="500" y="663" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
+            <path d="M575 755 V795" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+            <rect x="555" y="764" width="40" height="22" rx="11" fill="#10b981" />
+            <text x="575" y="779" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
 
             <!-- T2 Stock Check -->
-            <polygon points="500,675 570,715 500,755 430,715" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
-            <text x="500" y="719" class="svg-node-text" text-anchor="middle">In Stock?</text>
+            <polygon points="575,795 645,845 575,895 505,845" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
+            <text x="575" y="849" class="svg-node-text" text-anchor="middle">In Stock?</text>
           </g>
 
           <!-- T2 Stock Check NO ➔ Tier 3 (active for Path 4) -->
           <g class="flow-element path-sub">
-            <path d="M570 715 H630 V522.5 H680" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
-            <rect x="580" y="704" width="40" height="22" rx="11" fill="#ef4444" />
-            <text x="600" y="719" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
+            <path d="M645 845 H760 V592.5 H800" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+            <rect x="700" y="834" width="40" height="22" rx="11" fill="#ef4444" />
+            <text x="720" y="849" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
           </g>
 
           <!-- T2 Allocation Path (active for Path 3) -->
           <g class="flow-element path-t2">
             <!-- T2 Stock Check YES -->
-            <path d="M500 755 V795" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <rect x="480" y="763" width="40" height="22" rx="11" fill="#10b981" />
-            <text x="500" y="778" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
+            <path d="M575 895 V955" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+            <rect x="555" y="915" width="40" height="22" rx="11" fill="#10b981" />
+            <text x="575" y="930" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
 
             <!-- 9. Allocate T2 Box -->
-            <rect x="410" y="795" width="180" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
-            <text x="500" y="823" class="svg-node-text" text-anchor="middle">Allocate SKU &amp; Deficit</text>
+            <rect x="485" y="955" width="180" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
+            <text x="575" y="983" class="svg-node-text" text-anchor="middle">Allocate SKU &amp; Deficit</text>
 
             <!-- T2 Deficit Filled Check -->
-            <path d="M500 840 V870" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <polygon points="500,870 570,910 500,950 430,910" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
-            <text x="500" y="914" class="svg-node-text" text-anchor="middle">Filled?</text>
+            <path d="M575 1000 V1035" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+            <polygon points="575,1035 645,1085 575,1135 505,1085" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
+            <text x="575" y="1089" class="svg-node-text" text-anchor="middle">Filled?</text>
 
             <!-- YES ➔ FIFO -->
-            <path d="M500 950 V1050" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <rect x="480" y="965" width="40" height="22" rx="11" fill="#10b981" />
-            <text x="500" y="980" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
+            <path d="M575 1135 V1240" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+            <rect x="555" y="1155" width="40" height="22" rx="11" fill="#10b981" />
+            <text x="575" y="1170" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
           </g>
 
           <!-- T2 Loopbacks (active for Path 5) -->
           <g class="flow-element path-loop">
             <!-- Constraints Met? NO Loopback -->
-            <path d="M430 605 H370 V535 H390" stroke="#f5a623" stroke-width="2.5" stroke-dasharray="6 6" fill="none" marker-end="url(#arrow-orange)"/>
-            <rect x="350" y="550" width="40" height="22" rx="11" fill="#ef4444" />
-            <text x="370" y="565" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
+            <path d="M505 705 H430 V592.5 H465" stroke="#f5a623" stroke-width="2.5" stroke-dasharray="6 6" fill="none" marker-end="url(#arrow-orange)"/>
+            <rect x="410" y="630" width="40" height="22" rx="11" fill="#ef4444" />
+            <text x="430" y="645" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
 
             <!-- Filled? NO Loopback -->
-            <path d="M430 910 H370 V535 H390" stroke="#f5a623" stroke-width="2.5" stroke-dasharray="6 6" fill="none" marker-end="url(#arrow-orange)"/>
-            <rect x="350" y="780" width="40" height="22" rx="11" fill="#ef4444" />
-            <text x="370" y="795" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
+            <path d="M505 1085 H430 V592.5 H465" stroke="#f5a623" stroke-width="2.5" stroke-dasharray="6 6" fill="none" marker-end="url(#arrow-orange)"/>
+            <rect x="410" y="955" width="40" height="22" rx="11" fill="#ef4444" />
+            <text x="430" y="970" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
           </g>
 
 
-          <!-- ================= COLUMN 3: TIER 3 (Center x=790) ================= -->
+          <!-- ================= COLUMN 3: TIER 3 (Center x=910) ================= -->
           <!-- T3 Base Nodes (active for Path 4) -->
           <g class="flow-element path-sub">
             <!-- 10. Tier 3 Box -->
-            <rect x="680" y="500" width="220" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
-            <text x="790" y="518" class="svg-node-text" text-anchor="middle">Tier 3: Substitute Cascade</text>
-            <text x="790" y="532" class="svg-sub-text" text-anchor="middle">MRP ±20% | Relax: Color➔Mat➔Shape</text>
+            <rect x="800" y="570" width="220" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
+            <text x="910" y="518" class="svg-node-text" text-anchor="middle">Tier 3: Substitute Cascade</text>
+            <text x="910" y="532" class="svg-sub-text" text-anchor="middle">MRP ±20% | Relax: Color➔Mat➔Shape</text>
 
             <!-- T3 Constraints Check -->
-            <path d="M790 545 V565" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <polygon points="790,565 860,605 790,645 720,605" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
-            <text x="790" y="610" class="svg-node-text" text-anchor="middle">Constraints Met?</text>
+            <path d="M910 615 V655" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+            <polygon points="910,655 980,705 910,755 840,705" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
+            <text x="910" y="709" class="svg-node-text" text-anchor="middle">Constraints Met?</text>
 
             <!-- T3 Constraints Check YES ➔ In Stock? -->
-            <path d="M790 645 V675" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <rect x="770" y="648" width="40" height="22" rx="11" fill="#10b981" />
-            <text x="790" y="671" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
+            <path d="M910 755 V795" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+            <rect x="890" y="764" width="40" height="22" rx="11" fill="#10b981" />
+            <text x="910" y="779" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
 
             <!-- T3 Stock Check -->
-            <polygon points="790,675 860,715 790,755 720,715" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
-            <text x="790" y="719" class="svg-node-text" text-anchor="middle">In Stock?</text>
+            <polygon points="910,795 980,845 910,895 840,845" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
+            <text x="910" y="849" class="svg-node-text" text-anchor="middle">In Stock?</text>
 
             <!-- T3 Stock Check YES -->
-            <path d="M790 755 V795" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <rect x="770" y="763" width="40" height="22" rx="11" fill="#10b981" />
-            <text x="790" y="778" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
+            <path d="M910 895 V955" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+            <rect x="890" y="915" width="40" height="22" rx="11" fill="#10b981" />
+            <text x="910" y="930" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
 
             <!-- 11. Allocate T3 Box -->
-            <rect x="700" y="795" width="180" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
-            <text x="790" y="823" class="svg-node-text" text-anchor="middle">Allocate Substitute SKU</text>
+            <rect x="820" y="955" width="180" height="45" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
+            <text x="910" y="983" class="svg-node-text" text-anchor="middle">Allocate Substitute SKU</text>
 
             <!-- T3 Deficit Filled Check -->
-            <path d="M790 840 V870" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
-            <polygon points="790,870 860,910 790,950 720,910" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
-            <text x="790" y="914" class="svg-node-text" text-anchor="middle">Filled?</text>
+            <path d="M910 1000 V1035" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+            <polygon points="910,1035 980,1085 910,1135 840,1085" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
+            <text x="910" y="1089" class="svg-node-text" text-anchor="middle">Filled?</text>
 
             <!-- T3 Deficit Filled YES ➔ Routes down to FIFO -->
-            <path d="M790 950 V1020 H650 V1050" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
-            <rect x="770" y="965" width="40" height="22" rx="11" fill="#10b981" />
-            <text x="790" y="980" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
+            <path d="M910 1135 V1210 H725 V1240" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+            <rect x="890" y="1155" width="40" height="22" rx="11" fill="#10b981" />
+            <text x="910" y="1170" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
           </g>
 
-          <!-- T3 Stock Check NO ➔ Routes right and down on the margin (x=940) to center right side of FIFO (y=1090) -->
+          <!-- T3 Stock Check NO ➔ Routes right and down on the margin (x=1110) to center right side of FIFO (y=1280) -->
           <g class="flow-element path-sub">
-            <path d="M860 715 H940 V1090 H650" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
-            <rect x="890" y="704" width="40" height="22" rx="11" fill="#ef4444" />
-            <text x="910" y="719" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
+            <path d="M980,845 H1110 V1280 H725" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+            <rect x="1030" y="834" width="40" height="22" rx="11" fill="#ef4444" />
+            <text x="1050" y="849" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
           </g>
 
           <!-- T3 Loopbacks (active for Path 5) -->
           <g class="flow-element path-loop">
             <!-- Constraints Met? NO Loopback -->
-            <path d="M720 605 H660 V535 H680" stroke="#f5a623" stroke-width="2.5" stroke-dasharray="6 6" fill="none" marker-end="url(#arrow-orange)"/>
-            <rect x="640" y="550" width="40" height="22" rx="11" fill="#ef4444" />
-            <text x="660" y="565" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
+            <path d="M840 705 H800 V592.5 H800" stroke="#f5a623" stroke-width="2.5" stroke-dasharray="6 6" fill="none" marker-end="url(#arrow-orange)"/>
+            <rect x="780" y="630" width="40" height="22" rx="11" fill="#ef4444" />
+            <text x="800" y="645" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
 
             <!-- Filled? NO Loopback -->
-            <path d="M720 910 H660 V535 H680" stroke="#f5a623" stroke-width="2.5" stroke-dasharray="6 6" fill="none" marker-end="url(#arrow-orange)"/>
-            <rect x="640" y="780" width="40" height="22" rx="11" fill="#ef4444" />
-            <text x="660" y="795" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
+            <path d="M840 1085 H800 V592.5 H800" stroke="#f5a623" stroke-width="2.5" stroke-dasharray="6 6" fill="none" marker-end="url(#arrow-orange)"/>
+            <rect x="780" y="955" width="40" height="22" rx="11" fill="#ef4444" />
+            <text x="800" y="970" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
           </g>
 
 
@@ -432,23 +429,24 @@
           <!-- Active for Paths 2, 3, 4, 5 -->
           <g class="flow-element path-t1 path-t2 path-sub path-loop">
             <!-- 12. FIFO Batch Rule -->
-            <rect x="350" y="1050" width="300" height="80" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
-            <text x="500" y="1080" class="svg-node-text" text-anchor="middle">Apply FIFO Batch Rule</text>
-            <text x="500" y="1100" class="svg-sub-text" text-anchor="middle">Pull oldest warehouse stock age first</text>
+            <rect x="425" y="1240" width="300" height="80" rx="8" fill="#ffffff" stroke="#d9e2ec" stroke-width="2"/>
+            <text x="575" y="1270" class="svg-node-text" text-anchor="middle">Apply FIFO Batch Rule</text>
+            <text x="575" y="1290" class="svg-sub-text" text-anchor="middle">Pull oldest warehouse stock age first</text>
 
-            <path d="M500 1130 V1180" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+            <path d="M575 1320 V1380" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
 
             <!-- 13. Dispatch Order -->
-            <rect x="350" y="1180" width="300" height="45" rx="8" fill="#ffffff" stroke="#10b981" stroke-width="2"/>
-            <text x="500" y="1207" class="svg-node-text" text-anchor="middle">Generate Dispatch Order</text>
+            <rect x="425" y="1380" width="300" height="45" rx="8" fill="#ffffff" stroke="#10b981" stroke-width="2"/>
+            <text x="575" y="1407" class="svg-node-text" text-anchor="middle">Generate Dispatch Order</text>
 
-            <path d="M500 1225 V1280" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
+            <path d="M575 1407" stroke="#5a738e" stroke-width="2.5"/> <!-- anchor link spacer -->
+            <path d="M575 1425 V1485" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
           </g>
 
           <!-- 14. END Node (Active in all paths) -->
           <g class="flow-element path-skip path-t1 path-t2 path-sub path-loop">
-            <rect x="400" y="1280" width="200" height="50" rx="25" fill="#0f3a68" />
-            <text x="500" y="1310" class="svg-white-text" text-anchor="middle">END</text>
+            <rect x="475" y="1485" width="200" height="50" rx="25" fill="#0f3a68" />
+            <text x="575" y="1515" class="svg-white-text" text-anchor="middle">END</text>
           </g>
         </svg>
       </div>
