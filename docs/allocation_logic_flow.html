@@ -1,329 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OptiFlow Allocation Process Flow</title>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg-color: #f8fafc;
-      --blue-dark: #0f3a68;
-      --blue-border: #d9e2ec;
-      --blue-light: #f0f4f8;
-      --orange-main: #f5a623;
-      --text-dark: #102a43;
-      --text-muted: #627d98;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Plus Jakarta Sans', sans-serif;
-    }
-
     body {
-      background-color: var(--bg-color);
-      color: var(--text-dark);
-      padding: 60px 20px;
+      font-family: 'Inter', sans-serif;
+      background-color: #f8fafc;
+      color: #1e293b;
+      padding: 40px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      min-height: 100vh;
     }
 
     h1 {
-      font-size: 2.2rem;
-      font-weight: 800;
-      color: var(--blue-dark);
-      margin-bottom: 8px;
+      color: #0f172a;
+      margin-bottom: 10px;
     }
 
     .subtitle {
-      color: var(--text-muted);
+      color: #64748b;
       font-size: 1.1rem;
-      margin-bottom: 50px;
+      margin-bottom: 30px;
       text-align: center;
+      max-width: 800px;
     }
 
-    /* Flow Container */
-    .flow-container {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+    .mermaid {
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
       width: 100%;
-      max-width: 600px;
-    }
-
-    /* Vertical connector line */
-    .flow-line {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      width: 2px;
-      background-color: #bcccdc;
-      z-index: 1;
-    }
-
-    /* Custom Loopback Line (Next Store Loop) */
-    .loopback-container {
-      position: absolute;
-      top: 30px;
-      bottom: 60px;
-      right: -80px;
-      width: 80px;
-      border-right: 2px dashed var(--orange-main);
-      border-top: 2px dashed var(--orange-main);
-      border-bottom: 2px dashed var(--orange-main);
-      border-top-right-radius: 12px;
-      border-bottom-right-radius: 12px;
-      z-index: 0;
-      pointer-events: none;
-    }
-
-    .loopback-text {
-      position: absolute;
-      right: -10px;
-      top: 50%;
-      transform: translateY(-50%) rotate(90deg);
-      background-color: var(--bg-color);
-      padding: 4px 10px;
-      color: var(--orange-main);
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 1px;
-      white-space: nowrap;
-    }
-
-    /* Node Wrapper */
-    .node-wrapper {
-      position: relative;
-      width: 100%;
+      max-width: 1200px;
       display: flex;
       justify-content: center;
-      margin-bottom: 40px;
-      z-index: 2;
-    }
-
-    .node-wrapper:last-child {
-      margin-bottom: 0;
-    }
-
-    /* Pill Node (Start / End / Special) */
-    .node-pill {
-      background-color: var(--blue-dark);
-      color: #ffffff;
-      padding: 16px 40px;
-      border-radius: 40px;
-      text-align: center;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-      min-width: 280px;
-    }
-
-    .node-pill h3 {
-      font-size: 1.1rem;
-      font-weight: 700;
-    }
-
-    .node-pill p {
-      font-size: 0.8rem;
-      opacity: 0.8;
-      margin-top: 4px;
-    }
-
-    /* Standard Process Card */
-    .node-card {
-      background-color: #ffffff;
-      border: 2px solid var(--blue-border);
-      border-radius: 12px;
-      padding: 20px 24px;
-      width: 100%;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.02);
-      text-align: center;
-    }
-
-    .node-card h3 {
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--text-dark);
-      margin-bottom: 6px;
-    }
-
-    .node-card p {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      line-height: 1.5;
-    }
-
-    /* Highlight Card (Constraints / Logistics) */
-    .node-highlight {
-      background-color: var(--orange-main);
-      color: #ffffff;
-      border-radius: 12px;
-      padding: 18px 24px;
-      width: 100%;
-      text-align: center;
-      box-shadow: 0 4px 10px rgba(245, 166, 35, 0.2);
-    }
-
-    .node-highlight h3 {
-      font-size: 1rem;
-      font-weight: 700;
-    }
-
-    .node-highlight p {
-      font-size: 0.85rem;
-      opacity: 0.95;
-      margin-top: 4px;
-      line-height: 1.5;
-    }
-
-    /* Decision Diamond / Box */
-    .node-decision {
-      background-color: #ffffff;
-      border: 2px solid var(--orange-main);
-      border-radius: 12px;
-      padding: 18px 24px;
-      width: 80%;
-      text-align: center;
-      box-shadow: 0 4px 10px rgba(245, 166, 35, 0.05);
-      position: relative;
-    }
-
-    .node-decision h3 {
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: var(--text-dark);
-    }
-
-    /* Custom Yes/No badges on lines */
-    .branch-label {
-      position: absolute;
-      bottom: -28px;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: #10b981;
-      color: white;
-      font-size: 0.7rem;
-      font-weight: 700;
-      padding: 2px 8px;
-      border-radius: 4px;
-      z-index: 10;
     }
   </style>
 </head>
+
 <body>
 
-  <h1>OptiFlow Allocation Process Flow</h1>
-  <div class="subtitle">Replenishment Logic & Constraint Engine Flowchart</div>
-
-  <div class="flow-container">
-    
-    <!-- Connection lines -->
-    <div class="flow-line"></div>
-    <div class="loopback-container">
-      <div class="loopback-text">NEXT STORE</div>
-    </div>
-
-    <!-- START -->
-    <div class="node-wrapper">
-      <div class="node-pill">
-        <h3>Start</h3>
-        <p>(Distribution Day) Allocation Pipeline</p>
-      </div>
-    </div>
-
-    <!-- 1. Rank Stores -->
-    <div class="node-wrapper">
-      <div class="node-card">
-        <h3>1. Rank Stores by Priority</h3>
-        <p>Sort stores by Grade (A++ ➔ C) and inner Grade lists specified by client.</p>
-      </div>
-    </div>
-
-    <!-- 2. Calc Deficit -->
-    <div class="node-wrapper">
-      <div class="node-card">
-        <h3>2. Calculate Capacity & Deficits</h3>
-        <p>Deficit = Target (Facing + Depth) - Live Store SOH (per Brand/Commodity).</p>
-      </div>
-    </div>
-
-    <!-- Decision: Is Deficit > 0 -->
-    <div class="node-wrapper">
-      <div class="node-decision">
-        <h3>Is Deficit > 0?</h3>
-        <div class="branch-label">YES</div>
-      </div>
-    </div>
-
-    <!-- 3. Validation Gate -->
-    <div class="node-wrapper">
-      <div class="node-highlight">
-        <h3>3. Validation Gate (Verify Constraints)</h3>
-        <p>Before allocating any SKU, verify limits: Max 3 Colors/Model, Max 2 Units/SKU, Min 85% Brand Uniqueness.</p>
-      </div>
-    </div>
-
-    <!-- 4. Tier 1 -->
-    <div class="node-wrapper">
-      <div class="node-card">
-        <h3>4. Tier 1: Recent Sales Match (Last X Days)</h3>
-        <p>Find exact SKUs sold in Last X Days (configured in UI). Allocate exact match if in warehouse stock.</p>
-      </div>
-    </div>
-
-    <!-- Decision: Deficit Filled -->
-    <div class="node-wrapper">
-      <div class="node-decision">
-        <h3>Is Deficit Filled?</h3>
-        <div class="branch-label" style="background-color: #627d98;">NO</div>
-      </div>
-    </div>
-
-    <!-- 5. Tier 2 -->
-    <div class="node-wrapper">
-      <div class="node-card">
-        <h3>5. Tier 2: Historical Sales Match (Last 6 Months)</h3>
-        <p>Find exact SKUs sold in Last 6 Months. Allocate exact match if in warehouse stock.</p>
-      </div>
-    </div>
-
-    <!-- Decision: Deficit Filled -->
-    <div class="node-wrapper">
-      <div class="node-decision">
-        <h3>Is Deficit Filled?</h3>
-        <div class="branch-label" style="background-color: #627d98;">NO</div>
-      </div>
-    </div>
-
-    <!-- 6. Tier 3 -->
-    <div class="node-wrapper">
-      <div class="node-card">
-        <h3>6. Tier 3: Substitute Cascade</h3>
-        <p>Keep same Brand/Commodity & MRP ±20%. Relax attributes in order: Color ➔ Material ➔ Shape.</p>
-      </div>
-    </div>
-
-    <!-- 7. FIFO Batch -->
-    <div class="node-wrapper">
-      <div class="node-card">
-        <h3>7. FIFO Batch Selection</h3>
-        <p>Prioritize older warehouse stock batches (highest age in days) for the allocated SKUs.</p>
-      </div>
-    </div>
-
-    <!-- END -->
-    <div class="node-wrapper">
-      <div class="node-pill">
-        <h3>Generate Dispatch Order</h3>
-        <p>Final Outputs locked for distribution</p>
-      </div>
-    </div>
-
+  <h1>OptiFlow Business Process Flow</h1>
+  <div class="subtitle">
+    Visual flow mapping of ranking, deficit calculations, multi-tiered exact sales-based matching, and constraints
+    verification.
   </div>
 
+  <div class="mermaid">
+    flowchart TD
+    %% Styles
+    classDef process fill:#3b82f6,stroke:#2563eb,stroke-width:2px,color:white,rx:5px,ry:5px
+    classDef decision fill:#f59e0b,stroke:#d97706,stroke-width:2px,color:white
+    classDef data fill:#10b981,stroke:#059669,stroke-width:2px,color:white
+    classDef output fill:#6366f1,stroke:#4f46e5,stroke-width:2px,color:white
+    classDef note fill:#f8fafc,stroke:#cbd5e1,stroke-width:1px,color:#475569
+
+    %% Start
+    Start([Start Allocation Process]) --> Init["Load Planogram, Live SOH, Sales History"]
+    Init:::process --> RankStore["Rank Stores by Priority"]
+
+    %% Store Ranking Detail
+    RankStore:::process --> Rank1["1. Rank by Grade: A++ > A+ > A > B+ > B > C"]:::data
+    Rank1 --> Rank2["2. Rank by client-specified Inner Grade Priority list"]:::data
+
+    %% Deficit Calc
+    Rank2 --> CalcDeficit["Calculate Deficit per Brand-Commodity-Store: Deficit = Target - Live SOH (Target = Facing +
+    Depth)"]
+    CalcDeficit:::process --> CheckDeficit{"Is Deficit > 0?"}
+    CheckDeficit:::decision
+
+    CheckDeficit -- "NO" --> Skip["Skip Brand-Commodity for Store"]:::output
+    CheckDeficit -- "YES" --> CheckGlobalConstraints
+
+    %% Global Constraint Validation Checkpoint
+    subgraph ConstraintGate ["Validation Gate: Before allocating any SKU"]
+    CheckGlobalConstraints{"Check Global Constraints: 1. Max 3 Colors per Model? 2. Max 2 Units per SKU? 3. Min 85%
+    Brand Uniqueness?"}:::decision
+    end
+
+    CheckGlobalConstraints -- "Fails Constraints" --> SkipSKU["Skip SKU / Model Candidate"]:::output
+    CheckGlobalConstraints -- "Passes Constraints" --> TierSelect{"Select Allocation Tier"}:::decision
+
+    %% Tier 1
+    TierSelect -->|Tier 1| Tier1["Find SKUs sold in Last X Days"]:::process
+    XDaysNote["Note: X Days is set by user in UI before starting allocation process"]:::note
+    Tier1 -.-> XDaysNote
+
+    Tier1 --> T1StockCheck{"Is exact SKU in stock at Corporate Office?"}:::decision
+    T1StockCheck -- "YES" --> AllocateT1["Allocate Exact SKU"]:::process
+    AllocateT1 --> DecrDeficit1["Update Deficit"]:::process
+    DecrDeficit1 --> CheckDeficitGate1{"Deficit filled?"}:::decision
+    CheckDeficitGate1 -- "NO" --> Tier1
+    CheckDeficitGate1 -- "YES" --> FIFOApply
+    T1StockCheck -- "NO" --> Tier2["Tier 2: Find Exact SKUs Sold in Last 6 Months"]:::process
+
+    %% Tier 2
+    TierSelect -->|Tier 2| Tier2
+    Tier2 --> T2StockCheck{"Is exact SKU in stock at Corporate Office?"}:::decision
+    T2StockCheck -- "YES" --> AllocateT2["Allocate Exact SKU"]:::process
+    AllocateT2 --> DecrDeficit2["Update Deficit"]:::process
+    DecrDeficit2 --> CheckDeficitGate2{"Deficit filled?"}:::decision
+    CheckDeficitGate2 -- "NO" --> Tier2
+    CheckDeficitGate2 -- "YES" --> FIFOApply
+    T2StockCheck -- "NO" --> Tier3["Tier 3: Find Substitute Candidate"]:::process
+
+    %% Tier 3
+    TierSelect -->|Tier 3| Tier3
+    Tier3 --> SubVerify{"Verify Substitute Rules: 1. Same Brand & Commodity? 2. Within ±20% MRP of Target SKU?"}:::decision
+
+    SubVerify -- "NO" --> RejectSub["Skip Candidate"]:::output
+    SubVerify -- "YES" --> AttributeCascade["Relax Attributes in Order: 1. Color 2. Material 3. Shape"]:::process
+
+    AttributeCascade --> AllocateT3["Allocate Substitute SKU"]:::process
+    AllocateT3 --> DecrDeficit3["Update Deficit"]:::process
+    DecrDeficit3 --> CheckDeficitGate3{"Deficit filled?"}:::decision
+    CheckDeficitGate3 -- "NO" --> Tier3
+    CheckDeficitGate3 -- "YES" --> FIFOApply
+    RejectSub --> TierSelect
+
+    %% FIFO & Output
+    FIFOApply["Apply FIFO Rule: Pull inventory from oldest batch/barcode age first"]:::process
+    FIFOApply --> GenerateDispatch["Generate Final Dispatch Order"]:::output
+    GenerateDispatch --> End([End Process])
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'base',
+      themeVariables: {
+        fontFamily: 'Inter',
+        primaryColor: '#ffffff',
+        lineColor: '#64748b',
+        textColor: '#1e293b'
+      },
+      flowchart: {
+        curve: 'step',
+        nodeSpacing: 45,
+        rankSpacing: 45
+      }
+    });
+  </script>
 </body>
+
 </html>
