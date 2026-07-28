@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OptiFlow Allocation Process Flow</title>
   <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: 'Inter', sans-serif;
@@ -20,25 +20,58 @@
     h1 {
       color: #0f172a;
       margin-bottom: 10px;
+      font-weight: 800;
     }
 
     .subtitle {
       color: #64748b;
       font-size: 1.1rem;
-      margin-bottom: 30px;
+      margin-bottom: 40px;
       text-align: center;
       max-width: 800px;
     }
 
-    .mermaid {
+    .mermaid-container {
       background: white;
-      padding: 40px;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+      padding: 50px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
       width: 100%;
-      max-width: 800px;
+      max-width: 900px;
       display: flex;
       justify-content: center;
+    }
+
+    /* Custom overrides to match the exact premium diagram style */
+    .mermaid svg {
+      font-family: 'Inter', sans-serif !important;
+    }
+    
+    /* Connectors & Arrows */
+    .mermaid .edgePath .path {
+      stroke: #bcccdc !important;
+      stroke-width: 2.5px !important;
+    }
+    .mermaid .markerPath {
+      fill: #bcccdc !important;
+      stroke: none !important;
+    }
+
+    /* Node Label text formatting */
+    .mermaid .node label {
+      font-family: 'Inter', sans-serif !important;
+      font-weight: 600 !important;
+      font-size: 13px !important;
+    }
+
+    /* YES / NO Pill text formatting */
+    .mermaid .node.yesNode label,
+    .mermaid .node.noNode label,
+    .mermaid .node.noNode label span,
+    .mermaid .node.yesNode label span {
+      font-weight: 800 !important;
+      font-size: 11px !important;
+      letter-spacing: 0.5px !important;
     }
   </style>
 </head>
@@ -47,81 +80,83 @@
 
   <h1>OptiFlow Business Process Flow</h1>
   <div class="subtitle">
-    Visual flow mapping of ranking, deficit calculations, multi-tiered exact sales-based matching, and constraints verification.
+    Replenishment Logic, Decision Trees, and Constraints Engine
   </div>
 
-  <div class="mermaid">
-    flowchart TD
-    %% Styles
-    classDef process fill:#3b82f6,stroke:#2563eb,stroke-width:2px,color:white,rx:5px,ry:5px
-    classDef decision fill:#f59e0b,stroke:#d97706,stroke-width:2px,color:white
-    classDef data fill:#10b981,stroke:#059669,stroke-width:2px,color:white
-    classDef output fill:#6366f1,stroke:#4f46e5,stroke-width:2px,color:white
-    classDef note fill:#f8fafc,stroke:#cbd5e1,stroke-width:1px,color:#475569
+  <div class="mermaid-container">
+    <div class="mermaid">
+      flowchart TD
+      %% Style definitions
+      classDef startNode fill:#0f3a68,stroke:#0f3a68,stroke-width:1px,color:white,rx:30px,ry:30px;
+      classDef process fill:#ffffff,stroke:#bcccdc,stroke-width:2px,color:#102a43,rx:8px,ry:8px;
+      classDef decision fill:#ffffff,stroke:#f5a623,stroke-width:2px,color:#102a43;
+      
+      classDef yesNode fill:#10b981,stroke:#10b981,stroke-width:1px,color:white,rx:12px,ry:12px;
+      classDef noNode fill:#ef4444,stroke:#ef4444,stroke-width:1px,color:white,rx:12px,ry:12px;
+      
+      classDef data fill:#ffffff,stroke:#bcccdc,stroke-width:2px,color:#102a43,rx:8px,ry:8px;
+      classDef output fill:#0f3a68,stroke:#0f3a68,stroke-width:1px,color:white,rx:30px,ry:30px;
 
-    %% Start
-    Start([Start Allocation Process]) --> Init["Load Planogram, Live SOH, Sales History"]
-    Init:::process --> RankStore["Rank Stores by Priority"]
+      %% Start & Ranking
+      Start([Start Allocation Process]):::startNode --> Init["Load Planogram, Live SOH, Sales History"]:::process
+      Init --> RankStore["Rank Stores by Priority"]:::process
 
-    %% Store Ranking Detail
-    RankStore:::process --> Rank1["1. Rank by Grade: A++ > A+ > A > B+ > B > C"]:::data
-    Rank1 --> Rank2["2. Rank by client-specified Inner Grade Priority list"]:::data
+      RankStore --> Rank1["1. Rank by Grade: A++ > A+ > A > B+ > B > C"]:::data
+      Rank1 --> Rank2["2. Rank by client-specified Inner Grade Priority list"]:::data
 
-    %% Deficit Calc
-    Rank2 --> CalcDeficit["Calculate Deficit per Brand-Commodity-Store: Deficit = Target - Live SOH (Target = Facing + Depth)"]
-    CalcDeficit:::process --> CheckDeficit{"Is Deficit > 0?"}
-    CheckDeficit:::decision
+      %% Deficit
+      Rank2 --> CalcDeficit["Calculate Deficit per Brand-Commodity-Store: Deficit = Target - Live SOH (Target = Facing + Depth)"]:::process
+      CalcDeficit --> CheckDeficit{"Is Deficit > 0?"}:::decision
 
-    CheckDeficit -- "NO" --> Skip["Skip Brand-Commodity for Store"]:::output
-    CheckDeficit -- "YES" --> CheckGlobalConstraints
+      CheckDeficit --> DeficitNo["NO"]:::noNode --> Skip["Skip Brand-Commodity for Store"]:::output
+      CheckDeficit --> DeficitYes["YES"]:::yesNode --> CheckGlobalConstraints{"Check Global Constraints: 1. Max 3 Colors per Model? 2. Max 2 Units per SKU? 3. Min 85% Brand Uniqueness?"}:::decision
 
-    %% Global Constraint Validation Checkpoint
-    subgraph ConstraintGate ["Validation Gate: Before allocating any SKU"]
-    CheckGlobalConstraints{"Check Global Constraints: 1. Max 3 Colors per Model? 2. Max 2 Units per SKU? 3. Min 85% Brand Uniqueness?"}:::decision
-    end
+      %% Constraint Check
+      CheckGlobalConstraints --> ConstraintsFails["Fails Constraints"]:::noNode --> SkipSKU["Skip SKU / Model Candidate"]:::output
+      CheckGlobalConstraints --> ConstraintsPasses["Passes Constraints"]:::yesNode --> Tier1["Tier 1: Find Exact SKUs Sold in Last X Days (Set by user in UI)"]:::process
 
-    CheckGlobalConstraints -- "Fails Constraints" --> SkipSKU["Skip SKU / Model Candidate"]:::output
-    CheckGlobalConstraints -- "Passes Constraints" --> Tier1["Tier 1: Find Exact SKUs Sold in Last X Days (Set by user in UI)"]:::process
+      %% Tier 1
+      Tier1 --> T1StockCheck{"Is exact SKU in stock at Corporate Office?"}:::decision
+      T1StockCheck --> T1StockYes["YES"]:::yesNode --> AllocateT1["Allocate Exact SKU"]:::process
+      AllocateT1 --> DecrDeficit1["Update Deficit"]:::process
+      DecrDeficit1 --> CheckDeficitGate1{"Deficit filled?"}:::decision
 
-    %% Tier 1 Loop
-    Tier1 --> T1StockCheck{"Is exact SKU in stock at Corporate Office?"}:::decision
-    T1StockCheck -- "YES" --> AllocateT1["Allocate Exact SKU"]:::process
-    AllocateT1 --> DecrDeficit1["Update Deficit"]:::process
-    DecrDeficit1 --> CheckDeficitGate1{"Deficit filled?"}:::decision
-    
-    CheckDeficitGate1 -- "YES" --> FIFOApply
-    CheckDeficitGate1 -- "NO" --> T1Exhausted{"Are Tier 1 SKUs exhausted?"}:::decision
-    T1Exhausted -- "NO" --> Tier1
-    T1Exhausted -- "YES" --> Tier2["Tier 2: Find Exact SKUs Sold in Last 6 Months"]:::process
-    T1StockCheck -- "NO" --> Tier2
+      CheckDeficitGate1 --> T1FilledYes["YES"]:::yesNode --> FIFOApply["Apply FIFO Rule: Pull inventory from oldest batch/barcode age first"]:::process
+      CheckDeficitGate1 --> T1FilledNo["NO"]:::noNode --> T1Exhausted{"Are Tier 1 SKUs exhausted?"}:::decision
 
-    %% Tier 2 Loop
-    Tier2 --> T2StockCheck{"Is exact SKU in stock at Corporate Office?"}:::decision
-    T2StockCheck -- "YES" --> AllocateT2["Allocate Exact SKU"]:::process
-    AllocateT2 --> DecrDeficit2["Update Deficit"]:::process
-    DecrDeficit2 --> CheckDeficitGate2{"Deficit filled?"}:::decision
-    
-    CheckDeficitGate2 -- "YES" --> FIFOApply
-    CheckDeficitGate2 -- "NO" --> T2Exhausted{"Are Tier 2 SKUs exhausted?"}:::decision
-    T2Exhausted -- "NO" --> Tier2
-    T2Exhausted -- "YES" --> Tier3["Tier 3: Find Substitute Candidate (MRP ±20%, Same Brand/Commodity)"]:::process
-    T2StockCheck -- "NO" --> Tier3
+      T1Exhausted --> T1ExhaustedNo["NO"]:::noNode --> Tier1
+      T1Exhausted --> T1ExhaustedYes["YES"]:::yesNode --> Tier2["Tier 2: Find Exact SKUs Sold in Last 6 Months"]:::process
+      T1StockCheck --> T1StockNo["NO"]:::noNode --> Tier2
 
-    %% Tier 3 Loop
-    Tier3 --> AttributeCascade["Relax Attributes in Order: 1. Color 2. Material 3. Shape"]:::process
-    AttributeCascade --> AllocateT3["Allocate Substitute SKU"]:::process
-    AllocateT3 --> DecrDeficit3["Update Deficit"]:::process
-    DecrDeficit3 --> CheckDeficitGate3{"Deficit filled?"}:::decision
-    
-    CheckDeficitGate3 -- "YES" --> FIFOApply
-    CheckDeficitGate3 -- "NO" --> T3Exhausted{"Are Substitute candidates exhausted?"}:::decision
-    T3Exhausted -- "NO" --> Tier3
-    T3Exhausted -- "YES" --> FIFOApply
+      %% Tier 2
+      Tier2 --> T2StockCheck{"Is exact SKU in stock at Corporate Office?"}:::decision
+      T2StockCheck --> T2StockYes["YES"]:::yesNode --> AllocateT2["Allocate Exact SKU"]:::process
+      AllocateT2 --> DecrDeficit2["Update Deficit"]:::process
+      DecrDeficit2 --> CheckDeficitGate2{"Deficit filled?"}:::decision
 
-    %% FIFO & Output
-    FIFOApply["Apply FIFO Rule: Pull inventory from oldest batch/barcode age first"]:::process
-    FIFOApply --> GenerateDispatch["Generate Final Dispatch Order"]:::output
-    GenerateDispatch --> End([End Process])
+      CheckDeficitGate2 --> T2FilledYes["YES"]:::yesNode --> FIFOApply
+      CheckDeficitGate2 --> T2FilledNo["NO"]:::noNode --> T2Exhausted{"Are Tier 2 SKUs exhausted?"}:::decision
+
+      T2Exhausted --> T2ExhaustedNo["NO"]:::noNode --> Tier2
+      T2Exhausted --> T2ExhaustedYes["YES"]:::yesNode --> Tier3["Tier 3: Find Substitute Candidate (MRP ±20%, Same Brand/Commodity)"]:::process
+      T2StockCheck --> T2StockNo["NO"]:::noNode --> Tier3
+
+      %% Tier 3
+      Tier3 --> AttributeCascade["Relax Attributes in Order: 1. Color 2. Material 3. Shape"]:::process
+      AttributeCascade --> AllocateT3["Allocate Substitute SKU"]:::process
+      AllocateT3 --> DecrDeficit3["Update Deficit"]:::process
+      DecrDeficit3 --> CheckDeficitGate3{"Deficit filled?"}:::decision
+
+      CheckDeficitGate3 --> T3FilledYes["YES"]:::yesNode --> FIFOApply
+      CheckDeficitGate3 --> T3FilledNo["NO"]:::noNode --> T3Exhausted{"Are Substitute candidates exhausted?"}:::decision
+
+      T3Exhausted --> T3ExhaustedNo["NO"]:::noNode --> Tier3
+      T3Exhausted --> T3ExhaustedYes["YES"]:::yesNode --> FIFOApply
+
+      %% Output
+      FIFOApply --> GenerateDispatch["Generate Final Dispatch Order"]:::output
+      GenerateDispatch --> End([End Process]):::startNode
+    </div>
   </div>
 
   <script>
@@ -131,13 +166,13 @@
       themeVariables: {
         fontFamily: 'Inter',
         primaryColor: '#ffffff',
-        lineColor: '#64748b',
-        textColor: '#1e293b'
+        lineColor: '#bcccdc',
+        textColor: '#102a43'
       },
       flowchart: {
         curve: 'linear',
         nodeSpacing: 45,
-        rankSpacing: 45
+        rankSpacing: 50
       }
     });
   </script>
