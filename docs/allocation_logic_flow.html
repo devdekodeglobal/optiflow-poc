@@ -64,6 +64,12 @@
       .flowchart-section {
         padding: 20px 10px !important;
       }
+      .solution-flex {
+        flex-direction: column !important;
+      }
+      .constraints-card {
+        width: 100% !important;
+      }
     }
 
     .header-section h1 {
@@ -120,14 +126,24 @@
       <h1>OptiFlow</h1>
       <p style="font-size: 18px; color: #475569; font-weight: 500;">Automated Intelligent Allocation Workflow.</p>
       
-      <div style="text-align: left; background: #ecfdf5; border-left: 4px solid #10b981; padding: 24px; border-radius: 8px; margin-top: 24px;">
-        <h2 style="color: #047857; margin-top: 0; margin-bottom: 12px; font-size: 22px;">The Automated Solution</h2>
-        <p style="font-size: 16px; color: #334155; margin-bottom: 16px; line-height: 1.6;">
-          OptiFlow deploys a deterministic <strong>Logic Engine</strong> paired with a <strong>Human-in-the-Loop (HITL) Dashboard</strong>. This eliminates manual Excel math and automates 95% of standard replenishment.
-        </p>
-        <p style="font-size: 16px; color: #334155; margin-bottom: 0px; line-height: 1.6;">
-          The user simply uploads the raw store and warehouse CSV data. The system automatically calculates Planogram deficits and executes allocations.
-        </p>
+      <div class="solution-flex" style="text-align: left; background: #ecfdf5; border-left: 4px solid #10b981; padding: 24px; border-radius: 8px; margin-top: 24px; display: flex; gap: 24px; justify-content: space-between;">
+        <div style="flex: 1;">
+          <h2 style="color: #047857; margin-top: 0; margin-bottom: 12px; font-size: 22px;">The Automated Solution</h2>
+          <p style="font-size: 15px; color: #334155; margin-bottom: 12px; line-height: 1.6;">
+            OptiFlow deploys a deterministic <strong>Logic Engine</strong> paired with a <strong>Human-in-the-Loop (HITL) Dashboard</strong>. This eliminates manual Excel math and automates 95% of standard replenishment.
+          </p>
+          <p style="font-size: 15px; color: #334155; margin-bottom: 0px; line-height: 1.6;">
+            The user simply uploads the raw store and warehouse CSV data. The system automatically calculates Planogram deficits and executes allocations.
+          </p>
+        </div>
+        <div class="constraints-card" style="width: 340px; background: #f0fdf4; border: 1px solid #bcdfca; padding: 18px; border-radius: 6px;">
+          <h3 style="margin-top: 0; margin-bottom: 10px; color: #15803d; font-size: 15px; font-weight: 700;">Global Constraints Key</h3>
+          <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #166534; line-height: 1.6;">
+            <li style="margin-bottom: 6px;"><strong>Max 3 Colors/Model:</strong> Limits assortment redundancy per model.</li>
+            <li style="margin-bottom: 6px;"><strong>Max 2 Units/SKU:</strong> Caps dispatch depth to control store run.</li>
+            <li style="margin-bottom: 0px;"><strong>Min 85% Brand Uniqueness:</strong> Maintained across active store displays.</li>
+          </ul>
+        </div>
       </div>
     </div>
 
@@ -191,8 +207,7 @@
           <!-- T1 Constraints Check -->
           <path d="M210 545 V565" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
           <polygon points="210,565 280,605 210,645 140,605" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
-          <text x="210" y="604" class="svg-node-text" text-anchor="middle">Constraints Met?</text>
-          <text x="210" y="618" class="svg-sub-text" text-anchor="middle">(Max Color/SKU limits)</text>
+          <text x="210" y="610" class="svg-node-text" text-anchor="middle">Constraints Met?</text>
 
           <!-- T1 Constraints Check YES ➔ In Stock? -->
           <path d="M210 645 V675" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
@@ -248,8 +263,7 @@
           <!-- T2 Constraints Check -->
           <path d="M500 545 V565" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
           <polygon points="500,565 570,605 500,645 430,605" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
-          <text x="500" y="604" class="svg-node-text" text-anchor="middle">Constraints Met?</text>
-          <text x="500" y="618" class="svg-sub-text" text-anchor="middle">(Max Color/SKU limits)</text>
+          <text x="500" y="610" class="svg-node-text" text-anchor="middle">Constraints Met?</text>
 
           <!-- T2 Constraints Check YES ➔ In Stock? -->
           <path d="M500 645 V675" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
@@ -304,13 +318,12 @@
           <!-- T3 Constraints Check -->
           <path d="M790 545 V565" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
           <polygon points="790,565 860,605 790,645 720,605" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
-          <text x="790" y="604" class="svg-node-text" text-anchor="middle">Constraints Met?</text>
-          <text x="790" y="618" class="svg-sub-text" text-anchor="middle">(Max Color/SKU limits)</text>
+          <text x="790" y="610" class="svg-node-text" text-anchor="middle">Constraints Met?</text>
 
           <!-- T3 Constraints Check YES ➔ In Stock? -->
           <path d="M790 645 V675" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
           <rect x="770" y="648" width="40" height="22" rx="11" fill="#10b981" />
-          <text x="790" y="663" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
+          <text x="790" y="671" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
 
           <!-- T3 Constraints Check NO ➔ Loops back to next SKU -->
           <path d="M720 605 H645 V535 H680" stroke="#f5a623" stroke-width="2.5" stroke-dasharray="6 6" fill="none" marker-end="url(#arrow-orange)"/>
