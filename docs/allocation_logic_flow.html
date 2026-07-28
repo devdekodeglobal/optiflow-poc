@@ -182,19 +182,12 @@
           <text x="60" y="336" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
 
           <!-- 5. Validation Gate -->
-          <rect x="330" y="400" width="340" height="55" rx="8" fill="#f5a623" />
-          <text x="500" y="423" class="svg-white-text" text-anchor="middle">Verify Global Constraints</text>
-          <text x="500" y="440" class="svg-white-sub" text-anchor="middle">Max 3 Colors | Max 2 Units | Min 85% Uniqueness</text>
+          <rect x="280" y="400" width="340" height="55" rx="8" fill="#f5a623" />
+          <text x="450" y="423" class="svg-white-text" text-anchor="middle">Verify Global Constraints</text>
+          <text x="450" y="440" class="svg-white-sub" text-anchor="middle">Max 3 Colors | Max 2 Units | Min 85% Uniqueness</text>
 
-          <!-- Constraints YES ➔ Points to Column 1 (Tier 1) -->
+          <!-- Constraints Flow into Tier 1 -->
           <path d="M500 455 V475 H210 V500" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
-          <rect x="190" y="464" width="40" height="22" rx="11" fill="#10b981" />
-          <text x="210" y="479" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
-
-          <!-- Constraints NO ➔ Direct route to END -->
-          <path d="M670 427.5 H940 V1150 H600 V1180" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
-          <rect x="920" y="416" width="40" height="22" rx="11" fill="#ef4444" />
-          <text x="940" y="431" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
 
 
           <!-- ================= COLUMN 1: TIER 1 (Center x=210) ================= -->
