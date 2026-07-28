@@ -153,7 +153,7 @@
       <p style="color: var(--text-secondary); margin-bottom: 24px;">End-to-end logic for how the system processes store schedules, calculates deficits, and routes exceptions.</p>
 
       <div class="svg-container">
-        <svg width="100%" height="1350" viewBox="0 0 1000 1350" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg width="100%" height="1400" viewBox="0 0 1000 1400" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
               <path d="M 0 1 L 10 5 L 0 9 z" fill="#5a738e" />
@@ -192,10 +192,10 @@
           <rect x="190" y="440" width="40" height="22" rx="11" fill="#10b981" />
           <text x="210" y="455" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
 
-          <!-- Deficit NO Branch (Clean left margin route) -->
-          <path d="M420 332.5 H60 V1200 H400 V1230" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
-          <rect x="40" y="321" width="40" height="22" rx="11" fill="#ef4444" />
-          <text x="60" y="336" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
+          <!-- Deficit NO Branch (Clean left margin route at x=30, plugs into bottom END) -->
+          <path d="M420 332.5 H30 V1305 H400" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+          <rect x="10" y="321" width="40" height="22" rx="11" fill="#ef4444" />
+          <text x="30" y="336" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
 
 
           <!-- ================= COLUMN 1: TIER 1 (Center x=210) ================= -->
@@ -214,11 +214,11 @@
           <rect x="190" y="648" width="40" height="22" rx="11" fill="#10b981" />
           <text x="210" y="663" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
 
-          <!-- T1 Constraints Check NO ➔ Loops back to next SKU -->
-          <path d="M140 605 H50 V522.5 H100" stroke="#f5a623" stroke-width="2.5" stroke-dasharray="6 6" fill="none" marker-end="url(#arrow-orange)"/>
-          <rect x="30" y="550" width="40" height="22" rx="11" fill="#ef4444" />
-          <text x="50" y="565" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
-          <text x="40" y="530" fill="#f5a623" font-size="10" font-weight="700" text-anchor="middle" transform="rotate(-90 40 530)">NEXT SKU</text>
+          <!-- T1 Constraints Check NO ➔ Loops back to next SKU (runs at x=70 to clear x=30 line) -->
+          <path d="M140 605 H70 V522.5 H100" stroke="#f5a623" stroke-width="2.5" stroke-dasharray="6 6" fill="none" marker-end="url(#arrow-orange)"/>
+          <rect x="50" y="550" width="40" height="22" rx="11" fill="#ef4444" />
+          <text x="70" y="565" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
+          <text x="60" y="530" fill="#f5a623" font-size="10" font-weight="700" text-anchor="middle" transform="rotate(-90 60 530)">NEXT SKU</text>
 
           <!-- T1 Stock Check -->
           <polygon points="210,675 280,715 210,755 140,715" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
@@ -243,15 +243,15 @@
           <polygon points="210,870 280,910 210,950 140,910" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
           <text x="210" y="914" class="svg-node-text" text-anchor="middle">Filled?</text>
 
-          <!-- T1 Deficit Filled YES ➔ Routes down to FIFO -->
+          <!-- T1 Deficit Filled YES ➔ Routes down to FIFO (at y=1020) -->
           <path d="M210 950 V1020 H350 V1050" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
           <rect x="190" y="965" width="40" height="22" rx="11" fill="#10b981" />
           <text x="210" y="980" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
 
           <!-- T1 Deficit Filled NO Loopback ➔ Routes left and UP back to Tier 1 Box -->
-          <path d="M140 910 H50 V522.5 H100" stroke="#f5a623" stroke-width="2.5" stroke-dasharray="6 6" fill="none" marker-end="url(#arrow-orange)"/>
-          <rect x="30" y="780" width="40" height="22" rx="11" fill="#ef4444" />
-          <text x="50" y="795" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
+          <path d="M140 910 H70 V522.5 H100" stroke="#f5a623" stroke-width="2.5" stroke-dasharray="6 6" fill="none" marker-end="url(#arrow-orange)"/>
+          <rect x="50" y="780" width="40" height="22" rx="11" fill="#ef4444" />
+          <text x="70" y="795" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
 
 
           <!-- ================= COLUMN 2: TIER 2 (Center x=500) ================= -->
@@ -323,7 +323,7 @@
           <!-- T3 Constraints Check YES ➔ In Stock? -->
           <path d="M790 645 V675" stroke="#5a738e" stroke-width="2.5" marker-end="url(#arrow)"/>
           <rect x="770" y="648" width="40" height="22" rx="11" fill="#10b981" />
-          <text x="790" y="671" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
+          <text x="790" y="663" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
 
           <!-- T3 Constraints Check NO ➔ Loops back to next SKU -->
           <path d="M720 605 H645 V535 H680" stroke="#f5a623" stroke-width="2.5" stroke-dasharray="6 6" fill="none" marker-end="url(#arrow-orange)"/>
@@ -339,8 +339,8 @@
           <rect x="770" y="763" width="40" height="22" rx="11" fill="#10b981" />
           <text x="790" y="778" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
 
-          <!-- T3 Stock Check NO ➔ Routes right and down to FIFO -->
-          <path d="M860 715 H940 V1020 H650 V1050" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+          <!-- T3 Stock Check NO ➔ Routes right and down on the margin (x=940) to center right side of FIFO (y=1090) -->
+          <path d="M860 715 H940 V1090 H650" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
           <rect x="890" y="704" width="40" height="22" rx="11" fill="#ef4444" />
           <text x="910" y="719" fill="white" font-size="11" font-weight="800" text-anchor="middle">NO</text>
 
@@ -353,7 +353,7 @@
           <polygon points="790,870 860,910 790,950 720,910" fill="#ffffff" stroke="#f5a623" stroke-width="2"/>
           <text x="790" y="914" class="svg-node-text" text-anchor="middle">Filled?</text>
 
-          <!-- T3 Deficit Filled YES ➔ Routes left and down to FIFO -->
+          <!-- T3 Deficit Filled YES ➔ Routes down to FIFO -->
           <path d="M790 950 V1020 H650 V1050" stroke="#5a738e" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
           <rect x="770" y="965" width="40" height="22" rx="11" fill="#10b981" />
           <text x="790" y="980" fill="white" font-size="11" font-weight="800" text-anchor="middle">YES</text>
