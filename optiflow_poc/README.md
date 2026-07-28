@@ -54,6 +54,8 @@ OptiFlow is engineered using a decoupled **Microservices-ready SPA + REST API** 
 ---
 
 ### 3. 🧠 Mathematical Allocation & Optimization Engine
+> 📖 **Interactive Business Logic & Process Flow Diagram**: Open [`docs/allocation_logic_flow.html`](file:///Users/vanosski/Main/Projects/Dekode/centerforsight/docs/allocation_logic_flow.html) in any browser for the interactive step-by-step flowchart, similarity calculator, and column mapping matrix.
+
 - **Engine Core**: [Pandas](https://pandas.pydata.org/) & [NumPy](https://numpy.org/) (`allocation_engine.py`)
 - **Key Algorithms**:
   - **Dynamic Capacity Calculation**: Computes `Target Capacity = Facing (Display) + Depth (Reserve)` across store hierarchies (`Zone > Region > Grade > Store > Brand > Commodity`).

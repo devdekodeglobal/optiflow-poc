@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OptiFlow Allocation Engine - Business Logic & Process Flow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  
+  <style>
+    :root {
+      --bg-main: #0f172a;
+      --bg-card: rgba(30, 41, 59, 0.7);
+      --bg-card-hover: rgba(51, 65, 85, 0.8);
+      --border-color: rgba(255, 255, 255, 0.1);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --primary: #6366f1;
+      --primary-light: #818cf8;
+      --primary-glow: rgba(99, 102, 241, 0.25);
+      --success: #10b981;
+      --info: #06b6d4;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      line-height: 1.6;
+      padding: 32px 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 40px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    h1 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 30%, #818cf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 1.05rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      background: var(--primary-glow);
+      color: var(--primary-light);
+      border: 1px solid rgba(99, 102, 241, 0.4);
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 32px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 12px;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 4px 14px var(--primary-glow);
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Process Flow Diagram */
+    .flow-container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: relative;
+      margin-bottom: 40px;
+    }
+
+    .flow-step {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 24px;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .flow-step:hover {
+      border-color: var(--primary-light);
+      box-shadow: 0 8px 24px var(--primary-glow);
+      transform: translateY(-2px);
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .step-num {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: var(--primary);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 12px var(--primary-glow);
+    }
+
+    .step-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .step-desc {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      margin-bottom: 16px;
+    }
+
+    .tag-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-color);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-family: var(--font-mono);
+      color: var(--primary-light);
+    }
+
+    .arrow-connector {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      margin: -8px 0;
+    }
+
+    /* Grid & Cards */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-secondary);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+
+    td code {
+      font-family: var(--font-mono);
+      color: var(--primary-light);
+      background: rgba(99, 102, 241, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.82rem;
+    }
+
+    /* Match Type Badges */
+    .match-badge {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      display: inline-block;
+    }
+
+    .match-exact { background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .match-similar { background: rgba(6, 182, 212, 0.15); color: var(--info); border: 1px solid rgba(6, 182, 212, 0.3); }
+    .match-substitute { background: rgba(245, 158, 11, 0.15); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.3); }
+    .match-unresolved { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    /* Interactive Simulator */
+    .sim-box {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 16px;
+    }
+
+    .sim-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .sim-select {
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid var(--border-color);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+    }
+
+    .score-display {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--primary-light);
+      text-align: center;
+      margin-top: 16px;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 60px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      border-top: 1px solid var(--border-color);
+      padding-top: 24px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div>
+      <h1>OptiFlow Allocation Engine</h1>
+      <div class="subtitle">Comprehensive Business Logic, Technical Specification & Cascade Flow Diagram</div>
+    </div>
+    <div class="badge">Engine v1.0 · FastAPI + Pandas Core</div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('flow')">🔄 Process Flow Diagram</button>
+    <button class="tab-btn" onclick="switchTab('matrix')">🎯 Match Type Matrix & Rules</button>
+    <button class="tab-btn" onclick="switchTab('columns')">📊 Data File & Column Mapping</button>
+    <button class="tab-btn" onclick="switchTab('calculator')">🧮 Interactive Similarity Simulator</button>
+  </div>
+
+  <!-- TAB 1: PROCESS FLOW DIAGRAM -->
+  <div id="tab-flow" class="tab-content active">
+    <div class="flow-container">
+      
+      <!-- STEP 1 -->
+      <div class="flow-step">
+        <div class="step-header">
+          <div class="step-num">1</div>
+          <div class="step-title">Data Ingestion & Parallel Ingestion Pipeline</div>
+        </div>
+        <div class="step-desc">
+          Downloads and parses raw datasets from GCS Cloud Storage or local cache. Reconciles store names (e.g. <code>PO-AHMEDABAD 2</code> ➔ <code>Ahemdabad CG Road</code>) and auto-detects product commodities (<code>Frame</code> vs <code>Sunglass</code>).
+        </div>
+        <div class="tag-group">
+          <span class="tag">Planogram.csv / planogram_edited.json</span>
+          <span class="tag">Stock data.csv</span>
+          <span class="tag">Sales Data.csv</span>
+          <span class="tag">strategy_settings.json</span>
+        </div>
+      </div>
+
+      <div class="arrow-connector">↓</div>
+
+      <!-- STEP 2 -->
+      <div class="flow-step">
+        <div class="step-header">
+          <div class="step-num">2</div>
+          <div class="step-title">Store Category & Grade Prioritization Hierarchy</div>
+        </div>
+        <div class="step-desc">
+          Applies user-defined store tier sequence (e.g. <code>A++ ➔ A+ ➔ A ➔ B+ ➔ B ➔ C</code>). Each store row is assigned a strict priority rank (<code>_rank</code>). Higher priority stores receive first claim on available warehouse inventory.
+        </div>
+        <div class="tag-group">
+          <span class="tag">Priority Sort: A++ ➔ C</span>
+          <span class="tag">Filter: Active Categories Only</span>
+        </div>
+      </div>
+
+      <div class="arrow-connector">↓</div>
+
+      <!-- STEP 3 -->
+      <div class="flow-step">
+        <div class="step-header">
+          <div class="step-num">3</div>
+          <div class="step-title">Net Deficit & Capacity Gap Calculation</div>
+        </div>
+        <div class="step-desc">
+          Calculates physical target capacity and net deficit per store brand commodity combination:
+          <br />
+          <code>Target Capacity = Display Facing + Reserve Depth</code>
+          <br />
+          <code>Net Deficit = Target Capacity - Live Store SOH</code>
+          <br />
+          If <code>Deficit ≤ 0</code>, target is met (marked as <code>EXACT</code> match with 0 allocation required).
+        </div>
+        <div class="tag-group">
+          <span class="tag">Target = Facing + Depth</span>
+          <span class="tag">Deficit = Target - Store SOH</span>
+        </div>
+      </div>
+
+      <div class="arrow-connector">↓</div>
+
+      <!-- STEP 4 -->
+      <div class="flow-step">
+        <div class="step-header">
+          <div class="step-num">4</div>
+          <div class="step-title">Demand-Based Reference SKU Selection</div>
+        </div>
+        <div class="step-desc">
+          Determines target attribute baseline for candidate evaluation:
+          <br />
+          <strong>1. Primary Choice:</strong> Top selling SKU in that store/brand/commodity over selected lookback window (7, 30, 90 days, or All Time).
+          <br />
+          <strong>2. First Fallback:</strong> Existing store inventory SKU.
+          <br />
+          <strong>3. Final Fallback:</strong> Generic brand baseline.
+        </div>
+        <div class="tag-group">
+          <span class="tag">Lookback Filter (7d / 30d / 90d / All Time)</span>
+          <span class="tag">Top Sales SKU Extraction</span>
+        </div>
+      </div>
+
+      <div class="arrow-connector">↓</div>
+
+      <!-- STEP 5 -->
+      <div class="flow-step">
+        <div class="step-header">
+          <div class="step-num">5</div>
+          <div class="step-title">Hard Business Constraints & Uniqueness Filtering</div>
+        </div>
+        <div class="step-desc">
+          Evaluates warehouse candidate SKUs against 3 strict retail rules:
+          <br />
+          • 🎨 <strong>Max 3 Colors Per Model:</strong> Max 3 color variants per model per store.
+          <br />
+          • 🔢 <strong>Max 2 Units Per SKU:</strong> Max 2 physical units of the exact same SKU per store.
+          <br />
+          • ✨ <strong>85% Brand SKU Uniqueness Rule:</strong> <code>(Unique SKUs / Total Allocated) ≥ 0.85</code> to prevent SKU over-clustering.
+        </div>
+        <div class="tag-group">
+          <span class="tag">Max 3 Colors / Model</span>
+          <span class="tag">Max 2 Units / SKU</span>
+          <span class="tag">≥ 85% Brand Uniqueness</span>
+        </div>
+      </div>
+
+      <div class="arrow-connector">↓</div>
+
+      <!-- STEP 6 -->
+      <div class="flow-step">
+        <div class="step-header">
+          <div class="step-num">6</div>
+          <div class="step-title">Attribute-Similarity Cascade & Price Band Check</div>
+        </div>
+        <div class="step-desc">
+          Computes weighted attribute match score (0 to 100) + price protection check:
+          <br />
+          <code>Score = Shape(30) + Material(25) + FrameType(20) + Color(15) + Gender(10)</code>
+          <br />
+          • If candidate MRP exceeds 20% price band from target MRP, subtract 50 points (triggers <code>SUBSTITUTE</code>).
+          <br />
+          • If candidate matches store historical SKU, add +100 points (triggers <code>EXACT</code>).
+        </div>
+        <div class="tag-group">
+          <span class="tag">Score Weights: 30-25-20-15-10</span>
+          <span class="tag">20% MRP Price Protection</span>
+        </div>
+      </div>
+
+      <div class="arrow-connector">↓</div>
+
+      <!-- STEP 7 -->
+      <div class="flow-step">
+        <div class="step-header">
+          <div class="step-num">7</div>
+          <div class="step-title">FIFO Warehouse Inventory Depletion & Dispatch Order Generation</div>
+        </div>
+        <div class="step-desc">
+          Depletes warehouse inventory using <strong>FIFO (First In First Out)</strong> based on <code>stock_age_in_days</code>. Assigns exact barcode and batch quantity to line-item dispatch orders.
+        </div>
+        <div class="tag-group">
+          <span class="tag">FIFO Age Sorting</span>
+          <span class="tag">Barcode Level Allocation</span>
+          <span class="tag">Dispatch Order Generation</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TAB 2: MATCH TYPE MATRIX -->
+  <div id="tab-matrix" class="tab-content">
+    <div class="card" style="margin-bottom: 24px;">
+      <div class="card-title">🎯 Match Type Classification Matrix</div>
+      <p style="color: var(--text-secondary); margin-bottom: 16px;">
+        Every allocation gap is evaluated through the engine cascade and categorized into 1 of 4 match types based on physical availability, attribute similarity, and price band compliance.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Match Type</th>
+            <th>Trigger Criteria & Rules</th>
+            <th>Price Band Status</th>
+            <th>System Reasoning Log</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="match-badge match-exact">EXACT</span></td>
+            <td>Candidate SKU matches the store's exact historical SKU or target SOH is already satisfied.</td>
+            <td>Matches Baseline</td>
+            <td><code>"Exact SKU matching store historical stock"</code> or <code>"Target met by existing SOH"</code></td>
+          </tr>
+          <tr>
+            <td><span class="match-badge match-similar">SIMILAR</span></td>
+            <td>Candidate matches Brand & Commodity, satisfies hard constraints, and passes similarity scoring.</td>
+            <td>Within ±20% MRP Band</td>
+            <td><code>"Similar item: Same Brand, shape (CatEye), material (Acetate)"</code></td>
+          </tr>
+          <tr>
+            <td><span class="match-badge match-substitute">SUBSTITUTE</span></td>
+            <td>Candidate matches Brand & Commodity, but MRP exceeds the 20% price variance threshold from target.</td>
+            <td>Exceeds 20% MRP Band</td>
+            <td><code>"Substitute: same brand fallback (price band exceeded)"</code></td>
+          </tr>
+          <tr>
+            <td><span class="match-badge match-unresolved">UNRESOLVED</span></td>
+            <td>Warehouse inventory exhausted, or candidate rejected due to Hard Constraints (Color/Uniqueness/Max units).</td>
+            <td>N/A</td>
+            <td><code>"No stock available in Corporate Office"</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 3: COLUMN MAPPING -->
+  <div id="tab-columns" class="tab-content">
+    <div class="card">
+      <div class="card-title">📊 Data Source & Column Mapping Matrix</div>
+      <table>
+        <thead>
+          <tr>
+            <th>File Source</th>
+            <th>Raw CSV Header</th>
+            <th>Engine Data Model Field</th>
+            <th>Type & Usage Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>Planogram.csv</code></td>
+            <td><code>Store & Code</code> / <code>store_name</code></td>
+            <td><code>store_name</code></td>
+            <td>String — Store Identifier (Reconciled via <code>STORE_NAME_MAP</code>).</td>
+          </tr>
+          <tr>
+            <td><code>Planogram.csv</code></td>
+            <td><code>Brand Name</code> / <code>brand_name</code></td>
+            <td><code>brand_name</code></td>
+            <td>String — Brand Tier.</td>
+          </tr>
+          <tr>
+            <td><code>Planogram.csv</code></td>
+            <td><code>Store Display</code> / <code>facing</code></td>
+            <td><code>facing</code></td>
+            <td>Float — Physical display capacity (Facing).</td>
+          </tr>
+          <tr>
+            <td><code>Planogram.csv</code></td>
+            <td><code>Facing + Depth</code> / <code>facing_depth</code></td>
+            <td><code>facing + back_stock</code></td>
+            <td>Float — Total store target capacity. Depth = Target - Facing.</td>
+          </tr>
+          <tr>
+            <td><code>Stock data.csv</code></td>
+            <td><code>Facility</code> / <code>store</code></td>
+            <td><code>facility</code></td>
+            <td>String — Location (`Corporate Office` = Warehouse).</td>
+          </tr>
+          <tr>
+            <td><code>Stock data.csv</code></td>
+            <td><code>Barcode</code></td>
+            <td><code>barcode</code></td>
+            <td>String — Physical unit barcode assigned during FIFO allocation.</td>
+          </tr>
+          <tr>
+            <td><code>Stock data.csv</code></td>
+            <td><code>Item Name</code></td>
+            <td><code>ItemAttributes</code></td>
+            <td>String — Format: <code>Model - Brand - Gender - Color - Size - Shape - Material</code>.</td>
+          </tr>
+          <tr>
+            <td><code>Stock data.csv</code></td>
+            <td><code>Stock Age In Days</code></td>
+            <td><code>stock_age_in_days</code></td>
+            <td>Integer — Used to sort warehouse inventory queue for FIFO depletion.</td>
+          </tr>
+          <tr>
+            <td><code>Sales Data.csv</code></td>
+            <td><code>Branch Name</code> & <code>Product Code</code></td>
+            <td><code>store_top_sales</code></td>
+            <td>String & Int — Used to calculate top selling SKU per store/brand/commodity over lookback window.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB 4: CALCULATOR -->
+  <div id="tab-calculator" class="tab-content">
+    <div class="card">
+      <div class="card-title">🧮 Interactive Attribute Similarity Calculator</div>
+      <p style="color: var(--text-secondary);">
+        Simulate how the engine calculates candidate similarity scores (0-100) based on attribute weights:
+      </p>
+
+      <div class="sim-box">
+        <div class="sim-row">
+          <span>Shape Match (+30 pts)</span>
+          <select id="sim-shape" class="sim-select" onchange="calcSim()">
+            <option value="30">Matches (30 pts)</option>
+            <option value="0">Differs (0 pts)</option>
+          </select>
+        </div>
+        <div class="sim-row">
+          <span>Material Match (+25 pts)</span>
+          <select id="sim-material" class="sim-select" onchange="calcSim()">
+            <option value="25">Matches (25 pts)</option>
+            <option value="0">Differs (0 pts)</option>
+          </select>
+        </div>
+        <div class="sim-row">
+          <span>Frame Type Match (+20 pts)</span>
+          <select id="sim-frametype" class="sim-select" onchange="calcSim()">
+            <option value="20">Matches (20 pts)</option>
+            <option value="0">Differs (0 pts)</option>
+          </select>
+        </div>
+        <div class="sim-row">
+          <span>Color Match (+15 pts)</span>
+          <select id="sim-color" class="sim-select" onchange="calcSim()">
+            <option value="15">Matches (15 pts)</option>
+            <option value="0">Differs (0 pts)</option>
+          </select>
+        </div>
+        <div class="sim-row">
+          <span>Gender Match (+10 pts)</span>
+          <select id="sim-gender" class="sim-select" onchange="calcSim()">
+            <option value="10">Matches (10 pts)</option>
+            <option value="0">Differs (0 pts)</option>
+          </select>
+        </div>
+        <div class="sim-row">
+          <span>Price Band Check (>20% MRP Variance)</span>
+          <select id="sim-price" class="sim-select" onchange="calcSim()">
+            <option value="0">Within 20% (No Penalty)</option>
+            <option value="-50">Exceeds 20% (-50 pts penalty)</option>
+          </select>
+        </div>
+
+        <div class="score-display">
+          Total Score: <span id="score-val">100</span> / 100
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    OptiFlow Retail Allocation System · Centre For Sight / Dekode Global
+  </footer>
+
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+      event.target.classList.add('active');
+      document.getElementById('tab-' + tabId).classList.add('active');
+    }
+
+    function calcSim() {
+      const shape = parseInt(document.getElementById('sim-shape').value);
+      const material = parseInt(document.getElementById('sim-material').value);
+      const frametype = parseInt(document.getElementById('sim-frametype').value);
+      const color = parseInt(document.getElementById('sim-color').value);
+      const gender = parseInt(document.getElementById('sim-gender').value);
+      const price = parseInt(document.getElementById('sim-price').value);
+
+      const total = Math.max(0, shape + material + frametype + color + gender + price);
+      document.getElementById('score-val').innerText = total;
+    }
+  </script>
+</body>
+</html>
