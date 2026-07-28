@@ -198,13 +198,27 @@
 
     // Run dynamic edge label styling after SVG renders
     const styleLabels = () => {
-      const spans = document.querySelectorAll('.edgeLabel span, .edgeLabel foreignObject div');
-      spans.forEach(span => {
+      const edgeLabels = document.querySelectorAll('.mermaid .edgeLabel');
+      edgeLabels.forEach(label => {
+        const span = label.querySelector('span, div');
+        if (!span) return;
         const text = span.textContent.trim().toUpperCase();
         if (text === 'YES') {
           span.className = 'yes-badge';
+          const fo = label.closest('foreignObject');
+          if (fo) {
+            fo.setAttribute('width', '60');
+            fo.setAttribute('height', '30');
+            fo.style.overflow = 'visible';
+          }
         } else if (text === 'NO') {
           span.className = 'no-badge';
+          const fo = label.closest('foreignObject');
+          if (fo) {
+            fo.setAttribute('width', '60');
+            fo.setAttribute('height', '30');
+            fo.style.overflow = 'visible';
+          }
         }
       });
     };
@@ -217,6 +231,8 @@
     
     // Fallback run
     window.addEventListener('load', styleLabels);
+    setTimeout(styleLabels, 500);
+    setTimeout(styleLabels, 1000);
   </script>
 </body>
 </html>
