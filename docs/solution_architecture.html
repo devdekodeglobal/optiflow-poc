@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OptiFlow — Solution Architecture</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --primary: #1e40af;
+            --text: #0f172a;
+            --muted: #475569;
+            --border: #cbd5e1;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 40px 24px 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+        }
+        .page-header { text-align: center; margin-bottom: 40px; width: 100%; }
+        .page-header h1 { font-size: 2.25rem; font-weight: 800; color: var(--primary); letter-spacing: -0.5px; }
+        .page-header p { color: var(--muted); margin-top: 8px; font-size: 1.1rem; }
+
+        .diagram-container {
+            width: 100%;
+            max-width: 1600px; /* Much larger max-width for big screens */
+            background: white;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+            overflow-x: auto; /* Enables horizontal scroll on mobile */
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+        }
+        
+        .arch-svg {
+            display: block;
+            width: 100%;
+            height: auto;
+            min-width: 1160px; /* Prevents diagram from shrinking to unreadable sizes on mobile */
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            body { padding: 20px 10px; }
+            .diagram-container { padding: 20px 10px; border-radius: 12px; }
+            .page-header h1 { font-size: 1.75rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-header">
+    <h1>OptiFlow — Solution Architecture</h1>
+    <p>N-Tier Clean Architecture with Asynchronous Workers & Shared Repositories</p>
+</div>
+
+<div class="diagram-container">
+    <svg class="arch-svg" viewBox="0 0 1200 740" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <!-- Marker for clean straight arrows -->
+            <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#64748b"/>
+            </marker>
+            <marker id="arrow-dashed" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#94a3b8"/>
+            </marker>
+            <marker id="arrow-blue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#1e40af"/>
+            </marker>
+            <marker id="arrow-pink" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#db2777"/>
+            </marker>
+        </defs>
+
+        <!-- ========================================== -->
+        <!--   OUTSIDE LAYER LABELS (Left Column)      -->
+        <!-- ========================================== -->
+        <g font-family="Inter, sans-serif" font-size="12" font-weight="800" letter-spacing="1">
+            <text x="170" y="67" text-anchor="end" fill="#0284c7">PRESENTATION</text>
+            <text x="170" y="197" text-anchor="end" fill="#d97706">SERVICE API</text>
+            <text x="170" y="347" text-anchor="end" fill="#db2777">BUSINESS LOGIC</text>
+            <text x="170" y="497" text-anchor="end" fill="#ea580c">DATA ACCESS</text>
+            <text x="170" y="627" text-anchor="end" fill="#65a30d">PERSISTENCE</text>
+        </g>
+
+        <!-- ========================================== -->
+        <!--   LAYER BACKGROUND BANDS                   -->
+        <!-- ========================================== -->
+        <!-- Presentation Band -->
+        <rect x="190" y="20" width="710" height="90" rx="12" fill="#f0f9ff" stroke="#bae6fd" stroke-width="2"/>
+        
+        <!-- Service API Band -->
+        <rect x="190" y="150" width="710" height="90" rx="12" fill="#fffbeb" stroke="#fef08a" stroke-width="2"/>
+        
+        <!-- Business Logic Band -->
+        <rect x="190" y="280" width="710" height="130" rx="12" fill="#fdf2f8" stroke="#fbcfe8" stroke-width="2"/>
+        
+        <!-- Data Access Band -->
+        <rect x="190" y="450" width="710" height="90" rx="12" fill="#fff7ed" stroke="#fed7aa" stroke-width="2"/>
+        
+        <!-- Persistence Band -->
+        <rect x="190" y="580" width="710" height="90" rx="12" fill="#f7fee7" stroke="#d9f99d" stroke-width="2"/>
+
+        <!-- ========================================== -->
+        <!--   COMPONENTS (Nodes inside bands)          -->
+        <!-- ========================================== -->
+        
+        <!-- Presentation Layer Components -->
+        <g transform="translate(390, 35)">
+            <rect x="0" y="0" width="310" height="60" rx="8" fill="#ffffff" stroke="#0284c7" stroke-width="1.5" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.02))"/>
+            <text x="155" y="28" font-family="Inter, sans-serif" font-size="14" font-weight="700" fill="#0f172a" text-anchor="middle">React.js SPA</text>
+            <text x="155" y="45" font-family="Inter, sans-serif" font-size="11" fill="#64748b" text-anchor="middle">Web Frontend UI (Internal Portal)</text>
+        </g>
+
+        <!-- Service Layer Components -->
+        <g transform="translate(390, 165)">
+            <rect x="0" y="0" width="310" height="60" rx="8" fill="#ffffff" stroke="#d97706" stroke-width="1.5" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.02))"/>
+            <text x="155" y="28" font-family="Inter, sans-serif" font-size="14" font-weight="700" fill="#0f172a" text-anchor="middle">FastAPI Web Server</text>
+            <text x="155" y="45" font-family="Inter, sans-serif" font-size="11" fill="#64748b" text-anchor="middle">REST Endpoints & Background Task Dispatcher</text>
+        </g>
+
+        <!-- Logic Layer Components -->
+        <!-- Allocation Engine Worker -->
+        <g transform="translate(210, 305)">
+            <rect x="0" y="0" width="210" height="85" rx="8" fill="#ffffff" stroke="#db2777" stroke-width="1.5" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.02))"/>
+            <text x="105" y="34" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">Allocation Engine</text>
+            <text x="105" y="51" font-family="Inter, sans-serif" font-size="10" fill="#64748b" text-anchor="middle">Math Core Process Worker</text>
+            <text x="105" y="66" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#be185d" text-anchor="middle">(Pandas Engine)</text>
+        </g>
+        
+        <!-- Forecasting Engine Worker -->
+        <g transform="translate(440, 305)">
+            <rect x="0" y="0" width="210" height="85" rx="8" fill="#ffffff" stroke="#db2777" stroke-width="1.5" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.02))"/>
+            <text x="105" y="34" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">Forecasting Engine</text>
+            <text x="105" y="51" font-family="Inter, sans-serif" font-size="10" fill="#64748b" text-anchor="middle">Future ML Worker</text>
+            <text x="105" y="66" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#be185d" text-anchor="middle">(Predictive Analytics)</text>
+        </g>
+
+        <!-- Future AI/ML Engines -->
+        <g transform="translate(670, 305)">
+            <rect x="0" y="0" width="210" height="85" rx="8" fill="#ffffff" stroke="#f472b6" stroke-width="1.5" stroke-dasharray="4,4" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.02))"/>
+            <text x="105" y="34" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#9d174d" text-anchor="middle">[ Future Engines ]</text>
+            <text x="105" y="51" font-family="Inter, sans-serif" font-size="10" fill="#f472b6" text-anchor="middle">Pluggable Expansion</text>
+        </g>
+
+        <!-- Data Access Components -->
+        <g transform="translate(390, 465)">
+            <rect x="0" y="0" width="310" height="60" rx="8" fill="#ffffff" stroke="#ea580c" stroke-width="1.5" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.02))"/>
+            <text x="155" y="28" font-family="Inter, sans-serif" font-size="14" font-weight="700" fill="#0f172a" text-anchor="middle">Shared Python Repositories</text>
+            <text x="155" y="45" font-family="Inter, sans-serif" font-size="11" fill="#64748b" text-anchor="middle">SQLAlchemy ORM Data Access</text>
+        </g>
+
+        <!-- Persistence Components -->
+        <g transform="translate(390, 595)">
+            <rect x="0" y="0" width="310" height="60" rx="8" fill="#ffffff" stroke="#65a30d" stroke-width="1.5" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.02))"/>
+            <text x="155" y="28" font-family="Inter, sans-serif" font-size="14" font-weight="700" fill="#0f172a" text-anchor="middle">PostgreSQL 15 Database</text>
+            <text x="155" y="45" font-family="Inter, sans-serif" font-size="11" fill="#64748b" text-anchor="middle">Relational Data & Job Status Store</text>
+        </g>
+
+        <!-- ========================================== -->
+        <!--   CROSS-CUTTING CONCERNS (Right Column)    -->
+        <!-- ========================================== -->
+        <g transform="translate(930, 20)">
+            <!-- Outer Boundary -->
+            <rect x="0" y="0" width="220" height="650" rx="12" fill="#f8fafc" stroke="#94a3b8" stroke-width="2" stroke-dasharray="6,6"/>
+            <text x="110" y="35" font-family="Inter, sans-serif" font-size="11" font-weight="800" fill="#475569" letter-spacing="1" text-anchor="middle">CROSS-CUTTING CONCERNS</text>
+            
+            <!-- Security Module -->
+            <g transform="translate(15, 165)">
+                <rect x="0" y="0" width="190" height="80" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+                <text x="95" y="34" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">Security & Auth</text>
+                <text x="95" y="51" font-family="Inter, sans-serif" font-size="10" fill="#64748b" text-anchor="middle">JWT Verification & RBAC</text>
+            </g>
+
+            <!-- Logging Module -->
+            <g transform="translate(15, 305)">
+                <rect x="0" y="0" width="190" height="85" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+                <text x="95" y="34" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">Logging & Monitoring</text>
+                <text x="95" y="51" font-family="Inter, sans-serif" font-size="10" fill="#64748b" text-anchor="middle">Standard Application Logs</text>
+            </g>
+
+            <!-- Audit Trail Module -->
+            <g transform="translate(15, 465)">
+                <rect x="0" y="0" width="190" height="85" rx="8" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+                <text x="95" y="34" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#0f172a" text-anchor="middle">Audit & Run History</text>
+                <text x="95" y="51" font-family="Inter, sans-serif" font-size="10" fill="#64748b" text-anchor="middle">Allocation Decision Logs</text>
+            </g>
+        </g>
+
+        <!-- ========================================== -->
+        <!--   CONNECTIONS & ARROWS (Clean Straight)    -->
+        <!-- ========================================== -->
+        
+        <!-- Presentation -> Service (HTTP) -->
+        <line x1="545" y1="95" x2="545" y2="164" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+        <text x="555" y="130" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#64748b">HTTP / JSON</text>
+
+        <!-- Service -> Logic (Trigger Processing) -->
+        <line x1="315" y1="225" x2="315" y2="304" stroke="#db2777" stroke-width="2" marker-end="url(#arrow-pink)"/>
+        <text x="325" y="270" font-family="Inter, sans-serif" font-size="9" font-weight="700" fill="#db2777">Trigger Processing</text>
+
+        <!-- Logic -> DAL (Data Fetch/Save) -->
+        <line x1="315" y1="390" x2="315" y2="464" stroke="#ea580c" stroke-width="2" marker-end="url(#arrow)"/>
+        <rect x="325" y="415" width="120" height="20" rx="4" fill="#fff7ed" stroke="#fed7aa" stroke-width="1"/>
+        <text x="385" y="429" font-family="Inter, sans-serif" font-size="9" font-weight="700" fill="#ea580c" text-anchor="middle">Fetch &amp; Save Data</text>
+
+        <!-- Forecasting Worker -> Shared Repositories -->
+        <line x1="545" y1="390" x2="545" y2="464" stroke="#db2777" stroke-width="2" marker-end="url(#arrow)"/>
+
+        <!-- Future Worker -> Shared Repositories -->
+        <path d="M 775 390 L 775 425 L 575 425 L 575 464" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#arrow-dashed)"/>
+
+        <!-- Data Access -> Persistence (TCP SQL) -->
+        <line x1="545" y1="525" x2="545" y2="594" stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>
+        <text x="555" y="560" font-family="Inter, sans-serif" font-size="10" font-weight="600" fill="#64748b">TCP / SQL Query</text>
+
+    </svg>
+</div>
+
+</body>
+</html>

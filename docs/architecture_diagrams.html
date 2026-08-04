@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OptiFlow — System Architecture Diagrams</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f0f4f8;
+            --card: #ffffff;
+            --primary: #1e40af;
+            --text: #0f172a;
+            --muted: #64748b;
+            --border: #e2e8f0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 32px 24px 60px;
+        }
+        .page-header { text-align: center; margin-bottom: 40px; }
+        .page-header h1 { font-size: 2rem; font-weight: 800; color: var(--primary); }
+        .page-header p { color: var(--muted); margin-top: 8px; font-size: 1rem; }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 6px; justify-content: center; margin-bottom: 36px; flex-wrap: wrap; }
+        .tab-btn {
+            padding: 10px 22px; border: 2px solid var(--border);
+            background: white; border-radius: 8px; font-size: 0.9rem;
+            font-weight: 600; cursor: pointer; color: var(--muted);
+            transition: all 0.2s;
+        }
+        .tab-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .tab-btn.active { background: var(--primary); border-color: var(--primary); color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Diagram Wrapper */
+        .diagram-wrapper {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            padding: 32px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+            overflow-x: auto;
+        }
+        .diagram-title {
+            font-size: 1.1rem; font-weight: 700; color: var(--text);
+            margin-bottom: 24px; padding-bottom: 12px;
+            border-bottom: 2px solid var(--border);
+            display: flex; align-items: center; gap: 10px;
+        }
+        .diagram-title .badge {
+            font-size: 0.72rem; padding: 3px 10px; border-radius: 999px;
+            font-weight: 600; background: #dbeafe; color: #1e40af;
+        }
+
+        /* Legend */
+        .legend {
+            display: flex; gap: 16px; flex-wrap: wrap;
+            margin-top: 20px; padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+        .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--muted); }
+        .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+
+        /* SVG arrows container */
+        .arch-svg-container {
+            position: relative;
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+        }
+        .arch-svg-container::-webkit-scrollbar {
+            height: 6px;
+        }
+        .arch-svg-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .arch-svg-container::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 10px;
+        }
+        .arch-svg {
+            display: block;
+            width: 100%;
+            min-width: 950px;
+        }
+
+        .mobile-swipe-hint {
+            display: none;
+        }
+
+        /* Mobile Screen Optimizations */
+        @media (max-width: 768px) {
+            .mobile-swipe-hint {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                font-size: 0.75rem;
+                font-weight: 600;
+                color: #475569;
+                background: #f1f5f9;
+                padding: 6px 14px;
+                border-radius: 999px;
+                width: max-content;
+                margin: 0 auto 16px auto;
+                animation: swipe-pulse 2.5s infinite;
+                border: 1px solid #e2e8f0;
+            }
+            @keyframes swipe-pulse {
+                0%, 100% { transform: translateX(0); opacity: 0.8; }
+                50% { transform: translateX(5px); opacity: 1; }
+            }
+            .arch-svg {
+                min-width: 750px;
+            }
+            body {
+                padding: 16px 12px 40px;
+            }
+            .page-header {
+                margin-bottom: 24px;
+            }
+            .page-header h1 {
+                font-size: 1.35rem;
+            }
+            .page-header p {
+                font-size: 0.85rem;
+            }
+            .tabs {
+                flex-direction: column;
+                flex-wrap: nowrap;
+                margin-bottom: 24px;
+                gap: 8px;
+            }
+            .tab-btn {
+                width: 100%;
+                text-align: left;
+                padding: 12px 16px;
+                font-size: 0.9rem;
+                white-space: normal;
+            }
+            .diagram-wrapper {
+                padding: 16px 12px;
+                border-radius: 12px;
+            }
+            .diagram-title {
+                font-size: 0.95rem;
+                flex-wrap: wrap;
+            }
+            .legend {
+                gap: 8px 12px;
+                font-size: 0.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-header">
+    <h1>OptiFlow — System Architecture Diagrams</h1>
+    <p>High-Level, Low-Level, and Component Design for On-Premise & Cloud (GCP)</p>
+</div>
+
+<div class="tabs">
+    <button class="tab-btn active" onclick="openTab(event,'onprem-hl')">On-Premise Infrastructure</button>
+    <button class="tab-btn" onclick="openTab(event,'onprem-ll')">On-Premise Data Pipelines</button>
+    <button class="tab-btn" onclick="openTab(event,'cloud-hl')">Cloud GCP Infrastructure</button>
+    <button class="tab-btn" onclick="openTab(event,'cloud-ll')">Cloud GCP Data Pipelines</button>
+    <button class="tab-btn" onclick="openTab(event,'lld-comp')">Application Code Modules (LLD)</button>
+</div>
+
+<!-- ============================================================
+     TAB 1: ON-PREM HIGH LEVEL
+     ============================================================ -->
+<div id="onprem-hl" class="tab-content active">
+    <div class="diagram-wrapper">
+        <div class="diagram-title">
+            🖥️ On-Premise — High-Level System Architecture
+            <span class="badge">High Level</span>
+        </div>
+
+        <div class="arch-svg-container">
+            <div class="mobile-swipe-hint">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18-6-6 6-6"/><path d="m15 18 6-6-6-6"/></svg>
+                Swipe to explore diagram
+            </div>
+            <svg class="arch-svg" viewBox="0 0 1000 340" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+                <defs>
+                    <marker id="hl-arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#64748b"/></marker>
+                    <marker id="hl-blue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#2563eb"/></marker>
+                    <marker id="hl-purple" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#7c3aed"/></marker>
+
+                    <!-- LUCIDE VECTOR ICON SYMBOLS -->
+                    <!-- User Icon -->
+                    <g id="icon-user" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </g>
+                    <!-- Shield/Lock Icon -->
+                    <g id="icon-shield" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </g>
+                    <!-- Chart Icon -->
+                    <g id="icon-chart" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"/>
+                        <line x1="12" y1="20" x2="12" y2="4"/>
+                        <line x1="6" y1="20" x2="6" y2="14"/>
+                    </g>
+                    <!-- Globe Icon -->
+                    <g id="icon-globe" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="2" y1="12" x2="22" y2="12"/>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                    </g>
+                    <!-- Layout/React Icon -->
+                    <g id="icon-layout" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="3" y1="9" x2="21" y2="9"/>
+                        <line x1="9" y1="21" x2="9" y2="9"/>
+                    </g>
+                    <!-- Zap Icon -->
+                    <g id="icon-zap" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                    </g>
+                    <!-- Cpu Engine Icon -->
+                    <g id="icon-cpu" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="4" y="4" width="16" height="16" rx="2"/>
+                        <rect x="9" y="9" width="6" height="6"/>
+                        <line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/>
+                        <line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/>
+                        <line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="15" x2="23" y2="15"/>
+                        <line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="15" x2="4" y2="15"/>
+                    </g>
+                    <!-- Database Icon -->
+                    <g id="icon-db" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                    </g>
+                    <!-- Folder/Storage Icon -->
+                    <g id="icon-folder" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                    </g>
+                    <!-- File Logs Icon -->
+                    <g id="icon-logs" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                        <polyline points="10 9 9 9 8 9"/>
+                    </g>
+                </defs>
+
+                <!-- Swimlane Backgrounds -->
+                <rect x="10"  y="20" width="145" height="290" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5"/>
+                <rect x="170" y="20" width="145" height="290" rx="8" fill="#ecfeff" stroke="#a5f3fc" stroke-width="1.5"/>
+                <rect x="330" y="20" width="145" height="290" rx="8" fill="#fffbeb" stroke="#fcd34d" stroke-width="1.5"/>
+                <rect x="490" y="20" width="145" height="290" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+                <rect x="650" y="20" width="145" height="290" rx="8" fill="#f5f3ff" stroke="#ddd6fe" stroke-width="1.5"/>
+                <rect x="810" y="20" width="175" height="290" rx="8" fill="#fdf2f8" stroke="#f9a8d4" stroke-width="1.5"/>
+
+                <!-- Swimlane Headers -->
+                <text x="82"  y="42" text-anchor="middle" fill="#475569" font-size="11" font-weight="700">USERS</text>
+                <text x="242" y="42" text-anchor="middle" fill="#0891b2" font-size="11" font-weight="700">FRONTEND</text>
+                <text x="402" y="42" text-anchor="middle" fill="#d97706" font-size="11" font-weight="700">API GATEWAY</text>
+                <text x="562" y="42" text-anchor="middle" fill="#1d4ed8" font-size="11" font-weight="700">ENGINE</text>
+                <text x="722" y="42" text-anchor="middle" fill="#6d28d9" font-size="11" font-weight="700">DATABASE</text>
+                <text x="897" y="42" text-anchor="middle" fill="#be185d" font-size="11" font-weight="700">STORAGE / LOGS</text>
+
+                <!-- NODES -->
+                <!-- Users -->
+                <rect x="25" y="70" width="115" height="60" rx="8" fill="#374151"/>
+                <use href="#icon-user" xlink:href="#icon-user" x="73" y="80" width="18" height="18" color="#9ca3af"/>
+                <text x="82" y="116" text-anchor="middle" fill="white" font-size="11" font-weight="600">Dashboard User</text>
+
+                <rect x="25" y="150" width="115" height="60" rx="8" fill="#4b5563"/>
+                <use href="#icon-shield" xlink:href="#icon-shield" x="73" y="160" width="18" height="18" color="#d1d5db"/>
+                <text x="82" y="196" text-anchor="middle" fill="white" font-size="11" font-weight="600">Admin User</text>
+
+                <rect x="25" y="230" width="115" height="60" rx="8" fill="#6b7280"/>
+                <use href="#icon-chart" xlink:href="#icon-chart" x="73" y="240" width="18" height="18" color="#e5e7eb"/>
+                <text x="82" y="276" text-anchor="middle" fill="white" font-size="11" font-weight="600">POS / ERP Source</text>
+
+                <!-- Frontend -->
+                <rect x="185" y="70" width="115" height="60" rx="8" fill="#0e7490"/>
+                <use href="#icon-globe" xlink:href="#icon-globe" x="233" y="80" width="18" height="18" color="#cffafe"/>
+                <text x="242" y="116" text-anchor="middle" fill="white" font-size="11" font-weight="700">Nginx Proxy</text>
+
+                <rect x="185" y="170" width="115" height="80" rx="8" fill="#0891b2"/>
+                <use href="#icon-layout" xlink:href="#icon-layout" x="233" y="180" width="18" height="18" color="#a5f3fc"/>
+                <text x="242" y="214" text-anchor="middle" fill="white" font-size="11" font-weight="700">React.js SPA</text>
+                <text x="242" y="234" text-anchor="middle" fill="#cffafe" font-size="9">TanStack Suite</text>
+
+                <!-- API Gateway -->
+                <rect x="345" y="120" width="115" height="80" rx="8" fill="#d97706"/>
+                <use href="#icon-zap" xlink:href="#icon-zap" x="393" y="130" width="18" height="18" color="#fef3c7"/>
+                <text x="402" y="164" text-anchor="middle" fill="white" font-size="11" font-weight="700">FastAPI</text>
+                <text x="402" y="184" text-anchor="middle" fill="#fef3c7" font-size="9">REST & CSV Validator</text>
+
+                <!-- Engine -->
+                <rect x="505" y="120" width="115" height="80" rx="8" fill="#1d4ed8"/>
+                <use href="#icon-cpu" xlink:href="#icon-cpu" x="553" y="130" width="18" height="18" color="#bfdbfe"/>
+                <text x="562" y="164" text-anchor="middle" fill="white" font-size="11" font-weight="700">Python Engine</text>
+                <text x="562" y="184" text-anchor="middle" fill="#bfdbfe" font-size="9">Pandas / Polars</text>
+
+                <!-- Database -->
+                <rect x="665" y="120" width="115" height="80" rx="8" fill="#6d28d9"/>
+                <use href="#icon-db" xlink:href="#icon-db" x="713" y="130" width="18" height="18" color="#ede9fe"/>
+                <text x="722" y="164" text-anchor="middle" fill="white" font-size="11" font-weight="700">PostgreSQL 15</text>
+                <text x="722" y="184" text-anchor="middle" fill="#ede9fe" font-size="9">SQLAlchemy ORM + Alembic</text>
+
+                <!-- Storage / Ops -->
+                <rect x="830" y="70" width="135" height="60" rx="8" fill="#be185d"/>
+                <use href="#icon-folder" xlink:href="#icon-folder" x="888" y="80" width="18" height="18" color="#fce7f3"/>
+                <text x="897" y="116" text-anchor="middle" fill="white" font-size="11" font-weight="700">CSV Archive</text>
+
+                <rect x="830" y="170" width="135" height="60" rx="8" fill="#9d174d"/>
+                <use href="#icon-logs" xlink:href="#icon-logs" x="888" y="180" width="18" height="18" color="#fbcfe8"/>
+                <text x="897" y="216" text-anchor="middle" fill="white" font-size="11" font-weight="700">App Logs & Admin</text>
+
+                <!-- CLEAN STRAIGHT ARROWS -->
+                <line x1="140" y1="100" x2="183" y2="100" stroke="#64748b" stroke-width="1.5" marker-end="url(#hl-arr)"/>
+                <line x1="140" y1="190" x2="183" y2="190" stroke="#64748b" stroke-width="1.5" marker-end="url(#hl-arr)"/>
+                <line x1="140" y1="260" x2="183" y2="230" stroke="#64748b" stroke-width="1.5" marker-end="url(#hl-arr)"/>
+                
+                <line x1="242" y1="130" x2="242" y2="168" stroke="#0891b2" stroke-width="1.5" marker-end="url(#hl-arr)"/>
+                <line x1="300" y1="190" x2="343" y2="175" stroke="#64748b" stroke-width="1.5" marker-end="url(#hl-arr)"/>
+                
+                <line x1="460" y1="160" x2="503" y2="160" stroke="#2563eb" stroke-width="1.5" marker-end="url(#hl-blue)"/>
+                <line x1="620" y1="160" x2="663" y2="160" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#hl-purple)"/>
+                <line x1="780" y1="140" x2="828" y2="100" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#hl-arr)"/>
+                <line x1="780" y1="170" x2="828" y2="190" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#hl-arr)"/>
+            </svg>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#374151"></div> Users / External</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#0891b2"></div> Frontend (React + Nginx)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#d97706"></div> API Gateway (FastAPI)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#1d4ed8"></div> Allocation Engine (Python)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#6d28d9"></div> Database (PostgreSQL)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#be185d"></div> Storage / Ops</div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     TAB 2: ON-PREM LOW LEVEL
+     ============================================================ -->
+<div id="onprem-ll" class="tab-content">
+    <div class="diagram-wrapper">
+        <div class="diagram-title">
+            🖥️ On-Premise — Low-Level Request & Data Flow
+            <span class="badge">Low Level</span>
+        </div>
+
+        <div class="arch-svg-container">
+            <div class="mobile-swipe-hint">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18-6-6 6-6"/><path d="m15 18 6-6-6-6"/></svg>
+                Swipe to explore diagram
+            </div>
+            <svg class="arch-svg" viewBox="0 0 1080 560" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+                <defs>
+                    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#64748b"/></marker>
+                    <marker id="arr-red" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#dc2626"/></marker>
+                    <marker id="arr-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#16a34a"/></marker>
+                </defs>
+
+                <!-- FLOW 1: Auth & Dashboard Access -->
+                <rect x="20" y="15" width="290" height="22" rx="4" fill="#e2e8f0"/>
+                <text x="30" y="30" font-size="11" font-weight="700" fill="#1e293b">① AUTHENTICATION & DASHBOARD ACCESS</text>
+                
+                <rect x="20" y="45" width="130" height="50" rx="8" fill="#374151"/>
+                <text x="85" y="66" text-anchor="middle" fill="white" font-size="11" font-weight="700">Browser User</text>
+                <text x="85" y="82" text-anchor="middle" fill="#9ca3af" font-size="9">Opens On-Prem URL</text>
+                <line x1="150" y1="70" x2="175" y2="70" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+                <rect x="177" y="45" width="140" height="50" rx="8" fill="#0891b2"/>
+                <text x="247" y="66" text-anchor="middle" fill="white" font-size="11" font-weight="700">Nginx Proxy</text>
+                <text x="247" y="82" text-anchor="middle" fill="#cffafe" font-size="9">Serves React SPA</text>
+                <line x1="317" y1="70" x2="342" y2="70" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+                <rect x="344" y="45" width="150" height="50" rx="8" fill="#d97706"/>
+                <text x="419" y="66" text-anchor="middle" fill="white" font-size="11" font-weight="700">FastAPI Auth</text>
+                <text x="419" y="82" text-anchor="middle" fill="#fef3c7" font-size="9">Verifies JWT Token</text>
+                <line x1="494" y1="70" x2="519" y2="70" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+                <rect x="521" y="45" width="160" height="50" rx="8" fill="#6d28d9"/>
+                <text x="601" y="66" text-anchor="middle" fill="white" font-size="11" font-weight="700">PostgreSQL Session</text>
+                <text x="601" y="82" text-anchor="middle" fill="#ede9fe" font-size="9">Fetches Master Data</text>
+                <line x1="681" y1="70" x2="706" y2="70" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+                <rect x="708" y="45" width="170" height="50" rx="8" fill="#166534"/>
+                <text x="793" y="66" text-anchor="middle" fill="white" font-size="11" font-weight="700">Dashboard Render</text>
+                <text x="793" y="82" text-anchor="middle" fill="#bbf7d0" font-size="9">TanStack Grid Ready</text>
+
+                <!-- FLOW 2: Dashboard Edit Path -->
+                <rect x="20" y="115" width="300" height="22" rx="4" fill="#e2e8f0"/>
+                <text x="30" y="130" font-size="11" font-weight="700" fill="#1e293b">② DASHBOARD EDIT & AUDIT TRANSACTION</text>
+                
+                <rect x="20" y="145" width="130" height="50" rx="8" fill="#374151"/>
+                <text x="85" y="166" text-anchor="middle" fill="white" font-size="11" font-weight="700">User Edit</text>
+                <text x="85" y="182" text-anchor="middle" fill="#9ca3af" font-size="9">Modifies Team Rank</text>
+                <line x1="150" y1="170" x2="175" y2="170" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+                <rect x="177" y="145" width="140" height="50" rx="8" fill="#d97706"/>
+                <text x="247" y="166" text-anchor="middle" fill="white" font-size="11" font-weight="700">FastAPI</text>
+                <text x="247" y="182" text-anchor="middle" fill="#fef3c7" font-size="9">PATCH /stores/{id}</text>
+                <line x1="317" y1="170" x2="342" y2="170" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+                <rect x="344" y="145" width="180" height="50" rx="8" fill="#7c3aed"/>
+                <text x="434" y="166" text-anchor="middle" fill="white" font-size="11" font-weight="700">PostgreSQL Transaction</text>
+                <text x="434" y="182" text-anchor="middle" fill="#ede9fe" font-size="9">BEGIN; SET LOCAL user</text>
+                <line x1="524" y1="170" x2="549" y2="170" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+                <rect x="551" y="145" width="150" height="50" rx="8" fill="#6d28d9"/>
+                <text x="626" y="166" text-anchor="middle" fill="white" font-size="11" font-weight="700">UPDATE Table</text>
+                <text x="626" y="182" text-anchor="middle" fill="#ede9fe" font-size="9">Fires BEFORE Trigger</text>
+                <line x1="701" y1="170" x2="726" y2="170" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+                <rect x="728" y="145" width="160" height="50" rx="8" fill="#166534"/>
+                <text x="808" y="166" text-anchor="middle" fill="white" font-size="11" font-weight="700">INSERT {table}_audit</text>
+                <text x="808" y="182" text-anchor="middle" fill="#bbf7d0" font-size="9">Mirror Copy → COMMIT</text>
+
+                <!-- FLOW 3: CSV Upload Path -->
+                <rect x="20" y="215" width="270" height="22" rx="4" fill="#e2e8f0"/>
+                <text x="30" y="230" font-size="11" font-weight="700" fill="#1e293b">③ CSV UPLOAD & VALIDATION PIPELINE</text>
+                
+                <rect x="20" y="245" width="130" height="50" rx="8" fill="#374151"/>
+                <text x="85" y="266" text-anchor="middle" fill="white" font-size="11" font-weight="700">User Upload</text>
+                <text x="85" y="282" text-anchor="middle" fill="#9ca3af" font-size="9">Stock / Sales CSV</text>
+                <line x1="150" y1="270" x2="175" y2="270" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+                <rect x="177" y="245" width="140" height="50" rx="8" fill="#d97706"/>
+                <text x="247" y="266" text-anchor="middle" fill="white" font-size="11" font-weight="700">FastAPI</text>
+                <text x="247" y="282" text-anchor="middle" fill="#fef3c7" font-size="9">POST /upload/stock</text>
+                <line x1="317" y1="270" x2="342" y2="270" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+                <rect x="344" y="245" width="150" height="50" rx="8" fill="#be185d"/>
+                <text x="419" y="266" text-anchor="middle" fill="white" font-size="11" font-weight="700">Pandas Validator</text>
+                <text x="419" y="282" text-anchor="middle" fill="#fce7f3" font-size="9">Schema & Alias Check</text>
+
+                <!-- PASS Branch -->
+                <line x1="494" y1="260" x2="529" y2="250" stroke="#16a34a" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arr-green)"/>
+                <text x="510" y="248" text-anchor="middle" fill="#16a34a" font-size="9" font-weight="700">PASS</text>
+                <rect x="531" y="235" width="170" height="50" rx="8" fill="#166534"/>
+                <text x="616" y="256" text-anchor="middle" fill="white" font-size="11" font-weight="700">PostgreSQL UPSERT</text>
+                <text x="616" y="272" text-anchor="middle" fill="#bbf7d0" font-size="9">Save & Archive to /data/</text>
+
+                <!-- FAIL Branch -->
+                <line x1="494" y1="280" x2="529" y2="300" stroke="#dc2626" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arr-red)"/>
+                <text x="510" y="302" text-anchor="middle" fill="#dc2626" font-size="9" font-weight="700">FAIL</text>
+                <rect x="531" y="292" width="170" height="40" rx="8" fill="#fee2e2" stroke="#fca5a5" stroke-width="1.5"/>
+                <text x="616" y="310" text-anchor="middle" fill="#991b1b" font-size="10" font-weight="700">Reject Upload (csv_errors)</text>
+
+                <!-- FLOW 4: Allocation Run -->
+                <rect x="20" y="350" width="240" height="22" rx="4" fill="#e2e8f0"/>
+                <text x="30" y="365" font-size="11" font-weight="700" fill="#1e293b">④ ALLOCATION ENGINE RUN FLOW</text>
+                
+                <rect x="20" y="380" width="130" height="50" rx="8" fill="#374151"/>
+                <text x="85" y="401" text-anchor="middle" fill="white" font-size="11" font-weight="700">Admin User</text>
+                <text x="85" y="417" text-anchor="middle" fill="#9ca3af" font-size="9">Triggers Allocation</text>
+                <line x1="150" y1="405" x2="175" y2="405" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+                <rect x="177" y="380" width="140" height="50" rx="8" fill="#d97706"/>
+                <text x="247" y="401" text-anchor="middle" fill="white" font-size="11" font-weight="700">FastAPI</text>
+                <text x="247" y="417" text-anchor="middle" fill="#fef3c7" font-size="9">POST /allocations/run</text>
+                <line x1="317" y1="405" x2="342" y2="405" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+                <rect x="344" y="380" width="150" height="50" rx="8" fill="#1d4ed8"/>
+                <text x="419" y="401" text-anchor="middle" fill="white" font-size="11" font-weight="700">Python Engine</text>
+                <text x="419" y="417" text-anchor="middle" fill="#bfdbfe" font-size="9">Async Worker (Celery/Cloud Run)</text>
+                <line x1="494" y1="405" x2="519" y2="405" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+                <rect x="521" y="380" width="160" height="50" rx="8" fill="#2563eb"/>
+                <text x="601" y="401" text-anchor="middle" fill="white" font-size="11" font-weight="700">Matching Logic</text>
+                <text x="601" y="417" text-anchor="middle" fill="#bfdbfe" font-size="9">T1 ➔ T2 ➔ T3 Match</text>
+                <line x1="681" y1="405" x2="706" y2="405" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+                <rect x="708" y="380" width="170" height="50" rx="8" fill="#6d28d9"/>
+                <text x="793" y="401" text-anchor="middle" fill="white" font-size="11" font-weight="700">SQLAlchemy Bulk Save</text>
+                <text x="793" y="417" text-anchor="middle" fill="#ede9fe" font-size="9">Batch run_id UUID</text>
+
+                <!-- FLOW 5: Rollback & Admin Alerts -->
+                <rect x="20" y="450" width="280" height="22" rx="4" fill="#e2e8f0"/>
+                <text x="30" y="465" font-size="11" font-weight="700" fill="#1e293b">⑤ ALLOCATION ROLLBACK & MONITORING</text>
+                
+                <rect x="20" y="480" width="130" height="50" rx="8" fill="#374151"/>
+                <text x="85" y="501" text-anchor="middle" fill="white" font-size="11" font-weight="700">Admin User</text>
+                <text x="85" y="517" text-anchor="middle" fill="#9ca3af" font-size="9">Clicks Rollback</text>
+                <line x1="150" y1="505" x2="175" y2="505" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+                <rect x="177" y="480" width="140" height="50" rx="8" fill="#d97706"/>
+                <text x="247" y="501" text-anchor="middle" fill="white" font-size="11" font-weight="700">FastAPI</text>
+                <text x="247" y="517" text-anchor="middle" fill="#fef3c7" font-size="9">DELETE /allocations/{id}</text>
+                <line x1="317" y1="505" x2="342" y2="505" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+                <rect x="344" y="480" width="160" height="50" rx="8" fill="#7c3aed"/>
+                <text x="424" y="501" text-anchor="middle" fill="white" font-size="11" font-weight="700">Postgres Transaction</text>
+                <text x="424" y="517" text-anchor="middle" fill="#ede9fe" font-size="9">DELETE + Audit Rollback</text>
+                <line x1="504" y1="505" x2="529" y2="505" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+                <rect x="531" y="480" width="160" height="50" rx="8" fill="#be185d"/>
+                <text x="611" y="501" text-anchor="middle" fill="white" font-size="11" font-weight="700">Structured App Log</text>
+                <text x="611" y="517" text-anchor="middle" fill="#fce7f3" font-size="9">JSON /var/log/optiflow</text>
+                <line x1="691" y1="505" x2="716" y2="505" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+
+                <rect x="718" y="480" width="160" height="50" rx="8" fill="#166534"/>
+                <text x="798" y="501" text-anchor="middle" fill="white" font-size="11" font-weight="700">Admin Log Viewer</text>
+                <text x="798" y="517" text-anchor="middle" fill="#bbf7d0" font-size="9">Email Alert on ERROR</text>
+            </svg>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     TAB 3: CLOUD HIGH LEVEL
+     ============================================================ -->
+<div id="cloud-hl" class="tab-content">
+    <div class="diagram-wrapper">
+        <div class="diagram-title">
+            ☁️ Cloud (GCP) — High-Level System Architecture
+            <span class="badge">High Level</span>
+        </div>
+
+        <div class="arch-svg-container">
+            <div class="mobile-swipe-hint">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18-6-6 6-6"/><path d="m15 18 6-6-6-6"/></svg>
+                Swipe to explore diagram
+            </div>
+            <svg class="arch-svg" viewBox="0 0 1060 340" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+                <defs>
+                    <marker id="cg-arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#64748b"/></marker>
+                    <marker id="cg-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#16a34a"/></marker>
+                    <marker id="cg-blue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#2563eb"/></marker>
+                    <marker id="cg-purple" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#7c3aed"/></marker>
+
+                    <g id="icon-user" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </g>
+                    <g id="icon-shield" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </g>
+                    <g id="icon-chart" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"/>
+                        <line x1="12" y1="20" x2="12" y2="4"/>
+                        <line x1="6" y1="20" x2="6" y2="14"/>
+                    </g>
+                    <g id="icon-globe" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="2" y1="12" x2="22" y2="12"/>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                    </g>
+                    <g id="icon-layout" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="3" y1="9" x2="21" y2="9"/>
+                        <line x1="9" y1="21" x2="9" y2="9"/>
+                    </g>
+                    <g id="icon-zap" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                    </g>
+                    <g id="icon-cpu" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="4" y="4" width="16" height="16" rx="2"/>
+                        <rect x="9" y="9" width="6" height="6"/>
+                        <line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/>
+                        <line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/>
+                        <line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="15" x2="23" y2="15"/>
+                        <line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="15" x2="4" y2="15"/>
+                    </g>
+                    <g id="icon-db" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                    </g>
+                    <g id="icon-folder" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                    </g>
+                    <g id="icon-logs" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                        <polyline points="10 9 9 9 8 9"/>
+                    </g>
+                </defs>
+
+                <!-- Swimlane BGs -->
+                <rect x="10"  y="20" width="130" height="290" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5"/>
+                <rect x="155" y="20" width="135" height="290" rx="8" fill="#fffbeb" stroke="#fcd34d" stroke-width="1.5"/>
+                <rect x="305" y="20" width="135" height="290" rx="8" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/>
+                <rect x="455" y="20" width="135" height="290" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+                <rect x="605" y="20" width="135" height="290" rx="8" fill="#f5f3ff" stroke="#ddd6fe" stroke-width="1.5"/>
+                <rect x="755" y="20" width="145" height="290" rx="8" fill="#fdf2f8" stroke="#f9a8d4" stroke-width="1.5"/>
+                <rect x="915" y="20" width="135" height="290" rx="8" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+
+                <!-- Headers -->
+                <text x="75"  y="42" text-anchor="middle" fill="#475569" font-size="11" font-weight="700">USERS</text>
+                <text x="222" y="42" text-anchor="middle" fill="#d97706" font-size="11" font-weight="700">CDN / HOSTING</text>
+                <text x="372" y="42" text-anchor="middle" fill="#16a34a" font-size="11" font-weight="700">API GATEWAY</text>
+                <text x="522" y="42" text-anchor="middle" fill="#2563eb" font-size="11" font-weight="700">ENGINE</text>
+                <text x="672" y="42" text-anchor="middle" fill="#7c3aed" font-size="11" font-weight="700">DATABASE</text>
+                <text x="827" y="42" text-anchor="middle" fill="#be185d" font-size="11" font-weight="700">CLOUD STORAGE</text>
+                <text x="982" y="42" text-anchor="middle" fill="#166534" font-size="11" font-weight="700">MONITORING</text>
+
+                <!-- NODES -->
+                <!-- Users -->
+                <rect x="20" y="70" width="110" height="60" rx="8" fill="#374151"/>
+                <use href="#icon-user" xlink:href="#icon-user" x="66" y="80" width="18" height="18" color="#9ca3af"/>
+                <text x="75" y="116" text-anchor="middle" fill="white" font-size="10" font-weight="600">Dashboard User</text>
+
+                <rect x="20" y="150" width="110" height="60" rx="8" fill="#4b5563"/>
+                <use href="#icon-shield" xlink:href="#icon-shield" x="66" y="160" width="18" height="18" color="#d1d5db"/>
+                <text x="75" y="196" text-anchor="middle" fill="white" font-size="10" font-weight="600">Admin User</text>
+
+                <rect x="20" y="230" width="110" height="60" rx="8" fill="#6b7280"/>
+                <use href="#icon-chart" xlink:href="#icon-chart" x="66" y="240" width="18" height="18" color="#e5e7eb"/>
+                <text x="75" y="276" text-anchor="middle" fill="white" font-size="10" font-weight="600">POS / ERP Source</text>
+
+                <!-- CDN / Hosting -->
+                <rect x="165" y="70" width="115" height="60" rx="8" fill="#d97706"/>
+                <use href="#icon-globe" xlink:href="#icon-globe" x="213" y="80" width="18" height="18" color="#fef3c7"/>
+                <text x="222" y="116" text-anchor="middle" fill="white" font-size="10" font-weight="700">Firebase Hosting</text>
+
+                <rect x="165" y="170" width="115" height="80" rx="8" fill="#f59e0b"/>
+                <use href="#icon-layout" xlink:href="#icon-layout" x="213" y="180" width="18" height="18" color="#fef3c7"/>
+                <text x="222" y="214" text-anchor="middle" fill="white" font-size="10" font-weight="700">React SPA</text>
+                <text x="222" y="234" text-anchor="middle" fill="#fef3c7" font-size="9">Global Edge CDN</text>
+
+                <!-- API Gateway -->
+                <rect x="315" y="120" width="115" height="80" rx="8" fill="#16a34a"/>
+                <use href="#icon-zap" xlink:href="#icon-zap" x="363" y="130" width="18" height="18" color="#dcfce7"/>
+                <text x="372" y="164" text-anchor="middle" fill="white" font-size="10" font-weight="700">Cloud Run</text>
+                <text x="372" y="184" text-anchor="middle" fill="#dcfce7" font-size="9">FastAPI Gateway</text>
+
+                <!-- Engine -->
+                <rect x="465" y="120" width="115" height="80" rx="8" fill="#2563eb"/>
+                <use href="#icon-cpu" xlink:href="#icon-cpu" x="513" y="130" width="18" height="18" color="#bfdbfe"/>
+                <text x="522" y="164" text-anchor="middle" fill="white" font-size="10" font-weight="700">Cloud Run Job</text>
+                <text x="522" y="184" text-anchor="middle" fill="#bfdbfe" font-size="9">Python Worker Script</text>
+
+                <!-- Database -->
+                <rect x="615" y="120" width="115" height="80" rx="8" fill="#7c3aed"/>
+                <use href="#icon-db" xlink:href="#icon-db" x="663" y="130" width="18" height="18" color="#ede9fe"/>
+                <text x="672" y="164" text-anchor="middle" fill="white" font-size="10" font-weight="700">Cloud SQL</text>
+                <text x="672" y="184" text-anchor="middle" fill="#ede9fe" font-size="9">SQLAlchemy/Alembic</text>
+
+                <!-- Cloud Storage -->
+                <rect x="765" y="70" width="125" height="60" rx="8" fill="#be185d"/>
+                <use href="#icon-folder" xlink:href="#icon-folder" x="818" y="80" width="18" height="18" color="#fce7f3"/>
+                <text x="827" y="116" text-anchor="middle" fill="white" font-size="10" font-weight="700">Cloud Storage</text>
+
+                <rect x="765" y="170" width="125" height="60" rx="8" fill="#9d174d"/>
+                <use href="#icon-logs" xlink:href="#icon-logs" x="818" y="180" width="18" height="18" color="#fbcfe8"/>
+                <text x="827" y="216" text-anchor="middle" fill="white" font-size="10" font-weight="700">Artifact Registry</text>
+
+                <!-- Monitoring -->
+                <rect x="925" y="120" width="115" height="80" rx="8" fill="#166534"/>
+                <use href="#icon-chart" xlink:href="#icon-chart" x="973" y="130" width="18" height="18" color="#bbf7d0"/>
+                <text x="982" y="164" text-anchor="middle" fill="white" font-size="10" font-weight="700">Cloud Logging</text>
+                <text x="982" y="184" text-anchor="middle" fill="#bbf7d0" font-size="9">& Monitoring</text>
+
+                <!-- ARROWS -->
+                <line x1="130" y1="100" x2="163" y2="100" stroke="#64748b" stroke-width="1.5" marker-end="url(#cg-arr)"/>
+                <line x1="130" y1="180" x2="163" y2="180" stroke="#64748b" stroke-width="1.5" marker-end="url(#cg-arr)"/>
+                <line x1="130" y1="260" x2="163" y2="230" stroke="#64748b" stroke-width="1.5" marker-end="url(#cg-arr)"/>
+
+                <line x1="222" y1="130" x2="222" y2="168" stroke="#d97706" stroke-width="1.5" marker-end="url(#cg-arr)"/>
+                <line x1="280" y1="200" x2="313" y2="175" stroke="#64748b" stroke-width="1.5" marker-end="url(#cg-arr)"/>
+
+                <line x1="430" y1="160" x2="463" y2="160" stroke="#16a34a" stroke-width="1.5" marker-end="url(#cg-green)"/>
+                <line x1="580" y1="160" x2="613" y2="160" stroke="#2563eb" stroke-width="1.5" marker-end="url(#cg-blue)"/>
+                <line x1="730" y1="160" x2="763" y2="100" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#cg-purple)"/>
+                <line x1="730" y1="160" x2="763" y2="190" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#cg-purple)"/>
+                <line x1="890" y1="160" x2="923" y2="160" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#cg-arr)"/>
+            </svg>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#374151"></div> Users / External</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#d97706"></div> Firebase Hosting / CDN</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#16a34a"></div> Cloud Run (FastAPI Gateway)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#2563eb"></div> Cloud Run Job (Python Engine)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#7c3aed"></div> Cloud SQL (PostgreSQL)</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#be185d"></div> Cloud Storage & Registry</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#166534"></div> Cloud Logging & Alerts</div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     TAB 4: CLOUD LOW LEVEL
+     ============================================================ -->
+<div id="cloud-ll" class="tab-content">
+    <div class="diagram-wrapper">
+        <div class="diagram-title">
+            ☁️ Cloud (GCP) — Low-Level Request & Data Flow
+            <span class="badge">Low Level</span>
+        </div>
+
+        <div class="arch-svg-container">
+            <div class="mobile-swipe-hint">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18-6-6 6-6"/><path d="m15 18 6-6-6-6"/></svg>
+                Swipe to explore diagram
+            </div>
+            <svg class="arch-svg" viewBox="0 0 1080 560" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+                <defs>
+                    <marker id="cl" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#64748b"/></marker>
+                    <marker id="cl-red" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#dc2626"/></marker>
+                    <marker id="cl-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#16a34a"/></marker>
+                </defs>
+
+                <!-- FLOW 1: Auth & Dashboard Access -->
+                <rect x="20" y="15" width="330" height="22" rx="4" fill="#e2e8f0"/>
+                <text x="30" y="30" font-size="11" font-weight="700" fill="#1e293b">① AUTHENTICATION & DASHBOARD ACCESS (GCP)</text>
+                
+                <rect x="20" y="45" width="130" height="50" rx="8" fill="#374151"/>
+                <text x="85" y="66" text-anchor="middle" fill="white" font-size="11" font-weight="700">Browser User</text>
+                <text x="85" y="82" text-anchor="middle" fill="#9ca3af" font-size="9">Firebase Domain</text>
+                <line x1="150" y1="70" x2="175" y2="70" stroke="#64748b" stroke-width="1.5" marker-end="url(#cl)"/>
+
+                <rect x="177" y="45" width="140" height="50" rx="8" fill="#d97706"/>
+                <text x="247" y="66" text-anchor="middle" fill="white" font-size="11" font-weight="700">Firebase Hosting</text>
+                <text x="247" y="82" text-anchor="middle" fill="#fef3c7" font-size="9">CDN serves React SPA</text>
+                <line x1="317" y1="70" x2="342" y2="70" stroke="#64748b" stroke-width="1.5" marker-end="url(#cl)"/>
+
+                <rect x="344" y="45" width="140" height="50" rx="8" fill="#166534"/>
+                <text x="414" y="66" text-anchor="middle" fill="white" font-size="11" font-weight="700">Firebase Auth</text>
+                <text x="414" y="82" text-anchor="middle" fill="#bbf7d0" font-size="9">OAuth JWT Verification</text>
+                <line x1="484" y1="70" x2="509" y2="70" stroke="#64748b" stroke-width="1.5" marker-end="url(#cl)"/>
+
+                <rect x="511" y="45" width="160" height="50" rx="8" fill="#16a34a"/>
+                <text x="591" y="66" text-anchor="middle" fill="white" font-size="11" font-weight="700">Cloud Run FastAPI</text>
+                <text x="591" y="82" text-anchor="middle" fill="#dcfce7" font-size="9">Validates Bearer Token</text>
+                <line x1="671" y1="70" x2="696" y2="70" stroke="#64748b" stroke-width="1.5" marker-end="url(#cl)"/>
+
+                <rect x="698" y="45" width="170" height="50" rx="8" fill="#7c3aed"/>
+                <text x="783" y="66" text-anchor="middle" fill="white" font-size="11" font-weight="700">Cloud SQL (Postgres)</text>
+                <text x="783" y="82" text-anchor="middle" fill="#ede9fe" font-size="9">Auth Proxy Connection</text>
+
+                <!-- FLOW 2: Dashboard Edit Path -->
+                <rect x="20" y="115" width="370" height="22" rx="4" fill="#e2e8f0"/>
+                <text x="30" y="130" font-size="11" font-weight="700" fill="#1e293b">② DASHBOARD EDIT & AUDIT TRANSACTION (CLOUD SQL)</text>
+                
+                <rect x="20" y="145" width="130" height="50" rx="8" fill="#374151"/>
+                <text x="85" y="166" text-anchor="middle" fill="white" font-size="11" font-weight="700">User Edit</text>
+                <text x="85" y="182" text-anchor="middle" fill="#9ca3af" font-size="9">Modifies Team Rank</text>
+                <line x1="150" y1="170" x2="175" y2="170" stroke="#64748b" stroke-width="1.5" marker-end="url(#cl)"/>
+
+                <rect x="177" y="145" width="140" height="50" rx="8" fill="#16a34a"/>
+                <text x="247" y="166" text-anchor="middle" fill="white" font-size="11" font-weight="700">Cloud Run FastAPI</text>
+                <text x="247" y="182" text-anchor="middle" fill="#dcfce7" font-size="9">PATCH /stores/{id}</text>
+                <line x1="317" y1="170" x2="342" y2="170" stroke="#64748b" stroke-width="1.5" marker-end="url(#cl)"/>
+
+                <rect x="344" y="145" width="180" height="50" rx="8" fill="#7c3aed"/>
+                <text x="434" y="166" text-anchor="middle" fill="white" font-size="11" font-weight="700">Cloud SQL Transaction</text>
+                <text x="434" y="182" text-anchor="middle" fill="#ede9fe" font-size="9">BEGIN; SET LOCAL user</text>
+                <line x1="524" y1="170" x2="549" y2="170" stroke="#64748b" stroke-width="1.5" marker-end="url(#cl)"/>
+
+                <rect x="551" y="145" width="150" height="50" rx="8" fill="#6d28d9"/>
+                <text x="626" y="166" text-anchor="middle" fill="white" font-size="11" font-weight="700">UPDATE Table</text>
+                <text x="626" y="182" text-anchor="middle" fill="#ede9fe" font-size="9">Fires BEFORE Trigger</text>
+                <line x1="701" y1="170" x2="726" y2="170" stroke="#64748b" stroke-width="1.5" marker-end="url(#cl)"/>
+
+                <rect x="728" y="145" width="160" height="50" rx="8" fill="#166534"/>
+                <text x="808" y="166" text-anchor="middle" fill="white" font-size="11" font-weight="700">INSERT {table}_audit</text>
+                <text x="808" y="182" text-anchor="middle" fill="#bbf7d0" font-size="9">Mirror Copy → COMMIT</text>
+
+                <!-- FLOW 3: CSV Upload Path -->
+                <rect x="20" y="215" width="390" height="22" rx="4" fill="#e2e8f0"/>
+                <text x="30" y="230" font-size="11" font-weight="700" fill="#1e293b">③ CSV UPLOAD & STORAGE PIPELINE (CLOUD STORAGE)</text>
+                
+                <rect x="20" y="245" width="130" height="50" rx="8" fill="#374151"/>
+                <text x="85" y="266" text-anchor="middle" fill="white" font-size="11" font-weight="700">User Upload</text>
+                <text x="85" y="282" text-anchor="middle" fill="#9ca3af" font-size="9">Stock / Sales CSV</text>
+                <line x1="150" y1="270" x2="175" y2="270" stroke="#64748b" stroke-width="1.5" marker-end="url(#cl)"/>
+
+                <rect x="177" y="245" width="140" height="50" rx="8" fill="#16a34a"/>
+                <text x="247" y="266" text-anchor="middle" fill="white" font-size="11" font-weight="700">Cloud Run FastAPI</text>
+                <text x="247" y="282" text-anchor="middle" fill="#dcfce7" font-size="9">POST /upload/stock</text>
+                <line x1="317" y1="270" x2="342" y2="270" stroke="#64748b" stroke-width="1.5" marker-end="url(#cl)"/>
+
+                <rect x="344" y="245" width="150" height="50" rx="8" fill="#be185d"/>
+                <text x="419" y="266" text-anchor="middle" fill="white" font-size="11" font-weight="700">Pandas Validator</text>
+                <text x="419" y="282" text-anchor="middle" fill="#fce7f3" font-size="9">Schema & Alias Check</text>
+
+                <!-- PASS Branch -->
+                <line x1="494" y1="260" x2="529" y2="250" stroke="#16a34a" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#cl-green)"/>
+                <text x="510" y="248" text-anchor="middle" fill="#16a34a" font-size="9" font-weight="700">PASS</text>
+                <rect x="531" y="235" width="180" height="50" rx="8" fill="#166534"/>
+                <text x="621" y="256" text-anchor="middle" fill="white" font-size="11" font-weight="700">Cloud SQL & GCS Bucket</text>
+                <text x="621" y="272" text-anchor="middle" fill="#bbf7d0" font-size="9">UPSERT Data & Versioned Archive</text>
+
+                <!-- FAIL Branch -->
+                <line x1="494" y1="280" x2="529" y2="300" stroke="#dc2626" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#cl-red)"/>
+                <text x="510" y="302" text-anchor="middle" fill="#dc2626" font-size="9" font-weight="700">FAIL</text>
+                <rect x="531" y="292" width="180" height="40" rx="8" fill="#fee2e2" stroke="#fca5a5" stroke-width="1.5"/>
+                <text x="621" y="310" text-anchor="middle" fill="#991b1b" font-size="10" font-weight="700">Reject Upload (csv_errors)</text>
+
+                <!-- FLOW 4: Allocation Run -->
+                <rect x="20" y="350" width="280" height="22" rx="4" fill="#e2e8f0"/>
+                <text x="30" y="365" font-size="11" font-weight="700" fill="#1e293b">④ CLOUD RUN JOB ALLOCATION ENGINE</text>
+                
+                <rect x="20" y="380" width="130" height="50" rx="8" fill="#374151"/>
+                <text x="85" y="401" text-anchor="middle" fill="white" font-size="11" font-weight="700">Admin User</text>
+                <text x="85" y="417" text-anchor="middle" fill="#9ca3af" font-size="9">Triggers Allocation</text>
+                <line x1="150" y1="405" x2="175" y2="405" stroke="#64748b" stroke-width="1.5" marker-end="url(#cl)"/>
+
+                <rect x="177" y="380" width="140" height="50" rx="8" fill="#16a34a"/>
+                <text x="247" y="401" text-anchor="middle" fill="white" font-size="11" font-weight="700">Cloud Run FastAPI</text>
+                <text x="247" y="417" text-anchor="middle" fill="#dcfce7" font-size="9">POST /allocations/run</text>
+                <line x1="317" y1="405" x2="342" y2="405" stroke="#64748b" stroke-width="1.5" marker-end="url(#cl)"/>
+
+                <rect x="344" y="380" width="150" height="50" rx="8" fill="#2563eb"/>
+                <text x="419" y="401" text-anchor="middle" fill="white" font-size="11" font-weight="700">Cloud Run Job</text>
+                <text x="419" y="417" text-anchor="middle" fill="#bfdbfe" font-size="9">Container On-Demand</text>
+                <line x1="494" y1="405" x2="519" y2="405" stroke="#64748b" stroke-width="1.5" marker-end="url(#cl)"/>
+
+                <rect x="521" y="380" width="160" height="50" rx="8" fill="#2563eb"/>
+                <text x="601" y="401" text-anchor="middle" fill="white" font-size="11" font-weight="700">Matching Logic</text>
+                <text x="601" y="417" text-anchor="middle" fill="#bfdbfe" font-size="9">T1 ➔ T2 ➔ T3 Match</text>
+                <line x1="681" y1="405" x2="706" y2="405" stroke="#64748b" stroke-width="1.5" marker-end="url(#cl)"/>
+
+                <rect x="708" y="380" width="170" height="50" rx="8" fill="#7c3aed"/>
+                <text x="793" y="401" text-anchor="middle" fill="white" font-size="11" font-weight="700">INSERT Allocations</text>
+                <text x="793" y="417" text-anchor="middle" fill="#ede9fe" font-size="9">Cloud SQL run_id UUID</text>
+
+                <!-- FLOW 5: Rollback & Admin Alerts -->
+                <rect x="20" y="450" width="310" height="22" rx="4" fill="#e2e8f0"/>
+                <text x="30" y="465" font-size="11" font-weight="700" fill="#1e293b">⑤ ALLOCATION ROLLBACK & CLOUD MONITORING</text>
+                
+                <rect x="20" y="480" width="130" height="50" rx="8" fill="#374151"/>
+                <text x="85" y="501" text-anchor="middle" fill="white" font-size="11" font-weight="700">Admin User</text>
+                <text x="85" y="517" text-anchor="middle" fill="#9ca3af" font-size="9">Clicks Rollback</text>
+                <line x1="150" y1="505" x2="175" y2="505" stroke="#64748b" stroke-width="1.5" marker-end="url(#cl)"/>
+
+                <rect x="177" y="480" width="140" height="50" rx="8" fill="#16a34a"/>
+                <text x="247" y="501" text-anchor="middle" fill="white" font-size="11" font-weight="700">Cloud Run FastAPI</text>
+                <text x="247" y="517" text-anchor="middle" fill="#dcfce7" font-size="9">DELETE /allocations/{id}</text>
+                <line x1="317" y1="505" x2="342" y2="505" stroke="#64748b" stroke-width="1.5" marker-end="url(#cl)"/>
+
+                <rect x="344" y="480" width="160" height="50" rx="8" fill="#7c3aed"/>
+                <text x="424" y="501" text-anchor="middle" fill="white" font-size="11" font-weight="700">Cloud SQL Transaction</text>
+                <text x="424" y="517" text-anchor="middle" fill="#ede9fe" font-size="9">DELETE + Audit Rollback</text>
+                <line x1="504" y1="505" x2="529" y2="505" stroke="#64748b" stroke-width="1.5" marker-end="url(#cl)"/>
+
+                <rect x="531" y="480" width="160" height="50" rx="8" fill="#166534"/>
+                <text x="611" y="501" text-anchor="middle" fill="white" font-size="11" font-weight="700">Cloud Logging Sink</text>
+                <text x="611" y="517" text-anchor="middle" fill="#bbf7d0" font-size="9">Auto-ingests stdout</text>
+                <line x1="691" y1="505" x2="716" y2="505" stroke="#64748b" stroke-width="1.5" marker-end="url(#cl)"/>
+
+                <rect x="718" y="480" width="160" height="50" rx="8" fill="#166534"/>
+                <text x="798" y="501" text-anchor="middle" fill="white" font-size="11" font-weight="700">Cloud Monitoring</text>
+                <text x="798" y="517" text-anchor="middle" fill="#bbf7d0" font-size="9">Alert policy ➔ Email/Slack</text>
+            </svg>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     TAB 5: LLD COMPONENT DIAGRAM
+     ============================================================ -->
+<div id="lld-comp" class="tab-content">
+    <div class="diagram-wrapper">
+        <div class="diagram-title">
+            🧩 Low-Level Design (LLD) — Component Architecture
+            <span class="badge">LLD</span>
+        </div>
+
+        <div class="arch-svg-container">
+            <div class="mobile-swipe-hint">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18-6-6 6-6"/><path d="m15 18 6-6-6-6"/></svg>
+                Swipe to explore diagram
+            </div>
+            <svg class="arch-svg" viewBox="0 0 1000 580" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+                <defs>
+                    <marker id="lld-arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#166534"/></marker>
+                </defs>
+
+                <!-- React Web App Container -->
+                <rect x="20" y="20" width="960" height="190" rx="12" fill="white" stroke="#374151" stroke-width="2"/>
+                <text x="500" y="42" text-anchor="middle" font-size="13" font-weight="800" fill="#0f172a">React Web App (Dashboard)</text>
+                
+                <rect x="40" y="60" width="180" height="70" rx="5" fill="#dcfce7" stroke="#86efac" stroke-width="1.5"/>
+                <text x="130" y="92" text-anchor="middle" font-size="11" font-weight="700" fill="#14532d">TanStack Router</text>
+                <text x="130" y="108" text-anchor="middle" font-size="10" fill="#166534">Type-Safe Client Routing</text>
+
+                <rect x="240" y="60" width="480" height="70" rx="5" fill="#dcfce7" stroke="#86efac" stroke-width="1.5"/>
+                <text x="480" y="90" text-anchor="middle" font-size="11" font-weight="700" fill="#14532d">TanStack Table & Views (Dashboard UX)</text>
+                <text x="480" y="104" text-anchor="middle" font-size="10" fill="#166534">Interactive Planogram Target Configuration Matrix</text>
+                <text x="480" y="118" text-anchor="middle" font-size="10" fill="#166534">Real-time Dispatch Allocations Grid & CSV Upload interface</text>
+
+                <rect x="740" y="60" width="220" height="70" rx="5" fill="#dcfce7" stroke="#86efac" stroke-width="1.5"/>
+                <text x="850" y="90" text-anchor="middle" font-size="11" font-weight="700" fill="#14532d">TanStack Query</text>
+                <text x="850" y="104" text-anchor="middle" font-size="10" fill="#166534">Server-State Cache &</text>
+                <text x="850" y="118" text-anchor="middle" font-size="10" fill="#166534">Auto-Invalidation Engine</text>
+
+                <rect x="40" y="145" width="920" height="40" rx="5" fill="#dcfce7" stroke="#86efac" stroke-width="1.5"/>
+                <text x="500" y="169" text-anchor="middle" font-size="11" font-weight="700" fill="#14532d">API Service Client Wrapper (Axios / Fetch REST Calls)</text>
+
+                <!-- Container 1: FastAPI Web Application -->
+                <rect x="20" y="240" width="630" height="210" rx="12" fill="white" stroke="#d97706" stroke-width="2"/>
+                <text x="335" y="262" text-anchor="middle" font-size="13" font-weight="800" fill="#92400e">FastAPI Web Application (API Server)</text>
+
+                <!-- API Middleware Gatekeeper -->
+                <rect x="35" y="275" width="600" height="30" rx="5" fill="#fef3c7" stroke="#fcd34d" stroke-width="1.5"/>
+                <text x="335" y="294" text-anchor="middle" font-size="11" font-weight="700" fill="#92400e">API Middleware Gatekeeper (CORS Handler, JWT Auth &amp; RBAC Security)</text>
+
+                <!-- API Modules -->
+                <rect x="35" y="320" width="135" height="70" rx="5" fill="#fffbeb" stroke="#fcd34d" stroke-width="1.5"/>
+                <text x="102" y="348" text-anchor="middle" font-size="11" font-weight="700" fill="#78350f">Import/Export</text>
+                <text x="102" y="364" text-anchor="middle" font-size="9" fill="#92400e">CSV Parsing &amp; Validation</text>
+
+                <rect x="180" y="320" width="130" height="70" rx="5" fill="#fffbeb" stroke="#fcd34d" stroke-width="1.5"/>
+                <text x="245" y="348" text-anchor="middle" font-size="11" font-weight="700" fill="#78350f">User Management</text>
+                <text x="245" y="364" text-anchor="middle" font-size="9" fill="#92400e">Admins &amp; Viewers</text>
+
+                <rect x="320" y="320" width="170" height="70" rx="5" fill="#fffbeb" stroke="#fcd34d" stroke-width="1.5"/>
+                <text x="405" y="343" text-anchor="middle" font-size="11" font-weight="700" fill="#78350f">Master Data Mgmt</text>
+                <text x="405" y="358" text-anchor="middle" font-size="9" fill="#92400e">Stores, Brands, Catalog</text>
+                <text x="405" y="372" text-anchor="middle" font-size="9" font-weight="500" fill="#92400e">Planogram Facing SLAs</text>
+
+                <rect x="500" y="320" width="135" height="70" rx="5" fill="#fffbeb" stroke="#fcd34d" stroke-width="1.5"/>
+                <text x="567" y="345" text-anchor="middle" font-size="11" font-weight="700" fill="#78350f">Alerts &amp; Email API</text>
+                <text x="567" y="364" text-anchor="middle" font-size="9" fill="#92400e">SMTP / Webhooks</text>
+
+                <!-- Data Access Layer -->
+                <rect x="35" y="405" width="600" height="30" rx="5" fill="#fef3c7" stroke="#fcd34d" stroke-width="1.5"/>
+                <text x="335" y="424" text-anchor="middle" fill="#78350f" font-size="11" font-weight="700">SQLAlchemy Data Access Layer (ACID Transactions &amp; Mirror Audit)</text>
+
+                <!-- Container 2: Python Engine Background Worker -->
+                <rect x="670" y="240" width="310" height="210" rx="12" fill="white" stroke="#1d4ed8" stroke-width="2"/>
+                <text x="825" y="262" text-anchor="middle" font-size="13" font-weight="800" fill="#1e40af">Python Engine Worker (Async)</text>
+
+                <!-- Task Consumer Bar -->
+                <rect x="685" y="275" width="280" height="30" rx="5" fill="#dbeafe" stroke="#93c5fd" stroke-width="1.5"/>
+                <text x="825" y="294" text-anchor="middle" font-size="11" font-weight="700" fill="#1e40af">FastAPI BackgroundTask / ProcessPool</text>
+
+                <!-- Core Math Engine -->
+                <rect x="685" y="320" width="280" height="70" rx="5" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+                <text x="825" y="343" text-anchor="middle" font-size="11" font-weight="700" fill="#1e40af">Python Allocation Engine</text>
+                <text x="825" y="358" text-anchor="middle" font-size="9" fill="#1d4ed8">Pandas / Polars Math Engine</text>
+                <text x="825" y="372" text-anchor="middle" font-size="9" font-weight="500" fill="#1d4ed8">T1/T2/T3 &amp; FIFO Dispatch Logic</text>
+
+                <!-- Worker DB Writer -->
+                <rect x="685" y="405" width="280" height="30" rx="5" fill="#dbeafe" stroke="#93c5fd" stroke-width="1.5"/>
+                <text x="825" y="424" text-anchor="middle" fill="#1e40af" font-size="11" font-weight="700">SQLAlchemy Bulk Writer (Batch Allocations)</text>
+
+                <!-- Databases -->
+                <rect x="250" y="480" width="220" height="80" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+                <use href="#icon-db" xlink:href="#icon-db" x="351" y="492" width="18" height="18" color="#15803d"/>
+                <text x="360" y="530" text-anchor="middle" font-size="12" font-weight="800" fill="#14532d">PostgreSQL / Cloud SQL</text>
+                <text x="360" y="546" text-anchor="middle" font-size="10" fill="#166534">Relational Master & Stock Data</text>
+
+                <rect x="530" y="480" width="220" height="80" rx="10" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+                <use href="#icon-folder" xlink:href="#icon-folder" x="631" y="492" width="18" height="18" color="#15803d"/>
+                <text x="640" y="530" text-anchor="middle" font-size="12" font-weight="800" fill="#14532d">Log Filesystem / Storage</text>
+                <text x="640" y="546" text-anchor="middle" fill="#166534" font-size="10">Archived CSVs & App Logs</text>
+
+                <!-- Connection Lines -->
+                <line x1="360" y1="452" x2="360" y2="478" stroke="#166534" stroke-width="1.5" marker-end="url(#lld-arr)"/>
+                <line x1="640" y1="452" x2="640" y2="478" stroke="#166534" stroke-width="1.5" marker-end="url(#lld-arr)"/>
+                <line x1="500" y1="212" x2="500" y2="238" stroke="#166534" stroke-width="1.5" marker-end="url(#lld-arr)"/>
+            </svg>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openTab(evt, tabName) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabName).classList.add('active');
+        evt.currentTarget.classList.add('active');
+    }
+</script>
+</body>
+</html>
