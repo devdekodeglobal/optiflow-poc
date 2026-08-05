@@ -100,7 +100,11 @@ def set_store_planogram(df: Optional[pd.DataFrame]):
         df['zone'] = df['region'].apply(get_store_zone)
     df['_uid'] = df.index
     store.planogram = df
-    clean_df = df.astype(object).where(pd.notnull(df), None)
+    
+    import numpy as np
+    clean_df = df.copy()
+    clean_df.replace([np.inf, -np.inf], np.nan, inplace=True)
+    clean_df = clean_df.astype(object).where(pd.notnull(clean_df), None)
     store.planogram_dicts = clean_df.to_dict(orient="records")
 
 LOCAL_DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "local_data")
@@ -1350,7 +1354,7 @@ async def update_strategy(req: StrategyUpdate):
             out_json = store.planogram.to_json(orient="records")
             upload_to_gcs("planogram_edited.json", out_json.encode("utf-8"))
             if hasattr(store, 'planogram_dicts'):
-                store.planogram_dicts = store.planogram.to_dict(orient="records")
+                set_store_planogram(store.planogram)
         except Exception as e:
             logging.warning(f"Failed to sync planogram store grades: {e}")
 
