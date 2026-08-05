@@ -775,10 +775,12 @@ export default function PlanogramDrillDown({
                     <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Depth</span>
                     <span style={{ fontWeight: 700, color: 'var(--warning)' }}>{child.backStock.toLocaleString()}</span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                    <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Uniqueness %</span>
-                    <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{child.uniq_current}%</span>
-                  </div>
+                  {['store_name', 'brand_name', 'commodity'].includes(nextLevelName) && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                      <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Uniqueness %</span>
+                      <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{child.uniq_current}%</span>
+                    </div>
+                  )}
                 </div>
               </div>
             );
