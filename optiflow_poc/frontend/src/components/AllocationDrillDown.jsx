@@ -104,12 +104,12 @@ export default function AllocationDrillDown({
     let uniq_after = 0;
     if (filteredData.length > 0) {
       const firstItem = filteredData[0];
-      if (currentLevelIndex >= 4 && firstItem.store_name && firstItem.brand_name) {
-        // Brand-within-store level: look up this specific brand for this store
+      if (currentLevelIndex >= 5 && firstItem.store_name && firstItem.brand_name) {
+        // Brand-within-store level (level 5+): look up this specific brand for this store
         const bl = uniquenessLookup[firstItem.store_name]?.[firstItem.brand_name];
         if (bl) { uniq_before = bl[0]; uniq_after = bl[1]; }
-      } else if (firstItem.store_name && !firstItem.brand_name) {
-        // Store level: average across all brands in this store
+      } else if (currentLevelIndex === 4 && firstItem.store_name) {
+        // Store level (level 4): average across all brands in this store
         const storeLookup = uniquenessLookup[firstItem.store_name];
         if (storeLookup) {
           const vals = Object.values(storeLookup);
@@ -117,7 +117,7 @@ export default function AllocationDrillDown({
           uniq_after = vals.length > 0 ? Math.round(vals.reduce((a, b) => a + b[1], 0) / vals.length) : 0;
         }
       } else {
-        // Multi-store: average across all stores and brands visible
+        // Multi-store level: average across all stores and brands visible
         const storeNames = [...new Set(filteredData.map(i => i.store_name).filter(Boolean))];
         const allVals = storeNames.flatMap(sn => Object.values(uniquenessLookup[sn] || {}));
         if (allVals.length > 0) {
