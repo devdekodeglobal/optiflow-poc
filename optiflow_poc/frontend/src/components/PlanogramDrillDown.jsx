@@ -215,6 +215,26 @@ export default function PlanogramDrillDown({
         skus += parseInt(i.sku_count) || 0;
       });
 
+      let uniq_current = 0;
+      if (items.length > 0) {
+        const cardVals = [];
+        const seenPairs = new Set();
+        items.forEach(i => {
+          if (i.store_name && i.brand_name) {
+            const pairKey = `${i.store_name}__${i.brand_name}`;
+            if (!seenPairs.has(pairKey)) {
+              seenPairs.add(pairKey);
+              const bl = uniquenessLookup[i.store_name]?.[i.brand_name];
+              if (bl) cardVals.push(bl);
+            }
+          }
+        });
+
+        if (cardVals.length > 0) {
+          uniq_current = Math.round(cardVals.reduce((a, b) => a + b[0], 0) / cardVals.length);
+        }
+      }
+
       return { 
         name: key, 
         displayName: groupObj.displayName, 
@@ -228,7 +248,8 @@ export default function PlanogramDrillDown({
         brand_code: items[0]?.brand_code || '',
         brand_type: items[0]?.brand_type || '',
         brand_category: items[0]?.brand_category || '',
-        supplier_name: items[0]?.supplier_name || ''
+        supplier_name: items[0]?.supplier_name || '',
+        uniq_current
       };
     }).sort((a, b) => b.facing - a.facing);
   }, [effectiveData, nextLevelName, currentLevelIndex]);
@@ -753,6 +774,10 @@ export default function PlanogramDrillDown({
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
                     <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Depth</span>
                     <span style={{ fontWeight: 700, color: 'var(--warning)' }}>{child.backStock.toLocaleString()}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                    <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Uniqueness %</span>
+                    <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{child.uniq_current}%</span>
                   </div>
                 </div>
               </div>
