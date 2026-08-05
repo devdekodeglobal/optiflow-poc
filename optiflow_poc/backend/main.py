@@ -588,7 +588,10 @@ def get_planogram(
     total = len(df)
     start = (page - 1) * page_size
     end = start + page_size
-    paginated = df.iloc[start:end]
+    paginated = df.iloc[start:end].copy()
+    
+    import numpy as np
+    paginated.replace([np.inf, -np.inf], np.nan, inplace=True)
     paginated = paginated.astype(object).where(pd.notnull(paginated), None)
     
     return {
