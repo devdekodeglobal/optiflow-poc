@@ -4,7 +4,8 @@ OptiFlow Backend (FastAPI Application)
 Web service layer exposing CSV uploads, similar-item heuristics, and dispatch orders.
 """
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Body, Response
+from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Body, Response, Request
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 import os
@@ -57,6 +58,15 @@ app.add_middleware(
 
 # Compress large JSON responses (reduces 4MB -> ~400KB)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    print(f"Unhandled server error: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc)},
+        headers={"Access-Control-Allow-Origin": "*"}
+    )
 
 class DataStore:
     def __init__(self):
@@ -546,6 +556,15 @@ def get_planogram(
         }
         
     df = store.planogram
+    # Ensure region and zone exist on DataFrame before filtering
+    if 'region' not in df.columns and 'store_name' in df.columns:
+        df['region'] = df['store_name'].apply(get_store_region)
+    if 'zone' not in df.columns:
+        if 'region' in df.columns:
+            df['zone'] = df['region'].apply(get_store_zone)
+        elif 'store_name' in df.columns:
+            df['zone'] = df['store_name'].apply(lambda s: get_store_zone(get_store_region(s)))
+
     # Apply filters safely
     if store_name and isinstance(store_name, str):
         store_list = [s.strip().lower() for s in store_name.split(',')]
@@ -553,10 +572,10 @@ def get_planogram(
     if brand_name and isinstance(brand_name, str):
         brand_list = [b.strip().lower() for b in brand_name.split(',')]
         df = df[df['brand_name'].fillna('').str.lower().apply(lambda x: any(b in x for b in brand_list))]
-    if zone and isinstance(zone, str):
+    if zone and isinstance(zone, str) and 'zone' in df.columns:
         zone_list = [z.strip().lower() for z in zone.split(',')]
         df = df[df['zone'].fillna('').str.lower().isin(zone_list)]
-    if region and isinstance(region, str):
+    if region and isinstance(region, str) and 'region' in df.columns:
         region_list = [r.strip().lower() for r in region.split(',')]
         df = df[df['region'].fillna('').str.lower().isin(region_list)]
     if store_category and isinstance(store_category, str):
