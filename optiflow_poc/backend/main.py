@@ -8,7 +8,7 @@ from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Body, Respo
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 import os
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Tuple
 from pydantic import BaseModel
 from google.cloud import storage
 import logging
@@ -264,6 +264,7 @@ async def startup_event():
             if "summary" in alloc_data and alloc_data["summary"]:
                 from data_models import AllocationSummary
                 store.summary = AllocationSummary(**alloc_data["summary"])
+            _build_store_brand_uniqueness(store.allocations)
             has_saved_results = True
         except Exception as e:
             print(f"Failed to load allocation results: {e}")
@@ -301,6 +302,7 @@ async def startup_event():
             store.allocations_dicts = [a.model_dump(mode='json') for a in allocations]
             store.summary = summary
             store.last_run_time = time.time() - start
+            _build_store_brand_uniqueness(allocations)
             print("Initial allocation complete.")
         except Exception as e:
             print(f"Failed initial allocation: {e}")
@@ -394,6 +396,55 @@ async def upload_status():
 class AllocationRunRequest(BaseModel):
     sales_lookback_days: Optional[int] = None
 
+def calculate_uniqueness(facilities: set, brands: set, allocated_items: list) -> Tuple[int, int]:
+    # Support both Pydantic models and dicts
+    def get_val(obj, key, default=None):
+        if hasattr(obj, key):
+            return getattr(obj, key)
+        if isinstance(obj, dict):
+            return obj.get(key, default)
+        return default
+
+    total_allocated = sum(get_val(a, "allocated_qty", 0) for a in allocated_items)
+    allocated_skus = set(get_val(a, "allocated_item_code") for a in allocated_items if get_val(a, "allocated_qty", 0) > 0 and get_val(a, "allocated_item_code"))
+    
+    if store.store_stock is not None and not store.store_stock.empty:
+        # Filter stock by facility and brand
+        group_stock = store.store_stock[
+            store.store_stock["facility"].isin(facilities) & 
+            store.store_stock["brand_name"].str.lower().isin(brands)
+        ]
+        skus_in_hand = set(group_stock["item_code"].dropna().unique())
+        qty_in_hand = group_stock["batch_stock"].sum()
+    else:
+        skus_in_hand = set()
+        qty_in_hand = 0.0
+        
+    before_uniq_pct = int((len(skus_in_hand) / qty_in_hand) * 100) if qty_in_hand > 0 else 0
+    
+    after_uniq_skus = skus_in_hand.union(allocated_skus)
+    after_qty = qty_in_hand + total_allocated
+    after_uniq_pct = int((len(after_uniq_skus) / after_qty) * 100) if after_qty > 0 else 0
+    
+    return before_uniq_pct, after_uniq_pct
+
+
+def _build_store_brand_uniqueness(allocations: list):
+    """Build a {(store_name, brand_name): (before_pct, after_pct)} dict and cache it on store."""
+    # Group allocation items by (store_name, brand_name)
+    groups: Dict[Tuple[str, str], list] = {}
+    for a in allocations:
+        key = (a.store_name, a.brand_name)
+        groups.setdefault(key, []).append(a)
+
+    lookup: Dict[str, Dict[str, Tuple[int, int]]] = {}
+    for (store_name, brand_name), items in groups.items():
+        facility = STORE_NAME_MAP.get(store_name, store_name)
+        before_u, after_u = calculate_uniqueness({facility}, {brand_name.lower()}, items)
+        lookup.setdefault(store_name, {})[brand_name] = (before_u, after_u)
+
+    store.store_brand_uniqueness = lookup
+
 @app.post("/api/run-allocation")
 def execute_allocation(req: Optional[AllocationRunRequest] = None):
     lookback_days = req.sales_lookback_days if req else None
@@ -432,6 +483,9 @@ def execute_allocation(req: Optional[AllocationRunRequest] = None):
     store.summary = summary
     store.last_run_time = elapsed
     store.last_run_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+    # Build per-(store, brand) uniqueness lookup for the UI
+    _build_store_brand_uniqueness(allocations)
     
     # Invalidate dashboard cache
     store.dashboard_all_stores_cache = None
@@ -740,8 +794,9 @@ async def get_results(
             exact = sum(a.allocated_qty for a in items if a.match_type.value == "exact")
             similar = sum(a.allocated_qty for a in items if a.match_type.value == "similar")
             fallback = sum(a.allocated_qty for a in items if a.match_type.value == "substitute")
-            allocated_skus = set(a.allocated_item_code for a in items if a.allocated_qty > 0 and a.allocated_item_code)
-            uniq_pct = int((len(allocated_skus) / total_allocated) * 100) if total_allocated > 0 else 0
+            facilities = set(STORE_NAME_MAP.get(a.store_name, a.store_name) for a in items)
+            brands = set(a.brand_name.lower() for a in items)
+            before_uniq, after_uniq = calculate_uniqueness(facilities, brands, items)
             
             return {
                 "lines": len(unique_gaps),
@@ -753,7 +808,8 @@ async def get_results(
                 "exact_qty": exact,
                 "similar_qty": similar,
                 "fallback_qty": fallback,
-                "uniqueness_pct": uniq_pct,
+                "uniqueness_before_pct": before_uniq,
+                "uniqueness_after_pct": after_uniq,
                 "total_soh": int(total_soh)
             }
             
@@ -934,13 +990,13 @@ async def export_results(
                     elif r.match_type.value == "similar": similar += r.allocated_qty
                     elif r.match_type.value == "substitute": fallback += r.allocated_qty
                     
-                    if r.allocated_qty > 0 and r.allocated_item_code:
-                        allocated_skus.add(r.allocated_item_code)
-                        
+                facilities = set(STORE_NAME_MAP.get(r.store_name, r.store_name) for r in rows)
+                brands = set(r.brand_name.lower() for r in rows)
+                before_uniq, after_uniq = calculate_uniqueness(facilities, brands, rows)
+                
                 initial_deficit = sum(unique_gaps.values())
                 expected_total = sum(unique_expected.values())
                 remaining_deficit = max(0, initial_deficit - total_allocated)
-                uniq_pct = int((len(allocated_skus) / total_allocated) * 100) if total_allocated > 0 else 0
                 
                 row[1] = f"Lines: {len(unique_gaps)}"
                 row[2] = f"Expected: {int(expected_total)}"
@@ -951,7 +1007,7 @@ async def export_results(
                 row[7] = f"Exact Matches: {exact}"
                 row[8] = f"Similar Matches: {similar}"
                 row[9] = f"Fallback Matches: {fallback}"
-                row[10] = f"Uniqueness: {uniq_pct}%"
+                row[10] = f"Uniqueness: Before {before_uniq}% | After {after_uniq}%"
         ws.append(row)
         apply_style(ws.max_row, fill, is_bold=True)
         
@@ -1337,7 +1393,10 @@ async def get_store_detail(store_name: str):
                 "out_of_stock": 0,
                 "exact_lines": 0,
                 "similar_lines": 0,
+                "similar_lines": 0,
                 "fallback_lines": 0,
+                "uniqueness_before_pct": 0,
+                "uniqueness_after_pct": 0,
                 "retail_value": 0.0,
                 "items": []
             }
@@ -1359,6 +1418,13 @@ async def get_store_detail(store_name: str):
         brands[b_name]["out_of_stock"] = int(max(0, brands[b_name]["deficit"] - brands[b_name]["filled"]))
         brands[b_name]["fulfillment_pct"] = round((brands[b_name]["filled"] / brands[b_name]["deficit"] * 100), 1) if brands[b_name]["deficit"] > 0 else 100
         
+        # Calculate brand uniqueness
+        before_u, after_u = calculate_uniqueness({STORE_NAME_MAP.get(store_name, store_name)}, {b_name.lower()}, brands[b_name]["items"])
+        brands[b_name]["uniqueness_before_pct"] = before_u
+        brands[b_name]["uniqueness_after_pct"] = after_u
+
+    store_before_u, store_after_u = calculate_uniqueness({STORE_NAME_MAP.get(store_name, store_name)}, set(brands.keys()), store_allocs)
+        
     return {
         "store_name": store_allocs[0].store_name,
         "store_category": store_allocs[0].store_category,
@@ -1377,7 +1443,8 @@ async def get_store_detail(store_name: str):
         "total_items": sum(a.allocated_qty for a in store_allocs),
         "total_lines": len(store_allocs),
         "match_accuracy_pct": round((exact_count / (exact_count + sum(1 for a in store_allocs if a.match_type == MatchType.SIMILAR) + sum(1 for a in store_allocs if a.match_type == MatchType.SUBSTITUTE)) * 100), 1) if (exact_count + sum(1 for a in store_allocs if a.match_type == MatchType.SIMILAR) + sum(1 for a in store_allocs if a.match_type == MatchType.SUBSTITUTE)) > 0 else 100,
-        "uniqueness_pct": round((len(set(a.allocated_item_code for a in store_allocs if a.allocated_qty > 0 and a.allocated_item_code)) / total_filled * 100), 1) if total_filled > 0 else 0,
+        "uniqueness_before_pct": store_before_u,
+        "uniqueness_after_pct": store_after_u,
         "brands": list(brands.values())
     }
 
@@ -1722,6 +1789,17 @@ async def list_stores():
         s["has_allocations"] = s["store_name"] in allocated_stores
         
     return {"stores": store_list}
+
+
+@app.get("/api/allocation/uniqueness")
+async def get_uniqueness_lookup():
+    """Return pre-computed {store_name: {brand_name: [before_pct, after_pct]}} lookup."""
+    lookup = getattr(store, "store_brand_uniqueness", None)
+    if not lookup:
+        return {}
+    # Serialize: convert tuple values to lists for JSON
+    return {s: {b: list(v) for b, v in brands.items()} for s, brands in lookup.items()}
+
 
 
 @app.get("/api/brands")

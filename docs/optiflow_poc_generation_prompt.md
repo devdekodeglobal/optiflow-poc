@@ -171,6 +171,12 @@ Implement a clean PostgreSQL relational schema matching the following structure:
   - Receives a POST request with parameters (validated by `forecasting.py` schema).
   - Calls `forecasting_engine.run_forecast(params)`.
   - Returns predicted stock metrics.
+- `/api/v1/planograms/history/{store_code}/{brand_name}`:
+  - Fetches previous facing targets from the `audit_logs` mirror table.
+  - Returns a chronological version history of planogram changes.
+- `/api/v1/planograms/restore`:
+  - Receives a specific `audit_id`.
+  - Restores the planogram target facings to that historical version, logging a new audit event.
 
 ### 5. Presentation Layer (React.js with TanStack)
 - Build a responsive interface with Tailwind CSS.
@@ -183,6 +189,10 @@ Implement a clean PostgreSQL relational schema matching the following structure:
   - Dropdown parameters selector.
   - "Run Allocation" button that triggers the FastAPI endpoint via a TanStack Mutation.
   - Interactive grid displaying the before/after stock levels and the calculated target deficits (backed by React Query cache).
+- **Planogram Management Screen:**
+  - Grid to view and edit current planogram facing targets.
+  - "View History" button that opens a modal showing historical versions of the planogram.
+  - "Restore" button on historical records that triggers the restore mutation and invalidates the TanStack query cache to refresh the UI.
 
 ---
 

@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { DataGrid } from 'react-data-grid';
 import 'react-data-grid/lib/styles.css';
+import { getUniquenessLookup } from '../api';
 
 const HIERARCHY = ['network', 'zone', 'region', 'store_category', 'store_name', 'brand_name', 'commodity'];
 
@@ -32,6 +33,11 @@ export default function AllocationDrillDown({
   isLoading = false
 }) {
   const [viewMode, setViewMode] = useState('cards'); // 'cards' or 'table'
+  const [uniquenessLookup, setUniquenessLookup] = useState({});
+
+  useEffect(() => {
+    getUniquenessLookup().then(data => setUniquenessLookup(data || {})).catch(() => {});
+  }, []);
 
   // Determine current drill down level based on active filters
   const currentLevelIndex = useMemo(() => {
@@ -90,11 +96,39 @@ export default function AllocationDrillDown({
     const allocated = filteredData.reduce((a, b) => a + (b.allocated_qty || 0), 0);
     const outOfStock = Math.max(0, deficit - allocated);
     const fulfillRate = expected > 0 ? (allocated / expected) * 100 : 0;
-    const uniq_pct = allocated > 0 ? Math.floor((allocated_skus.size / allocated) * 100) : 0;
     const match_accuracy = (exact + similar + fallback) > 0 ? Math.round((exact / (exact + similar + fallback)) * 100) : 0;
 
-    return { expected, soh, deficit, allocated, outOfStock, fulfillRate, exact, similar, fallback, uniq_pct, match_accuracy };
-  }, [filteredData]);
+    // Compute uniqueness from the uniquenessLookup (same source as child cards) so
+    // the top summary card always matches what the drill-down cards show.
+    let uniq_before = 0;
+    let uniq_after = 0;
+    if (filteredData.length > 0) {
+      const firstItem = filteredData[0];
+      if (currentLevelIndex >= 4 && firstItem.store_name && firstItem.brand_name) {
+        // Brand-within-store level: look up this specific brand for this store
+        const bl = uniquenessLookup[firstItem.store_name]?.[firstItem.brand_name];
+        if (bl) { uniq_before = bl[0]; uniq_after = bl[1]; }
+      } else if (firstItem.store_name && !firstItem.brand_name) {
+        // Store level: average across all brands in this store
+        const storeLookup = uniquenessLookup[firstItem.store_name];
+        if (storeLookup) {
+          const vals = Object.values(storeLookup);
+          uniq_before = vals.length > 0 ? Math.round(vals.reduce((a, b) => a + b[0], 0) / vals.length) : 0;
+          uniq_after = vals.length > 0 ? Math.round(vals.reduce((a, b) => a + b[1], 0) / vals.length) : 0;
+        }
+      } else {
+        // Multi-store: average across all stores and brands visible
+        const storeNames = [...new Set(filteredData.map(i => i.store_name).filter(Boolean))];
+        const allVals = storeNames.flatMap(sn => Object.values(uniquenessLookup[sn] || {}));
+        if (allVals.length > 0) {
+          uniq_before = Math.round(allVals.reduce((a, b) => a + b[0], 0) / allVals.length);
+          uniq_after = Math.round(allVals.reduce((a, b) => a + b[1], 0) / allVals.length);
+        }
+      }
+    }
+
+    return { expected, soh, deficit, allocated, outOfStock, fulfillRate, exact, similar, fallback, uniq_before, uniq_after, match_accuracy };
+  }, [filteredData, uniquenessLookup, currentLevelIndex]);
 
   // Group data by next level to render cards/table
   const childrenData = useMemo(() => {
@@ -139,12 +173,40 @@ export default function AllocationDrillDown({
           allocated_skus.add(i.allocated_item_code);
         }
       });
-      const uniq_pct = allocated > 0 ? Math.floor((allocated_skus.size / allocated) * 100) : 0;
+      // Look up pre-computed uniqueness for this group from the backend
+      let uniq_before = 0;
+      let uniq_after = 0;
+      if (items.length > 0) {
+        const storeName = items[0]?.store_name;
+        const brandName = items[0]?.brand_name;
+        if (nextLevelName === 'brand_name') {
+          // Cards shown are brands within a store — look up by brand within that store
+          const brandLookup = uniquenessLookup[storeName]?.[key];
+          if (brandLookup) { uniq_before = brandLookup[0]; uniq_after = brandLookup[1]; }
+        } else if (nextLevelName === 'commodity' || currentLevelIndex >= 5) {
+          // Cards shown are commodities (e.g. Frame) within a brand & store
+          const brandLookup = uniquenessLookup[storeName]?.[brandName];
+          if (brandLookup) { uniq_before = brandLookup[0]; uniq_after = brandLookup[1]; }
+        } else if (nextLevelName === 'store_name' || currentLevelIndex === 4) {
+          // Cards shown are stores — aggregate brand values for the store
+          const storeLookup = uniquenessLookup[key] || uniquenessLookup[storeName];
+          if (storeLookup) {
+            const vals = Object.values(storeLookup);
+            uniq_before = vals.length > 0 ? Math.round(vals.reduce((a, b) => a + b[0], 0) / vals.length) : 0;
+            uniq_after = vals.length > 0 ? Math.round(vals.reduce((a, b) => a + b[1], 0) / vals.length) : 0;
+          }
+        }
+      }
+      
+      // If 0 units were allocated to this card/category, uniqueness does not change
+      if (allocated === 0) {
+        uniq_after = uniq_before;
+      }
       
       const uniqueSkus = isDispatch ? new Set(items.map(i => i.allocated_item_code)).size : 0;
       const stores = isDispatch ? new Set(items.map(i => i.store_name)).size : 0;
 
-      return { name: key, displayName: groupObj.displayName, expected, soh, allocated, outOfStock, ratio, count: items.length, uniqueSkus, stores, exact, similar, fallback, uniq_pct };
+      return { name: key, displayName: groupObj.displayName, expected, soh, allocated, outOfStock, ratio, count: items.length, uniqueSkus, stores, exact, similar, fallback, uniq_before, uniq_after };
     }).sort((a, b) => isDispatch ? b.allocated - a.allocated : b.expected - a.expected);
   }, [filteredData, nextLevelName, isDispatch]);
 
@@ -257,9 +319,13 @@ export default function AllocationDrillDown({
         </div>
         {currentLevelIndex >= 4 && !isDispatch && (
           <>
-            <div className="card animate-in" style={{ padding: '16px 20px', background: '#fff', border: '1px solid var(--border)' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, marginBottom: 4 }}>UNIQUENESS %</div>
-              <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--text-primary)' }}>{summary.uniq_pct}%</div>
+            <div className="card animate-in" style={{ padding: '12px 16px', background: '#fff', border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, marginBottom: 4 }}>UNIQUENESS %</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                <span style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-muted)' }}>{summary.uniq_before}%</span>
+                <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>→</span>
+                <span style={{ fontSize: 20, fontWeight: 800, color: '#10b981' }}>{summary.uniq_after}%</span>
+              </div>
             </div>
             <div className="card animate-in" style={{ padding: '16px 20px', background: '#fff', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column' }}>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6, fontSize: 13 }}>
@@ -476,7 +542,11 @@ export default function AllocationDrillDown({
                     <div style={{ borderTop: '1px solid var(--border)', paddingTop: 8, marginTop: 4, display: 'flex', flexDirection: 'column', gap: 6 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
                         <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Uniqueness %</span>
-                        <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{child.uniq_pct}%</span>
+                        <span style={{ fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>{child.uniq_before ?? child.uniq_pct}%</span>
+                          <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>→</span>
+                          <span style={{ color: '#10b981' }}>{child.uniq_after ?? child.uniq_pct}%</span>
+                        </span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-secondary)', background: 'var(--bg-surface)', padding: '6px 8px', borderRadius: 4 }}>
                         <span title="Exact Matches">E: <span style={{fontWeight: 700, color: 'var(--text-primary)'}}>{child.exact}</span></span>
@@ -544,7 +614,13 @@ export default function AllocationDrillDown({
           { key: 'exact', name: 'EXACT', resizable: true, renderCell: (p) => <span style={{color: 'var(--text-secondary)'}}>{p.row.exact.toLocaleString()}</span> },
           { key: 'similar', name: 'SIMILAR', resizable: true, renderCell: (p) => <span style={{color: 'var(--text-secondary)'}}>{p.row.similar.toLocaleString()}</span> },
           { key: 'fallback', name: 'FALLBACK', resizable: true, renderCell: (p) => <span style={{color: 'var(--text-secondary)'}}>{p.row.fallback.toLocaleString()}</span> },
-          { key: 'uniq_pct', name: 'UNIQUENESS %', resizable: true, renderCell: (p) => <span style={{fontWeight: 600}}>{p.row.uniq_pct}%</span> }
+          { key: 'uniq_pct', name: 'UNIQUENESS %', resizable: true, renderCell: (p) => (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}>
+              <span style={{ color: 'var(--text-secondary)', fontSize: 12 }}>{p.row.uniq_before ?? p.row.uniq_pct}%</span>
+              <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>→</span>
+              <span style={{ color: '#10b981', fontWeight: 800 }}>{p.row.uniq_after ?? p.row.uniq_pct}%</span>
+            </span>
+          ) }
         );
       }
       columns.push(
@@ -630,7 +706,8 @@ export default function AllocationDrillDown({
               <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Target SKU</th>
               <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Allocated SKU</th>
               <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Allocated Barcode</th>
-              <th style={{ textAlign: 'right', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Amount Allocated</th>
+              <th style={{ textAlign: 'right', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Amt Allocated</th>
+              <th style={{ textAlign: 'right', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Store Stock After</th>
               <th style={{ textAlign: 'center', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Match Type</th>
               <th style={{ textAlign: 'left', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>Reasoning</th>
             </tr>
@@ -642,6 +719,9 @@ export default function AllocationDrillDown({
                 <td style={{ padding: '10px 16px', fontFamily: 'monospace', fontWeight: 600, color: 'var(--primary)' }}>{item.allocated_item_code || "N/A"}</td>
                 <td style={{ padding: '10px 16px', fontFamily: 'monospace', fontWeight: 500, color: 'var(--text-secondary)' }}>{item.allocated_barcode || "-"}</td>
                 <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 700 }}>{item.allocated_qty}</td>
+                <td style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  {item.store_sku_soh_after ?? "-"}
+                </td>
                 <td style={{ padding: '10px 16px', textAlign: 'center' }}>
                   {item.match_type && (
                     <span style={{ 

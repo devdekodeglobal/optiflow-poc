@@ -327,53 +327,67 @@ def run_allocation(
 
     # Pre-aggregate top selling SKUs by facility + brand + commodity
     store_top_sales: Dict[Tuple[str, str, str], List[str]] = {}
+    store_hist_sales: Dict[Tuple[str, str, str], List[str]] = {}
+    
     if sales_df is not None and not sales_df.empty:
         # Expected sales columns: Facility Name, Item Code, Quantity, Order Date
         if "Quantity" in sales_df.columns:
             sales_df_temp = sales_df.copy()
             sales_df_temp["qty"] = pd.to_numeric(sales_df_temp["Quantity"], errors="coerce").fillna(0)
             
-            # Apply Sales Lookback Filter
-            if sales_lookback_days is not None and sales_lookback_days > 0 and "Order Date" in sales_df_temp.columns:
-                sales_df_temp["Order Date"] = pd.to_datetime(sales_df_temp["Order Date"], format="%Y-%m-%d", errors="coerce")
-                valid_dates = sales_df_temp["Order Date"].dropna()
-                if not valid_dates.empty:
-                    max_date = valid_dates.max()
-                    cutoff_date = max_date - pd.Timedelta(days=sales_lookback_days)
-                    sales_df_temp = sales_df_temp[sales_df_temp["Order Date"] >= cutoff_date]
-            
-            # Group by store (Branch Name) and Item Code
-            # Sales CSV uses "Branch Name" as store column and "Product Code" as item code
             store_col = "Branch Name" if "Branch Name" in sales_df_temp.columns else "Facility Name"
             item_col = "Product Code" if "Product Code" in sales_df_temp.columns else "Item Code"
-            qty_col = "Quantity"
             
             if store_col in sales_df_temp.columns and item_col in sales_df_temp.columns:
-                sales_grouped = sales_df_temp.groupby([store_col, item_col])["qty"].sum().reset_index()
-                sales_grouped = sales_grouped.rename(columns={store_col: "Facility Name", item_col: "Item Code"})
-                
-                # Sort to ensure highest quantities are first
-                sales_grouped = sales_grouped.sort_values(by=["Facility Name", "qty"], ascending=[True, False])
-                
-                # Fast build of store_top_sales using vectorized catalog lookup
-                # Only consider items that exist in the warehouse catalog
                 catalog_items = set(wh_catalog_by_item.keys())
-                sales_grouped = sales_grouped[sales_grouped["Item Code"].isin(catalog_items)]
                 
-                if not sales_grouped.empty:
-                    sales_grouped["brand_key"] = sales_grouped["Item Code"].map(
+                # --- Build Tier 2 (Historical Sales - All time in dataset) ---
+                hist_grouped = sales_df_temp.groupby([store_col, item_col])["qty"].sum().reset_index()
+                hist_grouped = hist_grouped.rename(columns={store_col: "Facility Name", item_col: "Item Code"})
+                hist_grouped = hist_grouped.sort_values(by=["Facility Name", "qty"], ascending=[True, False])
+                hist_grouped = hist_grouped[hist_grouped["Item Code"].isin(catalog_items)]
+                
+                if not hist_grouped.empty:
+                    hist_grouped["brand_key"] = hist_grouped["Item Code"].map(
                         lambda ic: wh_catalog_by_item[ic]["brand"].lower() if ic in wh_catalog_by_item else None
                     )
-                    sales_grouped["commodity_key"] = sales_grouped["Item Code"].map(
+                    hist_grouped["commodity_key"] = hist_grouped["Item Code"].map(
                         lambda ic: wh_catalog_by_item[ic]["commodity"] if ic in wh_catalog_by_item else None
                     )
-                    sales_grouped = sales_grouped.dropna(subset=["brand_key", "commodity_key"])
-                    
-                    for _, row in sales_grouped.iterrows():
+                    hist_grouped = hist_grouped.dropna(subset=["brand_key", "commodity_key"])
+                    for _, row in hist_grouped.iterrows():
                         key = (str(row["Facility Name"]), row["brand_key"], row["commodity_key"])
-                        if key not in store_top_sales:
-                            store_top_sales[key] = []
-                        store_top_sales[key].append(str(row["Item Code"]))
+                        if key not in store_hist_sales:
+                            store_hist_sales[key] = []
+                        store_hist_sales[key].append(str(row["Item Code"]))
+                
+                # --- Build Tier 1 (Recent Sales - Lookback Filtered) ---
+                if sales_lookback_days is not None and sales_lookback_days > 0 and "Order Date" in sales_df_temp.columns:
+                    sales_df_temp["Order Date"] = pd.to_datetime(sales_df_temp["Order Date"], format="%Y-%m-%d", errors="coerce")
+                    valid_dates = sales_df_temp["Order Date"].dropna()
+                    if not valid_dates.empty:
+                        cutoff_date = valid_dates.max() - pd.Timedelta(days=sales_lookback_days)
+                        recent_df = sales_df_temp[sales_df_temp["Order Date"] >= cutoff_date]
+                        recent_grouped = recent_df.groupby([store_col, item_col])["qty"].sum().reset_index()
+                        recent_grouped = recent_grouped.rename(columns={store_col: "Facility Name", item_col: "Item Code"})
+                        recent_grouped = recent_grouped.sort_values(by=["Facility Name", "qty"], ascending=[True, False])
+                        recent_grouped = recent_grouped[recent_grouped["Item Code"].isin(catalog_items)]
+                        
+                        if not recent_grouped.empty:
+                            recent_grouped["brand_key"] = recent_grouped["Item Code"].map(
+                                lambda ic: wh_catalog_by_item[ic]["brand"].lower() if ic in wh_catalog_by_item else None
+                            )
+                            recent_grouped["commodity_key"] = recent_grouped["Item Code"].map(
+                                lambda ic: wh_catalog_by_item[ic]["commodity"] if ic in wh_catalog_by_item else None
+                            )
+                            recent_grouped = recent_grouped.dropna(subset=["brand_key", "commodity_key"])
+                            for _, row in recent_grouped.iterrows():
+                                key = (str(row["Facility Name"]), row["brand_key"], row["commodity_key"])
+                                if key not in store_top_sales:
+                                    store_top_sales[key] = []
+                                store_top_sales[key].append(str(row["Item Code"]))
+                else:
+                    store_top_sales = store_hist_sales
 
     # Category Filtering & Strict Sorting
     # Build a master ordered list from the active categories and their store lists
@@ -488,23 +502,34 @@ def run_allocation(
 
         # 1. Primary rule: use top selling SKU from historical sales
         top_sales_items = store_top_sales.get((mapped_facility, brand_name.lower(), commodity), [])
+        hist_sales_items = store_hist_sales.get((mapped_facility, brand_name.lower(), commodity), [])
         
         # Look up item details for items the store already has as a fallback
         store_items = []
+        skus_in_hand = set()
         for ic, qty in stock_items:
+            skus_in_hand.add(ic)
             cat_item = wh_catalog_by_item.get(ic)
             if cat_item:
                 store_items.append(cat_item)
 
         # Resolve target attributes
         if top_sales_items:
-            # Get the #1 top selling SKU
+            # Tier 1 (Recent Sales)
             top_ic = top_sales_items[0]
             top_cat_item = wh_catalog_by_item.get(top_ic)
             if top_cat_item:
                 target_attrs = top_cat_item["attrs"]
                 target_mrp = top_cat_item["mrp"]
                 requested_ic = top_ic
+        elif hist_sales_items:
+            # Tier 2 (Historical Sales)
+            hist_ic = hist_sales_items[0]
+            hist_cat_item = wh_catalog_by_item.get(hist_ic)
+            if hist_cat_item:
+                target_attrs = hist_cat_item["attrs"]
+                target_mrp = hist_cat_item["mrp"]
+                requested_ic = hist_ic
         elif store_items:
             # Fallback to current inventory
             target_attrs = store_items[0]["attrs"]
@@ -517,68 +542,85 @@ def run_allocation(
 
         allocated_qty = 0
         while allocated_qty < deficit_qty:
-            best_cand = None
-            best_score = -1.0
-            match_type = MatchType.UNRESOLVED
-            reason = "No stock available in Corporate Office"
+            def find_best_candidate(allow_duplicates: bool):
+                b_cand = None
+                b_score = -1.0
+                m_type = MatchType.UNRESOLVED
+                m_reason = "No stock available in Corporate Office"
 
-            for cand in candidates:
-                cand_code = cand["item_code"]
-                rem_stock = wh_remaining.get(cand_code, 0)
-                if rem_stock <= 0:
-                    continue
+                for cand in candidates:
+                    cand_code = cand["item_code"]
+                    rem_stock = wh_remaining.get(cand_code, 0)
+                    if rem_stock <= 0:
+                        continue
+                        
+                    cand_model = cand["attrs"].model
+                    cand_color = cand["attrs"].color
                     
-                cand_model = cand["attrs"].model
-                cand_color = cand["attrs"].color
-                
-                # HARD LIMIT: Max 3 unique colors per model per store
-                if pl_store in store_model_colors and cand_model in store_model_colors[pl_store]:
-                    existing_colors = store_model_colors[pl_store][cand_model]
-                    if cand_color not in existing_colors and len(existing_colors) >= 3:
+                    # HARD LIMIT: Max 3 unique colors per model per store
+                    if pl_store in store_model_colors and cand_model in store_model_colors[pl_store]:
+                        existing_colors = store_model_colors[pl_store][cand_model]
+                        if cand_color not in existing_colors and len(existing_colors) >= 3:
+                            continue
+                    
+                    # HARD LIMIT: Max 2 units of the same exact SKU per store
+                    MAX_UNITS_PER_SKU = 2
+                    sku_alloc_count = store_sku_counts.get(pl_store, {}).get(cand_code, 0)
+                    if sku_alloc_count >= MAX_UNITS_PER_SKU:
                         continue
-                
-                # HARD LIMIT: Max 2 units of the same exact SKU per store
-                MAX_UNITS_PER_SKU = 2
-                sku_alloc_count = store_sku_counts.get(pl_store, {}).get(cand_code, 0)
-                if sku_alloc_count >= MAX_UNITS_PER_SKU:
-                    continue
-                
-                # 85% UNIQUENESS RULE: Reject candidate if adding it drops uniqueness below 85% for this brand
-                store_brand = (pl_store, brand_name)
-                is_new_sku = cand_code not in store_brand_allocated_skus.get(store_brand, set())
-                
-                if not is_new_sku:
-                    current_unique = len(store_brand_allocated_skus.get(store_brand, set()))
-                    current_total = store_brand_allocated_qty_total.get(store_brand, 0)
-                    # If we add this duplicate, unique count stays the same, total increases by 1
-                    if current_unique / (current_total + 1) < 0.85:
-                        continue
-                
-                is_exact = any(si["item_code"] == cand_code for si in store_items)
-                sim_score = calculate_similarity(target_attrs, cand["attrs"])
-                
-                price_match = True
-                if target_mrp > 0:
-                    price_diff = abs(cand["mrp"] - target_mrp) / target_mrp
-                    if price_diff > 0.20:
-                        price_match = False
-                        sim_score -= 50
+                    
+                    # UNIQUENESS RULES
+                    store_brand = (pl_store, brand_name)
+                    is_in_shipment = cand_code in store_brand_allocated_skus.get(store_brand, set())
+                    is_on_shelf = cand_code in skus_in_hand
+                    is_duplicate = is_in_shipment or is_on_shelf
+                    
+                    if not allow_duplicates and is_duplicate:
+                        continue # Strict Pass 1: Skip entirely
+                        
+                    is_exact_tier1 = cand_code in top_sales_items
+                    is_exact_tier2 = cand_code in hist_sales_items
+                    sim_score = calculate_similarity(target_attrs, cand["attrs"])
+                    
+                    price_match = True
+                    if target_mrp > 0:
+                        price_diff = abs(cand["mrp"] - target_mrp) / target_mrp
+                        if price_diff > 0.20:
+                            price_match = False
+                            sim_score -= 50
 
-                if is_exact:
-                    sim_score += 100
-                
-                if sim_score > best_score:
-                    best_score = sim_score
-                    best_cand = cand
-                    if is_exact:
-                        match_type = MatchType.EXACT
-                        reason = "Exact SKU matching store historical stock"
-                    elif price_match:
-                        match_type = MatchType.SIMILAR
-                        reason = f"Similar item: Same Brand ({brand_name}), shape ({cand['attrs'].shape}), material ({cand['attrs'].material})"
-                    else:
-                        match_type = MatchType.SUBSTITUTE
-                        reason = f"Substitute: same brand fallback (price band exceeded)"
+                    if is_exact_tier1:
+                        sim_score += 200 # Tier 1 match (Recent sales)
+                    elif is_exact_tier2:
+                        sim_score += 150 # Tier 2 match (Historical sales)
+                    elif is_on_shelf:
+                        sim_score += 100 # Match existing SOH model/sku
+                    
+                    if sim_score > b_score:
+                        b_score = sim_score
+                        b_cand = cand
+                        if is_exact_tier1:
+                            m_type = MatchType.EXACT
+                            m_reason = "Tier 1 Exact Match: Recent sales"
+                        elif is_exact_tier2:
+                            m_type = MatchType.EXACT
+                            m_reason = "Tier 2 Exact Match: Historical sales"
+                        elif is_on_shelf:
+                            m_type = MatchType.EXACT
+                            m_reason = "Tier 2 Exact Match: Matching store shelf stock"
+                        elif price_match:
+                            m_type = MatchType.SIMILAR
+                            m_reason = f"Tier 3 Substitute: Same Brand ({brand_name}), shape ({cand['attrs'].shape}), material ({cand['attrs'].material})"
+                        else:
+                            m_type = MatchType.SUBSTITUTE
+                            m_reason = f"Substitute fallback (price band exceeded)"
+
+                return b_cand, b_score, m_type, m_reason
+
+            # Two-Pass Evaluation
+            best_cand, best_score, match_type, reason = find_best_candidate(allow_duplicates=False)
+            if not best_cand:
+                best_cand, best_score, match_type, reason = find_best_candidate(allow_duplicates=True)
 
             if not best_cand:
                 unfulfilled = deficit_qty - allocated_qty
@@ -694,6 +736,9 @@ def run_allocation(
             store_region = get_store_region(pl_store)
             store_zone = get_store_zone(store_region)
 
+            # Store's current SOH for the specific allocated SKU (before this allocation)
+            cand_store_soh = int(store_stock_grouped.get((mapped_facility, best_cand["item_code"]), 0))
+
             for bc, b_qty in allocated_barcodes_with_qty:
                 allocations.append(AllocationItem(
                     gap_id=idx,
@@ -723,8 +768,10 @@ def run_allocation(
                     initial_wh_stock=initial_wh,
                     remaining_wh_stock=remaining_wh,
                     initial_gap=initial_gap,
-                    remaining_gap=remaining_gap
+                    remaining_gap=remaining_gap,
+                    store_sku_soh_after=cand_store_soh + actual_alloc_qty
                 ))
+
 
     exact_c = sum(1 for a in allocations if a.match_type == MatchType.EXACT)
     similar_c = sum(1 for a in allocations if a.match_type == MatchType.SIMILAR)

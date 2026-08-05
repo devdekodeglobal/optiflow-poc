@@ -80,7 +80,8 @@ export default function PlanogramDrillDown({
   setFilters,
   editedRows,
   setEditedRows,
-  onAddRow
+  onAddRow,
+  uniquenessLookup = {}
 }) {
   const [viewMode, setViewMode] = useState('cards'); // 'cards' or 'table'
   const [editingCard, setEditingCard] = useState(null); // { oldName: string, newName: string }
@@ -155,15 +156,39 @@ export default function PlanogramDrillDown({
     let facing = 0;
     let backStock = 0;
     let skus = 0;
+    let totalSoh = 0;
+    const sohSkuSet = new Set();
     
     effectiveData.forEach(i => {
       facing += parseInt(i.facing) || 0;
       backStock += parseInt(i.back_stock) || 0;
       skus += parseInt(i.sku_count) || 0;
+      totalSoh += parseFloat(i.soh) || 0;
+      if (i.soh > 0 && i.store_name && i.brand_name && i.commodity) {
+        sohSkuSet.add(`${i.store_name}|${i.brand_name}|${i.commodity}`);
+      }
     });
 
-    return { facing, backStock, skus };
-  }, [effectiveData]);
+    // Uniqueness from actual store stock data (before allocation), only meaningful at store/brand level
+    let uniq_current = 0;
+    if (currentLevelIndex >= 4) {
+      const firstItem = effectiveData[0];
+      if (currentLevelIndex >= 5 && firstItem?.store_name && firstItem?.brand_name) {
+        // Brand level: look up this brand within this store
+        const bl = uniquenessLookup[firstItem.store_name]?.[firstItem.brand_name];
+        if (bl) uniq_current = bl[0]; // index 0 = before allocation
+      } else if (firstItem?.store_name) {
+        // Store level: average across all brands in the store
+        const storeLookup = uniquenessLookup[firstItem.store_name];
+        if (storeLookup) {
+          const vals = Object.values(storeLookup);
+          uniq_current = vals.length > 0 ? Math.round(vals.reduce((a, b) => a + b[0], 0) / vals.length) : 0;
+        }
+      }
+    }
+
+    return { facing, backStock, skus, totalSoh: Math.round(totalSoh), uniq_current };
+  }, [effectiveData, uniquenessLookup, currentLevelIndex]);
 
   // Group data by next level to render cards
   const childrenData = useMemo(() => {
@@ -401,7 +426,7 @@ export default function PlanogramDrillDown({
 
   const renderKPIBar = () => {
     return (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: currentLevelIndex >= 4 ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
         <div className="card animate-in" style={{ padding: '16px 20px', background: '#fff', border: '1px solid var(--glass-border)', boxShadow: 'var(--glass-shadow)' }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, marginBottom: 4 }}>TARGET</div>
           <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--primary)' }}>{(summary.facing + summary.backStock).toLocaleString()}</div>
@@ -414,6 +439,13 @@ export default function PlanogramDrillDown({
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', letterSpacing: 0.5, marginBottom: 4 }}>DEPTH</div>
           <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--warning)' }}>{summary.backStock.toLocaleString()}</div>
         </div>
+        {currentLevelIndex >= 4 && (
+          <div className="card animate-in" style={{ padding: '16px 20px', background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)', border: '1px solid #a7f3d0', boxShadow: 'var(--glass-shadow)' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#065f46', letterSpacing: 0.5, marginBottom: 4 }}>UNIQUENESS %</div>
+            <div style={{ fontSize: 24, fontWeight: 800, color: '#059669' }}>{summary.uniq_current}%</div>
+            <div style={{ fontSize: 10, color: '#047857', marginTop: 2 }}>Based on stock on hand</div>
+          </div>
+        )}
       </div>
     );
   };

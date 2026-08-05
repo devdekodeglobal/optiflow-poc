@@ -57,6 +57,11 @@ export async function getAllocationSummary() {
   return res.json();
 }
 
+export async function getUniquenessLookup() {
+  const res = await fetch(`${API_BASE}/api/allocation/uniqueness`);
+  return res.json();
+}
+
 export async function getDispatchOrder(storeName) {
   const res = await fetch(`${API_BASE}/api/allocation/dispatch/${encodeURIComponent(storeName)}`);
   if (!res.ok) {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useContext } from 'react';
-import { getPlanogramData, updatePlanogramData, getPlanogramVersions, restorePlanogramVersion } from '../api';
+import { getPlanogramData, updatePlanogramData, getPlanogramVersions, restorePlanogramVersion, getUniquenessLookup } from '../api';
 import { useLocation, useNavigate } from 'react-router-dom';
 import PlanogramDrillDown from '../components/PlanogramDrillDown';
 import { DataContext } from '../DataContext';
@@ -25,6 +25,8 @@ export default function PlanogramPage() {
   const [loadingVersions, setLoadingVersions] = useState(false);
   const [restoringId, setRestoringId] = useState(null);
 
+  const [uniquenessLookup, setUniquenessLookup] = useState({});
+
   const fetchPlanogram = async () => {
     setLoading(true);
     try {
@@ -43,6 +45,7 @@ export default function PlanogramPage() {
 
   useEffect(() => {
     fetchPlanogram();
+    getUniquenessLookup().then(data => setUniquenessLookup(data || {})).catch(() => {});
   }, []);
 
   const handleFiltersChange = (newFilters) => {
@@ -182,6 +185,7 @@ export default function PlanogramPage() {
               editedRows={editedRows}
               setEditedRows={setEditedRows}
               onAddRow={handleAddRow}
+              uniquenessLookup={uniquenessLookup}
             />
           )}
         </div>

@@ -69,6 +69,7 @@ class AllocationItem(BaseModel):
     remaining_wh_stock: int = 0
     initial_gap: float = 0
     remaining_gap: float = 0
+    store_sku_soh_after: int = 0  # store's existing SOH for this SKU + allocated_qty
 
 
 class AllocationSummary(BaseModel):
@@ -84,6 +85,8 @@ class AllocationSummary(BaseModel):
     total_target_deficit: int = 0
     total_soh: int = 0
     total_retail_value: float = 0.0
+    uniqueness_before_pct: int = 0
+    uniqueness_after_pct: int = 0
     tier_fulfillment: Dict[str, Dict[str, float]] = Field(default_factory=dict)
     brands: List[Dict] = Field(default_factory=list)
     last_run_at: Optional[str] = None

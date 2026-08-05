@@ -125,8 +125,12 @@ export default function StorePage() {
         </div>
         <div className="summary-card navy animate-in">
           <div className="label">Uniqueness</div>
-          <div className="value">{detail.uniqueness_pct}%</div>
-          <div className="sub">Unique SKUs to total items</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span className="value" style={{ fontSize: '1.4rem', color: 'rgba(255,255,255,0.7)' }}>{detail.uniqueness_before_pct ?? detail.uniqueness_pct ?? 0}%</span>
+            <span style={{ fontSize: 16, color: 'rgba(255,255,255,0.5)' }}>→</span>
+            <span className="value" style={{ fontSize: '1.8rem' }}>{detail.uniqueness_after_pct ?? detail.uniqueness_pct ?? 0}%</span>
+          </div>
+          <div className="sub">Before → After allocation</div>
         </div>
       </div>
 
