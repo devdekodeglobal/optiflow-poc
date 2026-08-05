@@ -174,8 +174,8 @@ export default function AllocationDrillDown({
         }
       });
       // Look up pre-computed uniqueness for this group from the backend
-      let uniq_before = 0;
-      let uniq_after = 0;
+      let uniq_before = 100;
+      let uniq_after = 100;
       if (items.length > 0) {
         const cardVals = [];
         const seenPairs = new Set();

@@ -420,11 +420,11 @@ def calculate_uniqueness(facilities: set, brands: set, allocated_items: list) ->
         skus_in_hand = set()
         qty_in_hand = 0.0
         
-    before_uniq_pct = int((len(skus_in_hand) / qty_in_hand) * 100) if qty_in_hand > 0 else 0
+    before_uniq_pct = int((len(skus_in_hand) / qty_in_hand) * 100) if qty_in_hand > 0 else 100
     
     after_uniq_skus = skus_in_hand.union(allocated_skus)
     after_qty = qty_in_hand + total_allocated
-    after_uniq_pct = int((len(after_uniq_skus) / after_qty) * 100) if after_qty > 0 else 0
+    after_uniq_pct = int((len(after_uniq_skus) / after_qty) * 100) if after_qty > 0 else before_uniq_pct
     
     return before_uniq_pct, after_uniq_pct
 
