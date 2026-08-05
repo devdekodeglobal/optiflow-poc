@@ -177,24 +177,22 @@ export default function AllocationDrillDown({
       let uniq_before = 0;
       let uniq_after = 0;
       if (items.length > 0) {
-        const storeName = items[0]?.store_name;
-        const brandName = items[0]?.brand_name;
-        if (nextLevelName === 'brand_name') {
-          // Cards shown are brands within a store — look up by brand within that store
-          const brandLookup = uniquenessLookup[storeName]?.[key];
-          if (brandLookup) { uniq_before = brandLookup[0]; uniq_after = brandLookup[1]; }
-        } else if (nextLevelName === 'commodity' || currentLevelIndex >= 5) {
-          // Cards shown are commodities (e.g. Frame) within a brand & store
-          const brandLookup = uniquenessLookup[storeName]?.[brandName];
-          if (brandLookup) { uniq_before = brandLookup[0]; uniq_after = brandLookup[1]; }
-        } else if (nextLevelName === 'store_name' || currentLevelIndex === 4) {
-          // Cards shown are stores — aggregate brand values for the store
-          const storeLookup = uniquenessLookup[key] || uniquenessLookup[storeName];
-          if (storeLookup) {
-            const vals = Object.values(storeLookup);
-            uniq_before = vals.length > 0 ? Math.round(vals.reduce((a, b) => a + b[0], 0) / vals.length) : 0;
-            uniq_after = vals.length > 0 ? Math.round(vals.reduce((a, b) => a + b[1], 0) / vals.length) : 0;
+        const cardVals = [];
+        const seenPairs = new Set();
+        items.forEach(i => {
+          if (i.store_name && i.brand_name) {
+            const pairKey = `${i.store_name}__${i.brand_name}`;
+            if (!seenPairs.has(pairKey)) {
+              seenPairs.add(pairKey);
+              const bl = uniquenessLookup[i.store_name]?.[i.brand_name];
+              if (bl) cardVals.push(bl);
+            }
           }
+        });
+
+        if (cardVals.length > 0) {
+          uniq_before = Math.round(cardVals.reduce((a, b) => a + b[0], 0) / cardVals.length);
+          uniq_after = Math.round(cardVals.reduce((a, b) => a + b[1], 0) / cardVals.length);
         }
       }
       
