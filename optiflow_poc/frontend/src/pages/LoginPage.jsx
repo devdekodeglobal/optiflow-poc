@@ -8,13 +8,13 @@ export default function LoginPage({ onLogin }) {
   const handleLogin = (e) => {
     e.preventDefault();
     if (loginMode === 'admin') {
-      if (password === 'b47b2') {
+      if (password === 'dek123vip') {
         onLogin({ name: 'System Admin', role: 'admin' });
       } else {
         setError('Incorrect admin password');
       }
     } else if (loginMode === 'user') {
-      if (password === 'b37b1') {
+      if (password === 'dek123acc') {
         onLogin({ name: 'Standard User', role: 'user' });
       } else {
         setError('Incorrect user password');
