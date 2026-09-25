@@ -51,7 +51,7 @@ export default function LoginPage({ onLogin }) {
         zIndex: 10
       }}>
         <div style={{ marginBottom: 40 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--primary)', marginBottom: 24, fontFamily: '"Montserrat", sans-serif' }}>NATIONAL EYEWEAR COMPANY</h1>
+          <img src="/cfs-logo.png" alt="Centre For Sight" style={{ display: 'block', margin: '0 auto 24px', maxWidth: 240, height: 'auto' }} />
           <h2 style={{ fontSize: 16, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: 2, margin: '0 0 8px', fontWeight: 600 }}>Login</h2>
           <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: 13, fontWeight: 600, letterSpacing: '0.5px' }}>OptiFlow v0.1</p>
         </div>
