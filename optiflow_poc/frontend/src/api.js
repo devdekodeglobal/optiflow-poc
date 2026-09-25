@@ -1,6 +1,6 @@
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://127.0.0.1:8000'
-  : 'https://gxirk-2401-4900-8845-3bd6-20cc-aa9f-8703-cd32.run.pinggy-free.link';
+  : 'https://e218b436344d75.lhr.life';
 
 export async function uploadFile(endpoint, file) {
   const formData = new FormData();
