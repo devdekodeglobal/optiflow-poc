@@ -10,7 +10,7 @@ build
 
 # Data & Cache files
 data/
-optiflow_poc/backend/local_data/
+# optiflow_poc/backend/local_data/ is now included for zero-setup deployment
 optiflow_poc/backend/test.xlsx
 
 # Scratch/Utility scripts
