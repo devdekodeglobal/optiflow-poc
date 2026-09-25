@@ -44,9 +44,7 @@ export const DataProvider = ({ children }) => {
 
     setIsLoadingData(true);
     try {
-      const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-        ? 'http://127.0.0.1:8000'
-        : 'https://e218b436344d75.lhr.life';
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://optiflow-poc.onrender.com';
       const q = new URLSearchParams({ page_size: 50000 }).toString();
 
       // 1. Fetch summary and dashboard (Fast queries, ~200ms)

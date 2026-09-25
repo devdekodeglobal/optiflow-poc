@@ -1,6 +1,4 @@
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://127.0.0.1:8000'
-  : 'https://e218b436344d75.lhr.life';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://optiflow-poc.onrender.com';
 
 export async function uploadFile(endpoint, file) {
   const formData = new FormData();

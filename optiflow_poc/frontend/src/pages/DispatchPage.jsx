@@ -70,9 +70,7 @@ export default function DispatchPage() {
   const handleDownloadExcel = (full, groupBy) => {
     setExportMenuOpen(false);
     const getBaseUrl = () => {
-      return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-        ? 'http://127.0.0.1:8000'
-        : 'https://e218b436344d75.lhr.life';
+      return import.meta.env.VITE_API_BASE_URL || 'https://optiflow-poc.onrender.com';
     };
 
     if (full) {
