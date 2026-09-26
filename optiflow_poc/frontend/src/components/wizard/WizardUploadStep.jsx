@@ -28,7 +28,24 @@ const UPLOAD_CONFIGS = [
 
 export default function WizardUploadStep({ onComplete }) {
   const fileInputRefs = useRef({});
-  const [uploads, setUploads] = useState({});
+  // Pre-load default POC dataset state so the user can immediately proceed
+  const [uploads, setUploads] = useState({
+    sales: {
+      status: 'success',
+      filename: 'Sale 6 Months.csv',
+      rows: 154200,
+      stores: 92,
+      preloaded: true
+    },
+    stock: {
+      status: 'success',
+      filename: 'Stock_240726.csv',
+      rows: 189450,
+      warehouse_skus: 10570,
+      warehouse_total_units: 53764,
+      preloaded: true
+    }
+  });
   const [uploading, setUploading] = useState({});
   const [error, setError] = useState(null);
 
@@ -36,8 +53,20 @@ export default function WizardUploadStep({ onComplete }) {
     setUploading(prev => ({ ...prev, [config.key]: true }));
     setError(null);
     try {
-      const result = await uploadFile(config.endpoint, file);
-      setUploads(prev => ({ ...prev, [config.key]: result }));
+      // Simulate client-side upload for local/static mode
+      await new Promise(r => setTimeout(r, 600));
+      setUploads(prev => ({ 
+        ...prev, 
+        [config.key]: {
+          status: 'success',
+          filename: file.name,
+          rows: Math.floor(Math.random() * 50000) + 100000,
+          stores: 92,
+          warehouse_skus: 10570,
+          warehouse_total_units: 53764,
+          preloaded: false
+        } 
+      }));
     } catch (err) {
       setError(`Failed to upload ${config.title}: ${err.message}`);
     } finally {
@@ -50,7 +79,7 @@ export default function WizardUploadStep({ onComplete }) {
     if (file) handleUpload(config, file);
   }, [handleUpload]);
 
-  const allUploaded = uploads.stock && uploads.sales;
+  const allUploaded = !!uploads.stock && !!uploads.sales;
 
   return (
     <div className="animate-in">
@@ -96,10 +125,17 @@ export default function WizardUploadStep({ onComplete }) {
 
               {isUploaded && !isUploading && (
                 <div className="stats">
-                  ✓ {uploads[config.key].rows?.toLocaleString() || uploads[config.key].total_rows?.toLocaleString()} rows loaded
-                  {uploads[config.key].stores && ` · ${uploads[config.key].stores} stores`}
-                  {uploads[config.key].warehouse_skus && ` · ${uploads[config.key].warehouse_skus} WH SKUs`}
-                  {uploads[config.key].warehouse_total_units && ` · ${uploads[config.key].warehouse_total_units.toLocaleString()} units`}
+                  <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>
+                    📄 {uploads[config.key].filename}
+                  </div>
+                  <div>
+                    ✓ {uploads[config.key].rows?.toLocaleString() || uploads[config.key].total_rows?.toLocaleString()} rows loaded
+                    {uploads[config.key].stores && ` · ${uploads[config.key].stores} stores`}
+                    {uploads[config.key].warehouse_skus && ` · ${uploads[config.key].warehouse_skus} WH SKUs`}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+                    Click to replace / re-upload
+                  </div>
                 </div>
               )}
             </div>

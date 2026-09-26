@@ -69,6 +69,56 @@ export default function DispatchPage() {
 
   const handleDownloadExcel = (full, groupBy) => {
     setExportMenuOpen(false);
+
+    // --- FRONTEND CLIENT-SIDE CSV/EXCEL EXPORT ---
+    try {
+      const dataToExport = (full ? masterData : filteredData).filter(item => (item.allocated_qty || 0) > 0);
+      if (!dataToExport || dataToExport.length === 0) {
+        alert('No dispatch allocations to export');
+        return;
+      }
+
+      const headers = [
+        'Store Name', 'Category', 'Store Type', 'Zone', 'Region',
+        'Brand', 'Commodity', 'Allocated Qty', 'Match Type',
+        'Allocated SKU Code', 'Allocated Description', 'Barcode', 'MRP', 'Match Reason'
+      ];
+
+      const rows = dataToExport.map(item => [
+        `"${item.store_name || ''}"`,
+        `"${item.store_category || ''}"`,
+        `"${item.store_type || ''}"`,
+        `"${item.zone || ''}"`,
+        `"${item.region || ''}"`,
+        `"${item.brand_name || ''}"`,
+        `"${item.commodity || ''}"`,
+        item.allocated_qty || 0,
+        `"${item.match_type || ''}"`,
+        `"${item.allocated_item_code || ''}"`,
+        `"${(item.allocated_item_name || '').replace(/"/g, '""')}"`,
+        `"${item.allocated_barcode || ''}"`,
+        item.mrp || 0,
+        `"${(item.match_reason || '').replace(/"/g, '""')}"`
+      ]);
+
+      const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `OptiFlow_Dispatch_${groupBy || 'Store'}_${full ? 'Full' : 'Filtered'}_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Client dispatch export failed, falling back to backend:', err);
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://optiflow-poc.onrender.com';
+      window.location.href = `${baseUrl}/api/allocation/results/export?group_by=${groupBy}&dispatch_only=true`;
+    }
+
+    // --- BACKEND API EXPORT (Commented off for frontend mode) ---
+    /*
     const getBaseUrl = () => {
       return import.meta.env.VITE_API_BASE_URL || 'https://optiflow-poc.onrender.com';
     };
@@ -89,6 +139,7 @@ export default function DispatchPage() {
       }).toString();
       window.location.href = `${getBaseUrl()}/api/allocation/results/export?${q}`;
     }
+    */
   };
 
 

@@ -44,10 +44,11 @@ export const DataProvider = ({ children }) => {
 
     setIsLoadingData(true);
     try {
+      // --- BACKEND API CALLS (Commented off for frontend-only mode) ---
+      /*
       const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://optiflow-poc.onrender.com';
       const q = new URLSearchParams({ page_size: 50000 }).toString();
 
-      // 1. Fetch summary and dashboard (Fast queries, ~200ms)
       const summaryPromise = instantData && instantData.summary
         ? Promise.resolve()
         : fetch(`${baseUrl}/api/allocation/summary`)
@@ -80,16 +81,40 @@ export const DataProvider = ({ children }) => {
         })
         .catch(() => {});
 
-      // Wait for fast summary queries to resolve so header timestamp updates instantly
       await Promise.all([summaryPromise, dashPromise]);
 
-      // 2. Fetch results (Slow query, 5-10s depending on network since payload is ~10MB)
       const resultsRes = await fetch(`${baseUrl}/api/allocation/results?${q}`).catch(() => null);
       if (resultsRes?.ok) {
         const json = await resultsRes.json();
         setAllocationData(json.allocations || []);
       } else {
         setAllocationData([]);
+      }
+      */
+
+      // --- FRONTEND STATIC CACHE MODE (Fast, local & serverless) ---
+      const [resultsRes, dashRes] = await Promise.all([
+        fetch('/data/allocation_results.json').then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch('/data/dashboard_cache.json').then(r => r.ok ? r.json() : null).catch(() => null)
+      ]);
+
+      if (resultsRes) {
+        if (resultsRes.summary) {
+          setAllocationSummary(resultsRes.summary);
+        }
+        if (resultsRes.last_run_at) {
+          const rawDateStr = resultsRes.last_run_at;
+          const isoDateStr = rawDateStr.includes(' ') && !rawDateStr.includes('T') 
+            ? rawDateStr.replace(' ', 'T') 
+            : rawDateStr;
+          const date = new Date(isoDateStr);
+          setLastRun(!isNaN(date.getTime()) ? date.toLocaleString() : rawDateStr);
+        }
+        setAllocationData(resultsRes.results || []);
+      }
+
+      if (dashRes) {
+        setDashboardData(dashRes);
       }
 
     } catch (e) {
