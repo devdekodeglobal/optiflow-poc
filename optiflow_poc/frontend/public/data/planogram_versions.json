@@ -1,0 +1,93 @@
+[
+  {
+    "version_id": "v_2026-08-04_19-51-22",
+    "filename": "backups/planogram_v_2026-08-04_19-51-22.json",
+    "timestamp": "2026-08-04T19:51:22.311369+00:00",
+    "total_entries": 2,
+    "description": "Restored snapshot from v_2026-07-27_07-26-58"
+  },
+  {
+    "version_id": "v_2026-07-27_07-28-30",
+    "filename": "backups/planogram_v_2026-07-27_07-28-30.json",
+    "timestamp": "2026-07-27T07:28:30.622586+00:00",
+    "total_entries": 2,
+    "description": "Restored snapshot from v_2026-07-27_07-28-07"
+  },
+  {
+    "version_id": "v_2026-07-27_07-28-24",
+    "filename": "backups/planogram_v_2026-07-27_07-28-24.json",
+    "timestamp": "2026-07-27T07:28:24.877909+00:00",
+    "total_entries": 2,
+    "description": "Updated TestStore1 facing to 50"
+  },
+  {
+    "version_id": "v_2026-07-27_07-28-23",
+    "filename": "backups/planogram_v_2026-07-27_07-28-23.json",
+    "timestamp": "2026-07-27T07:28:23.771808+00:00",
+    "total_entries": 2,
+    "description": "Initial Test Snapshot"
+  },
+  {
+    "version_id": "v_2026-07-27_07-28-07",
+    "filename": "backups/planogram_v_2026-07-27_07-28-07.json",
+    "timestamp": "2026-07-27T07:28:07.488471+00:00",
+    "total_entries": 2,
+    "description": "Restored snapshot from v_2026-07-27_07-27-33"
+  },
+  {
+    "version_id": "v_2026-07-27_07-28-06",
+    "filename": "backups/planogram_v_2026-07-27_07-28-06.json",
+    "timestamp": "2026-07-27T07:28:06.445088+00:00",
+    "total_entries": 2,
+    "description": "Updated TestStore1 facing to 50"
+  },
+  {
+    "version_id": "v_2026-07-27_07-27-56",
+    "filename": "backups/planogram_v_2026-07-27_07-27-56.json",
+    "timestamp": "2026-07-27T07:27:56.192443+00:00",
+    "total_entries": 2,
+    "description": "Initial Test Snapshot"
+  },
+  {
+    "version_id": "v_2026-07-27_07-27-43",
+    "filename": "backups/planogram_v_2026-07-27_07-27-43.json",
+    "timestamp": "2026-07-27T07:27:43.324129+00:00",
+    "total_entries": 2,
+    "description": "Updated TestStore1 facing to 50"
+  },
+  {
+    "version_id": "v_2026-07-27_07-27-33",
+    "filename": "backups/planogram_v_2026-07-27_07-27-33.json",
+    "timestamp": "2026-07-27T07:27:33.375906+00:00",
+    "total_entries": 2,
+    "description": "Initial Test Snapshot"
+  },
+  {
+    "version_id": "v_2026-07-27_07-27-27",
+    "filename": "backups/planogram_v_2026-07-27_07-27-27.json",
+    "timestamp": "2026-07-27T07:27:27.424834+00:00",
+    "total_entries": 2,
+    "description": "Updated TestStore1 facing to 50"
+  },
+  {
+    "version_id": "v_2026-07-27_07-27-15",
+    "filename": "backups/planogram_v_2026-07-27_07-27-15.json",
+    "timestamp": "2026-07-27T07:27:15.263402+00:00",
+    "total_entries": 2,
+    "description": "Initial Test Snapshot"
+  },
+  {
+    "version_id": "v_2026-07-27_07-27-13",
+    "filename": "backups/planogram_v_2026-07-27_07-27-13.json",
+    "timestamp": "2026-07-27T07:27:13.764557+00:00",
+    "total_entries": 2,
+    "description": "Updated TestStore1 facing to 50"
+  },
+  {
+    "version_id": "v_2026-07-27_07-26-58",
+    "filename": "backups/planogram_v_2026-07-27_07-26-58.json",
+    "timestamp": "2026-07-27T07:26:58.804684+00:00",
+    "total_entries": 2,
+    "description": "Initial Test Snapshot"
+  }
+]
